@@ -65,7 +65,7 @@ namespace spToolbelt2019Lib
             }
             catch (Exception ex)
             {
-               
+                System.Diagnostics.Trace.WriteLine(ex.Message);  
             }
             return false;
 
@@ -89,7 +89,7 @@ namespace spToolbelt2019Lib
             }
             catch (Exception ex)
             {
-                
+                System.Diagnostics.Trace.WriteLine(ex.Message);
             }
             return false;
         }
@@ -138,9 +138,11 @@ namespace spToolbelt2019Lib
                 lst.Context.Load(lst);
                 lst.Context.ExecuteQuery();
                 string viewXML = "<View><Query><Where><Eq><FieldRef Name = 'FileLeafRef' /><Value Type = 'File'>" + cFileName + "</Value></Eq></Where></Query><RowLimit>5000</RowLimit></View>";
-                CamlQuery oQuery = new CamlQuery();// CamlQuery.CreateAllItemsQuery();
-                //CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
-                oQuery.ViewXml = viewXML;
+                CamlQuery oQuery = new CamlQuery
+                {
+                    //CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
+                    ViewXml = viewXML
+                };// CamlQuery.CreateAllItemsQuery();
                 ListItemCollection oItems = lst.GetItems(oQuery);
                 lst.Context.Load(oItems,itms=>itms.Include(i=>i["FileLeafRef"]));
                 lst.Context.ExecuteQuery();
@@ -343,7 +345,7 @@ namespace spToolbelt2019Lib
             }
             catch (Exception ex)
             {
-
+                System.Diagnostics.Trace.WriteLine(ex.Message);
             }
             return null;
         }
@@ -361,7 +363,7 @@ namespace spToolbelt2019Lib
             }
             catch (Exception ex)
             {
-                
+                System.Diagnostics.Trace.WriteLine(ex.Message);
             }
             return false;
         }

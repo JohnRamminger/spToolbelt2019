@@ -50,5 +50,12 @@ namespace spToolbelt2019.Forms
 
 
         }
+
+        private void Button2_Click(object sender, EventArgs e)
+        {
+            Guid guid = new Guid("e374875e-06b6-11e0-b0fa-57f5dfd72085");
+            ctx.Site.Features.Add(guid, true, FeatureDefinitionScope.None);
+            ctx.ExecuteQuery();
+        }
     }
 }
