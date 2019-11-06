@@ -224,7 +224,7 @@ namespace spToolbelt2019Lib
                         }
                         break;
 
-                        break;
+                        
 
                     case "ensure-listhascontenttype":
                         if (parms.ContainsKey("url") && parms.ContainsKey("listname") && parms.ContainsKey("contenttype"))

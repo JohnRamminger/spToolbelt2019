@@ -2,7 +2,6 @@
 using Microsoft.SharePoint.Client;
 using Microsoft.SharePoint.Client.Utilities;
 using Microsoft.SharePoint.Client.WebParts;
-using Microsoft.SharePoint.Client.WorkflowServices;
 using Newtonsoft.Json;
 using OfficeDevPnP.Core.Enums;
 using spToolbelt2019Lib.Objects;
@@ -91,7 +90,7 @@ namespace spToolbelt2019Lib
         #region Public Methods
 
         string cLogFile;
-        bool SiteCollectionsOnly;
+        
         scriptItems oWorkItems;
         public void Start(string cWorkerName, ClientContext workerCTX, scriptItems ScriptItems, string cCommand,bool bAllSites)
         {
@@ -837,8 +836,10 @@ namespace spToolbelt2019Lib
                     e2.WebRequestExecutor.WebRequest.UserAgent = "NONISV|RammWare|spToolbelt2019/1.0";
                 };
                 List lstSites = workCTX.Web.Lists.GetByTitle("spmiSites");
-                CamlQuery oQuery = new CamlQuery();
-                oQuery.ViewXml = "<View><Query><Where><Eq><FieldRef Name='UniquePermissions' /><Value Type='Boolean'>1</Value></Eq></Where></Query></View>";
+                CamlQuery oQuery = new CamlQuery
+                {
+                    ViewXml = "<View><Query><Where><Eq><FieldRef Name='UniquePermissions' /><Value Type='Boolean'>1</Value></Eq></Where></Query></View>"
+                };
                 ListItemCollection items = lstSites.GetItems(oQuery);
                 workCTX.Load(items, i => i.Include(itm => itm["SiteUrl"]));
                 workCTX.ExecuteQuery();
@@ -869,8 +870,10 @@ namespace spToolbelt2019Lib
         {
             try
             {
-                ClientContext siteCTX = new ClientContext(cSiteUrl);
-                siteCTX.Credentials = ctx.Credentials;
+                ClientContext siteCTX = new ClientContext(cSiteUrl)
+                {
+                    Credentials = ctx.Credentials
+                };
                 siteCTX.ExecutingWebRequest += delegate (object sender2, WebRequestEventArgs e2)
                 {
                     e2.WebRequestExecutor.WebRequest.UserAgent = "NONISV|RammWare|spToolbelt2019/1.0";
@@ -1058,7 +1061,7 @@ namespace spToolbelt2019Lib
             }
             catch (Exception ex)
             {
-                
+                System.Diagnostics.Trace.WriteLine(ex.Message);
             }
         }
 
@@ -1165,7 +1168,7 @@ namespace spToolbelt2019Lib
             }
             catch (Exception ex)
             {
-                
+                System.Diagnostics.Trace.WriteLine(ex.Message);
             }
 
         }
@@ -1299,8 +1302,10 @@ namespace spToolbelt2019Lib
         private void UpdateSitePermissions(scriptItem workItem)
         {
             string saveUrl = workItem.GetParm("SaveContext");
-            ClientContext workCTX = new ClientContext(saveUrl);
-            workCTX.Credentials = ctx.Credentials;
+            ClientContext workCTX = new ClientContext(saveUrl)
+            {
+                Credentials = ctx.Credentials
+            };
             workCTX.ExecutingWebRequest += delegate (object sender2, WebRequestEventArgs e2)
             {
                 e2.WebRequestExecutor.WebRequest.UserAgent = "NONISV|RammWare|spToolbelt2019/1.0";
@@ -1904,7 +1909,7 @@ namespace spToolbelt2019Lib
             }
             catch (Exception ex)
             {
-                
+                System.Diagnostics.Trace.WriteLine(ex.Message);
             }
 
             return false; 
@@ -2528,43 +2533,43 @@ namespace spToolbelt2019Lib
             try
             {
 
-                var workflowServicesManager = new WorkflowServicesManager(workCTX, workCTX.Web);
-                var workflowInteropService = workflowServicesManager.GetWorkflowInteropService();
-                var workflowSubscriptionService = workflowServicesManager.GetWorkflowSubscriptionService();
-                var workflowDeploymentService = workflowServicesManager.GetWorkflowDeploymentService();
-                var workflowInstanceService = workflowServicesManager.GetWorkflowInstanceService();
+                //var workflowServicesManager = new WorkflowServicesManager(workCTX, workCTX.Web);
+                //var workflowInteropService = workflowServicesManager.GetWorkflowInteropService();
+                //var workflowSubscriptionService = workflowServicesManager.GetWorkflowSubscriptionService();
+                //var workflowDeploymentService = workflowServicesManager.GetWorkflowDeploymentService();
+                //var workflowInstanceService = workflowServicesManager.GetWorkflowInstanceService();
 
-                var publishedWorkflowDefinitions = workflowDeploymentService.EnumerateDefinitions(true);
-                workCTX.Load(publishedWorkflowDefinitions);
-                workCTX.ExecuteQuery();
+                //var publishedWorkflowDefinitions = workflowDeploymentService.EnumerateDefinitions(true);
+                //workCTX.Load(publishedWorkflowDefinitions);
+                //workCTX.ExecuteQuery();
 
-                var def = from defs in publishedWorkflowDefinitions
-                          where defs.DisplayName == cWorkflowName
-                          select defs;
+                //var def = from defs in publishedWorkflowDefinitions
+                //          where defs.DisplayName == cWorkflowName
+                //          select defs;
 
-                WorkflowDefinition workflow = def.FirstOrDefault();
+                //WorkflowDefinition workflow = def.FirstOrDefault();
 
-                if (workflow != null)
-                {
-
-
-                    // get all workflow associations
-                    var workflowAssociations = workflowSubscriptionService.EnumerateSubscriptionsByDefinition(workflow.Id);
-                    workCTX.Load(workflowAssociations);
-                    workCTX.ExecuteQuery();
-
-                    // find the first association
-                    var firstWorkflowAssociation = workflowAssociations.First();
-
-                    // start the workflow
-                    var startParameters = new Dictionary<string, object>();
+                //if (workflow != null)
+                //{
 
 
-                    ShowProgress("Starting workflow for item: " + itm.Id);
-                    workflowInstanceService.StartWorkflowOnListItem(firstWorkflowAssociation, itm.Id, startParameters);
-                    workCTX.ExecuteQuery();
+                //    // get all workflow associations
+                //    var workflowAssociations = workflowSubscriptionService.EnumerateSubscriptionsByDefinition(workflow.Id);
+                //    workCTX.Load(workflowAssociations);
+                //    workCTX.ExecuteQuery();
 
-                }
+                //    // find the first association
+                //    var firstWorkflowAssociation = workflowAssociations.First();
+
+                //    // start the workflow
+                //    var startParameters = new Dictionary<string, object>();
+
+
+                //    ShowProgress("Starting workflow for item: " + itm.Id);
+                //    workflowInstanceService.StartWorkflowOnListItem(firstWorkflowAssociation, itm.Id, startParameters);
+                //    workCTX.ExecuteQuery();
+
+                //}
 
             }
             catch (Exception ex)
@@ -2890,222 +2895,223 @@ namespace spToolbelt2019Lib
 
         private static ListTemplateType GetTemplateType(string cTypeName)
         {
+            ListTemplateType returnType=ListTemplateType.GenericList;
             
             switch (cTypeName)
             {
                 case "Picture":
-                    return ListTemplateType.PictureLibrary;
+                    returnType= ListTemplateType.PictureLibrary;
                     break;
                 case "Document":
                 
                 case "DocumentLibrary":
-                    return ListTemplateType.DocumentLibrary;
+                    returnType= ListTemplateType.DocumentLibrary;
                     break;
                 case "Generic":
                 case "Custom":
-                    return ListTemplateType.GenericList;
+                    returnType= ListTemplateType.GenericList;
                     break;
                 default:
                     break;
             }
 
-            return ListTemplateType.GenericList;
+            return returnType;
             //switch (tp)
             //{
             //    case ListTemplateType.InvalidType:
-                    
+
             //        break;
             //    case ListTemplateType.NoListTemplate:
-                    
+
             //        break;
             //    case ListTemplateType.GenericList:
-                    
+
             //        break;
             //    case ListTemplateType.DocumentLibrary:
-                    
+
             //        break;
             //    case ListTemplateType.Survey:
-                    
+
             //        break;
             //    case ListTemplateType.Links:
-                    
+
             //        break;
             //    case ListTemplateType.Announcements:
-                    
+
             //        break;
             //    case ListTemplateType.Contacts:
-                    
+
             //        break;
             //    case ListTemplateType.Events:
-                    
+
             //        break;
             //    case ListTemplateType.Tasks:
-                    
+
             //        break;
             //    case ListTemplateType.DiscussionBoard:
-                    
+
             //        break;
             //    case ListTemplateType.PictureLibrary:
-                    
+
             //        break;
             //    case ListTemplateType.DataSources:
-                    
+
             //        break;
             //    case ListTemplateType.WebTemplateCatalog:
-                    
+
             //        break;
             //    case ListTemplateType.UserInformation:
-                    
+
             //        break;
             //    case ListTemplateType.WebPartCatalog:
-                    
+
             //        break;
             //    case ListTemplateType.ListTemplateCatalog:
-                    
+
             //        break;
             //    case ListTemplateType.XMLForm:
-                    
+
             //        break;
             //    case ListTemplateType.MasterPageCatalog:
-                    
+
             //        break;
             //    case ListTemplateType.NoCodeWorkflows:
-                    
+
             //        break;
             //    case ListTemplateType.WorkflowProcess:
-                    
+
             //        break;
             //    case ListTemplateType.WebPageLibrary:
-                    
+
             //        break;
             //    case ListTemplateType.CustomGrid:
-                    
+
             //        break;
             //    case ListTemplateType.SolutionCatalog:
-                    
+
             //        break;
             //    case ListTemplateType.NoCodePublic:
-                    
+
             //        break;
             //    case ListTemplateType.ThemeCatalog:
-                    
+
             //        break;
             //    case ListTemplateType.DesignCatalog:
-                    
+
             //        break;
             //    case ListTemplateType.AppDataCatalog:
-                    
+
             //        break;
             //    case ListTemplateType.DataConnectionLibrary:
-                    
+
             //        break;
             //    case ListTemplateType.WorkflowHistory:
-                    
+
             //        break;
             //    case ListTemplateType.GanttTasks:
-                    
+
             //        break;
             //    case ListTemplateType.HelpLibrary:
-                    
+
             //        break;
             //    case ListTemplateType.AccessRequest:
-                    
+
             //        break;
             //    case ListTemplateType.TasksWithTimelineAndHierarchy:
-                    
+
             //        break;
             //    case ListTemplateType.MaintenanceLogs:
-                    
+
             //        break;
             //    case ListTemplateType.Meetings:
-                    
+
             //        break;
             //    case ListTemplateType.Agenda:
-                    
+
             //        break;
             //    case ListTemplateType.MeetingUser:
-                    
+
             //        break;
             //    case ListTemplateType.Decision:
-                    
+
             //        break;
             //    case ListTemplateType.MeetingObjective:
-                    
+
             //        break;
             //    case ListTemplateType.TextBox:
-                    
+
             //        break;
             //    case ListTemplateType.ThingsToBring:
-                    
+
             //        break;
             //    case ListTemplateType.HomePageLibrary:
-                    
+
             //        break;
             //    case ListTemplateType.Posts:
-                    
+
             //        break;
             //    case ListTemplateType.Comments:
-                    
+
             //        break;
             //    case ListTemplateType.Categories:
-                    
+
             //        break;
             //    case ListTemplateType.Facility:
-                    
+
             //        break;
             //    case ListTemplateType.Whereabouts:
-                    
+
             //        break;
             //    case ListTemplateType.CallTrack:
-                    
+
             //        break;
             //    case ListTemplateType.Circulation:
-                    
+
             //        break;
             //    case ListTemplateType.Timecard:
-                    
+
             //        break;
             //    case ListTemplateType.Holidays:
-                    
+
             //        break;
             //    case ListTemplateType.IMEDic:
-                    
+
             //        break;
             //    case ListTemplateType.ExternalList:
-                    
+
             //        break;
             //    case ListTemplateType.MySiteDocumentLibrary:
-                    
+
             //        break;
             //    case ListTemplateType.IssueTracking:
-                    
+
             //        break;
             //    case ListTemplateType.AdminTasks:
-                    
+
             //        break;
             //    case ListTemplateType.HealthRules:
-                    
+
             //        break;
             //    case ListTemplateType.HealthReports:
-                    
+
             //        break;
             //    case ListTemplateType.DeveloperSiteDraftApps:
-                    
+
             //        break;
             //    case ListTemplateType.AccessApp:
-                    
+
             //        break;
             //    case ListTemplateType.AlchemyMobileForm:
-                    
+
             //        break;
             //    case ListTemplateType.AlchemyApprovalWorkflow:
-                    
+
             //        break;
             //    case ListTemplateType.SharingLinks:
-                    
+
             //        break;
             //    case ListTemplateType.HashtagStore:
-                    
+
             //        break;
 
             //}
@@ -3908,13 +3914,13 @@ namespace spToolbelt2019Lib
                 case -1:
                     string cParms = (string)e.UserState;
                     string[] parms = cParms.Split('|');
-                    if (Error != null) Error(parms[0], parms[1], parms[2]);
+                    Error?.Invoke(parms[0], parms[1], parms[2]);
                     break;
                 case 1:
-                    if (Progress != null) Progress((string)e.UserState);
+                    Progress?.Invoke((string)e.UserState);
                     break;
                 case 2:
-                    if (Info != null) Info((string)e.UserState);
+                    Info?.Invoke((string)e.UserState);
                     break;
                 default:
                     break;
@@ -3926,10 +3932,10 @@ namespace spToolbelt2019Lib
             sw.Stop();
             if (oWorker.CancellationPending)
             {
-                if (Canceled != null) Canceled();
+                Canceled?.Invoke();
                 return;
             }
-            if (Complete != null) Complete();
+            Complete?.Invoke();
             oOutputFile.Flush();
             oOutputFile.Close();
         }
@@ -4371,8 +4377,10 @@ namespace spToolbelt2019Lib
                     }
                 }
                 var user_group = web.EnsureUser(cUserName);
-                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX);
-                roleDefBindCol.Add(web.RoleDefinitions.GetByType(role));
+                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX)
+                {
+                    web.RoleDefinitions.GetByType(role)
+                };
                 roleAssignments.Add(user_group, roleDefBindCol);
                 workCTX.Load(roleAssignments);
                 web.Update();
@@ -4401,8 +4409,10 @@ namespace spToolbelt2019Lib
                     }
                 }
                 var user_group = list.ParentWeb.EnsureUser(cUserName);
-                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX);
-                roleDefBindCol.Add(list.ParentWeb.RoleDefinitions.GetByType(role));
+                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX)
+                {
+                    list.ParentWeb.RoleDefinitions.GetByType(role)
+                };
                 roleAssignments.Add(user_group, roleDefBindCol);
                 workCTX.Load(roleAssignments);
                 list.Update();
@@ -4432,8 +4442,10 @@ namespace spToolbelt2019Lib
                     }
                 }
                 var user_group = item.ParentList.ParentWeb.EnsureUser(cUserName);
-                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX);
-                roleDefBindCol.Add(item.ParentList.ParentWeb.RoleDefinitions.GetByType(role));
+                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX)
+                {
+                    item.ParentList.ParentWeb.RoleDefinitions.GetByType(role)
+                };
                 roleAssignments.Add(user_group, roleDefBindCol);
                 workCTX.Load(roleAssignments);
                 item.SystemUpdate();
@@ -4462,8 +4474,10 @@ namespace spToolbelt2019Lib
                     }
                 }
                 var user_group = web.SiteGroups.GetByName(cGroupName);
-                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX);
-                roleDefBindCol.Add(web.RoleDefinitions.GetByType(role));
+                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX)
+                {
+                    web.RoleDefinitions.GetByType(role)
+                };
                 roleAssignments.Add(user_group, roleDefBindCol);
                 workCTX.Load(roleAssignments);
                 web.Update();
@@ -4492,8 +4506,10 @@ namespace spToolbelt2019Lib
                     }
                 }
                 var user_group = list.ParentWeb.SiteGroups.GetByName(cGroupName);
-                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX);
-                roleDefBindCol.Add(list.ParentWeb.RoleDefinitions.GetByType(role));
+                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX)
+                {
+                    list.ParentWeb.RoleDefinitions.GetByType(role)
+                };
                 roleAssignments.Add(user_group, roleDefBindCol);
                 workCTX.Load(roleAssignments);
                 list.Update();
@@ -4524,8 +4540,10 @@ namespace spToolbelt2019Lib
                     }
                 }
                 var user_group = item.ParentList.ParentWeb.SiteGroups.GetByName(cGroupName);
-                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX);
-                roleDefBindCol.Add(item.ParentList.ParentWeb.RoleDefinitions.GetByType(role));
+                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX)
+                {
+                    item.ParentList.ParentWeb.RoleDefinitions.GetByType(role)
+                };
                 roleAssignments.Add(user_group, roleDefBindCol);
                 workCTX.Load(roleAssignments);
                 item.SystemUpdate();
