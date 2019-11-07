@@ -4537,6 +4537,7 @@ namespace spToolbelt2019Lib
         {
             try
             {
+                
                 RoleAssignmentCollection roleAssignments = item.RoleAssignments;
                 workCTX.Load(roleAssignments, ra => ra.Include(rd => rd.Member.Title, rd => rd.Member.PrincipalType, rd => rd.RoleDefinitionBindings));
                 workCTX.ExecuteQuery();
@@ -4562,6 +4563,48 @@ namespace spToolbelt2019Lib
                 ShowError(ex, "EnsureGroupPermissionInWeb", "");
             }
         }
+
+
+
+
+        private void ListWebParts(ClientContext workCTX, string item, scriptItem oWorkItem)
+        {
+            try
+            {
+                string cPageUrl = oWorkItem.GetParm("pagename");
+
+                var page = workCTX.Web.GetFileByServerRelativeUrl(cPageUrl);
+                var wpm = page.GetLimitedWebPartManager(PersonalizationScope.Shared);
+                workCTX.Load(wpm, w => w.WebParts);
+                workCTX.ExecuteQuery();
+                Console.WriteLine(wpm.WebParts.Count);
+                foreach (WebPartDefinition wp in wpm.WebParts)
+                {
+                    workCTX.Load(wp, wpi => wpi.WebPart);
+                    workCTX.ExecuteQuery();
+                    System.Diagnostics.Trace.WriteLine(wp.ToString());
+                    
+                    //var client = new WebPartPagesWebService();
+                    //client.Url = siteRootAddress + "/_vti_bin/Webpartpages.asmx";
+                    //client.Credentials = credential;
+                    //// webPartId is a property of WebPart Defenition from the above code
+                    //var webPartXmlString = client.GetWebPart2(pageAddress,
+                    //                                               webPartId,
+                    //                                               Storage.Shared,
+                    //                                               SPWebServiceBehavior.Version3);
+
+                    //var webPartNode = XElement.Parse(webPartXmlString);
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "ListWebParts", ex.Message);
+            }
+        }
+
+        
+        
+        
 
 
     }

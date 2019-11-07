@@ -539,5 +539,25 @@ namespace spToolbelt2019Lib
             return null;
         }
         #endregion
+        
+        public static void EnsureFile(this List lstName,ClientContext workContext,string cFileName,string cLocalPath)
+        {
+            ListItem fileItem = lstName.GetListItemByFileName(workContext, cFileName);
+            if (fileItem==null)
+            {
+
+                Folder folder = lstName.RootFolder;
+                FileCreationInformation fci = new FileCreationInformation();
+                fci.Content = System.IO.File.ReadAllBytes(cLocalPath);
+                fci.Url = cFileName;
+                fci.Overwrite = true;
+                File fileToUpload = folder.Files.Add(fci);
+                workContext.Load(fileToUpload);
+                workContext.ExecuteQuery();
+
+            }
+        }
+        
+        
     }
 }
