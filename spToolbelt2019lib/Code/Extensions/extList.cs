@@ -9,6 +9,22 @@ namespace spToolbelt2019Lib
 {
     public static class extList
     {
+        public static void SetListExperience(this List lst, ListExperience exp)
+        {
+            try
+            {
+                
+                lst.ListExperienceOptions = exp;
+
+
+            } catch (Exception ex)
+            {
+                throw new Exception("An error occured in SetListExperience for: " + lst.Title + " " + ex.Message);
+            }
+        }
+
+
+
         #region Guid
 
         public static bool HasGuid(this List lst,string cGuid)
@@ -48,6 +64,105 @@ namespace spToolbelt2019Lib
         }
         #endregion
 
+
+        public static ListItemCollection GetAllItems(this List workList)
+        {
+            try
+            {
+                CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
+                ListItemCollection items = workList.GetItems(oQuery);
+                workList.Context.Load(items);
+                workList.Context.ExecuteQuery();
+                return items;
+            }
+            catch (Exception ex)
+            {
+
+            }
+            return null;
+        }
+
+
+        public static ListItemCollection GetModifiedItems(this List workList, DateTime lastRun)
+        {
+            try
+            {
+                string datetime = lastRun.ToString("yyyy-MM-ddTHH:mm:ssZ");//change the Time to your date time value
+                CamlQuery oQuery = new CamlQuery();
+
+                oQuery.ViewXml= "<View><Query><Where><Gt><FieldRef Name='Modified'/><Value Type='DateTime'>" + datetime + "</Value></Gt></Where></Query><RowLimit>5000</RowLimit></View>";
+
+                ListItemCollection items = workList.GetItems(oQuery);
+                workList.Context.Load(items);
+                workList.Context.ExecuteQuery();
+
+                return items;
+            }
+            catch (Exception ex)
+            {
+                
+            }
+            return null;
+        }
+
+
+        public static void SyncList(this List srcList, ClientContext ctxTarget, string cListName, string cSyncFields, DateTime dtLastRun)
+        {
+
+            try
+            {
+                List tgtList = ctxTarget.Web.Lists.GetByTitle(cListName);
+                ctxTarget.Load(tgtList, l => l.ItemCount);
+                ctxTarget.ExecuteQuery();
+                srcList.Context.Load(srcList, s => s.ItemCount);
+                srcList.Context.ExecuteQuery();
+
+                ListItemCollection workItems = null;
+
+                if (srcList.ItemCount != tgtList.ItemCount)
+                {
+                    workItems = srcList.GetAllItems();
+                } else
+                {
+                    workItems = srcList.GetModifiedItems(dtLastRun);
+                }
+                foreach (ListItem item in workItems)
+                {
+                    try
+                    {
+                        srcList.Context.Load(item);
+                        srcList.Context.ExecuteQueryRetry();
+
+                        ListItem tgtItem = tgtList.GetListItemByTitle(item["Title"].ToString());
+                        if (tgtItem == null)
+                        {
+                            ListItemCreationInformation lici = new ListItemCreationInformation();
+                            tgtItem = tgtList.AddItem(lici);
+                            tgtItem["Title"] = item["Title"];
+                            tgtItem.Update();
+                        }
+
+                        string[] aFields = cSyncFields.Split('|');
+                        foreach(string cField in aFields)
+                        {
+                            tgtItem[cField.Trim()] = item[cField.Trim()];
+                        }
+                        tgtItem.Update();
+                        ctxTarget.ExecuteQuery();
+                        tgtItem.Update();
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
+                }
+            } catch(Exception ex)
+            {
+
+            }
+            
+        }
+  
 
         public static bool HasItemByTitle(this List lst,string cTitle)
         {
@@ -129,7 +244,40 @@ namespace spToolbelt2019Lib
             return null;
         }
 
+        public static ListItem GetListItemByTitle(this List lst, string cItemTitle)
+        {
+            try
+            {
+                lst.Context.Load(lst);
+                lst.Context.ExecuteQuery();
+                string viewXML = "<View><Query><Where><Eq><FieldRef Name='Title' /><Value Type='Text'>" + cItemTitle + "</Value></Eq></Where></Query></View>";
+                CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
+                oQuery.ViewXml = viewXML;
+                ListItemCollection oItems = lst.GetItems(oQuery);
+                lst.Context.Load(oItems);
+                lst.Context.ExecuteQuery();
+                foreach (ListItem listItem in oItems)
+                {
+                    if (listItem["Title"].ToString() == cItemTitle)
+                    {
+                        return listItem;
+                    }
+                }
+                //if (oItems.Count>0)
+                //{
+                //    return oItems[0];
+                //}
+            }
+            catch (Exception ex)
+            {
+                if (ex.InnerException != null)
+                {
+                    System.Diagnostics.Trace.WriteLine(ex.InnerException.Message);
+                }
 
+            }
+            return null;
+        }
 
         public static ListItem GetItemByFileNam(this List lst,  string cFileName)
         {

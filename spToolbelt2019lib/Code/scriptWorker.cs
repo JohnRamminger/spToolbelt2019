@@ -505,34 +505,17 @@ namespace spToolbelt2019Lib
                         case "WalkSites":
                             WalkAllSites();
                             break;
-                        case "ContentTypeFields":
-                            ShowContentTypeFields("https://havertys.sharepoint.com/sites/contentTypeHub");
-                            break;
-                        case "UpdateSearch":
-                            NavigationNodeCollection oSearchNav = workCTX.Web.LoadSearchNavigation();
-
-                            //workCTX.Web.DeleteAllNavigationNodes(NavigationType.SearchNav);
-                            //workCTX.ExecuteQuery();
-                            workCTX.Web.SetPropertyBagValue("SRCH_ENH_FTR_URL_WEB", @"https://havertys.sharepoint.com/Sites/SearchCenter/Pages/results.aspx");
-                            workCTX.Web.SetPropertyBagValue("SRCH_ENH_FTR_URL", @"https://havertys.sharepoint.com/Sites/SearchCenter/Pages/results.aspx");
-                            workCTX.ExecuteQuery();
-
-                            EnsureNavNode(workCTX, "Everything", "https://havertys.sharepoint.com/Sites/SearchCenter/Pages/results.aspx");
-                            EnsureNavNode(workCTX, "KB", "https://havertys.sharepoint.com/Sites/SearchCenter/Pages/kbresults.aspx");
-                            EnsureNavNode(workCTX, "Bulletin", "https://havertys.sharepoint.com/Sites/SearchCenter/Pages/bulletinresults.aspx");
-                            RemoveNavNode(workCTX, "Warranty");
-                            EnsureNavNode(workCTX, "Product", "https://havertys.sharepoint.com/Sites/SearchCenter/Pages/warrantyresults.aspx");
-                            EnsureNavNode(workCTX, "Training", "https://havertys.sharepoint.com/Sites/SearchCenter/Pages/trainingresults.aspx");
-                            EnsureNavNode(workCTX, "User Guides", "https://havertys.sharepoint.com/Sites/SearchCenter/Pages/ugresults.aspx");
-                            EnsureNavNode(workCTX, "Directory", "https://havertys.sharepoint.com/Sites/SearchCenter/Pages/dirresults.aspx");
-
-                            workCTX.ExecuteQuery();
+                        
+                            case "sync-list":
+                                SyncList(workCTX, oWorkItem);
+                                break;
+                            case "sync-navigationlist":
+                                SyncNavList(workCTX, oWorkItem);
+                                break;
 
 
 
-
-                            break;
-                        default:
+                            default:
                             ShowProgress("Unrecognized command!"+oWorkItem.Command);
                             break;
                     }
@@ -553,6 +536,32 @@ namespace spToolbelt2019Lib
                 ShowError(ex, "ProcessSites.WorkSite - "+item, "");
             }
 
+        }
+
+        private void SyncNavList(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void SyncList(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            try
+            {
+                string cFields = oWorkItem.GetParm("syncfields");
+                string cListName = oWorkItem.GetParm("listname");
+                string ctargeturl = oWorkItem.GetParm("targeturl");
+                List lstSource = workCTX.Web.Lists.GetByTitle(cListName);
+                ClientContext ctxTarget = new ClientContext(ctargeturl);
+                ctxTarget.Credentials = workCTX.Credentials;
+                ctxTarget.ExecutingWebRequest += delegate (object sender2, WebRequestEventArgs e2)
+                {
+                    e2.WebRequestExecutor.WebRequest.UserAgent = "NONISV|RammWare|spToolbelt2019/1.0";
+                };
+                lstSource.SyncList(ctxTarget, cListName, cFields, new DateTime(1970, 1, 1));
+            } catch (Exception ex)
+            {
+
+            }
         }
 
         private void SetSiteReadOnly()
