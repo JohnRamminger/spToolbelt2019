@@ -15,7 +15,7 @@ using System.Linq;
 using System.Net;
 using System.Security;
 using System.Text;
-
+using System.Threading.Tasks;
 
 namespace spToolbelt2019Lib
 {
@@ -33,6 +33,17 @@ namespace spToolbelt2019Lib
         List<string> spwebs = null;
         public bool ProcessSubWebs { get; set; }
         public bool bSingleSite { get; set; }
+
+
+        public void UpdateProgress()
+        {
+            RunCount += 1;
+            string cRemainingTime = RemainingTime;
+            oWorker.ReportProgress(4, cRemainingTime);
+
+
+        }
+
 
         public string RemainingTime
         {
@@ -80,6 +91,16 @@ namespace spToolbelt2019Lib
 
         public delegate void InfoHandler(string cInfo);
         public event InfoHandler Info;
+
+
+        public delegate void ReaminingTimeHandler(string ReaminingTimeInfo);
+        public event ReaminingTimeHandler ReaminingTimeInfo;
+
+
+        public delegate void SiteInfoHandler(string cInfo);
+        public event SiteInfoHandler SiteInfo;
+
+
 
         public delegate void WorkerErrorHandler(string cExceptionMessage, string cLocation, string cMessage);
         public event WorkerErrorHandler Error;
@@ -533,7 +554,19 @@ namespace spToolbelt2019Lib
 
 
                             break;
-                        default:
+
+                            case "update-inventorylistitems":
+                                UpdateInventoryListItems(workCTX, item, oWorkItem);
+                                break;
+
+
+                            case "update-inventory":
+                                UpdateInventory(workCTX, item, oWorkItem);
+                                break;
+
+
+
+                            default:
                             ShowProgress("Unrecognized command!"+oWorkItem.Command);
                             break;
                     }
@@ -3916,7 +3949,11 @@ namespace spToolbelt2019Lib
                 case 2:
                     if (Info != null) Info((string)e.UserState);
                     break;
-                default:
+                case 3:
+                    if (SiteInfo != null) SiteInfo((string)e.UserState);
+                    break;
+                case 4:
+                    if (ReaminingTimeInfo != null) ReaminingTimeInfo((string)e.UserState);
                     break;
             }
         }
@@ -4331,7 +4368,11 @@ namespace spToolbelt2019Lib
         #endregion
 
         #region ProgressMethods
-
+        void ShowSiteInfo(string cSiteInfo)
+        {
+            oWorker.ReportProgress(3, cSiteInfo);
+            oOutputFile.WriteLine("SiteInfo: " + cSiteInfo);
+        }
         void ShowProgress(string cProgress)
         {
             oWorker.ReportProgress(1, cProgress);
@@ -4512,6 +4553,7 @@ namespace spToolbelt2019Lib
         {
             try
             {
+                
                 RoleAssignmentCollection roleAssignments = item.RoleAssignments;
                 workCTX.Load(roleAssignments, ra => ra.Include(rd => rd.Member.Title, rd => rd.Member.PrincipalType, rd => rd.RoleDefinitionBindings));
                 workCTX.ExecuteQuery();
@@ -4536,6 +4578,350 @@ namespace spToolbelt2019Lib
             }
         }
 
+
+
+
+        private void ListWebParts(ClientContext workCTX, string item, scriptItem oWorkItem)
+        {
+            try
+            {
+                string cPageUrl = oWorkItem.GetParm("pagename");
+
+                var page = workCTX.Web.GetFileByServerRelativeUrl(cPageUrl);
+                var wpm = page.GetLimitedWebPartManager(PersonalizationScope.Shared);
+                workCTX.Load(wpm, w => w.WebParts);
+                workCTX.ExecuteQuery();
+                Console.WriteLine(wpm.WebParts.Count);
+                foreach (WebPartDefinition wp in wpm.WebParts)
+                {
+                    workCTX.Load(wp, wpi => wpi.WebPart);
+                    workCTX.ExecuteQuery();
+                    System.Diagnostics.Trace.WriteLine(wp.ToString());
+                    
+                    //var client = new WebPartPagesWebService();
+                    //client.Url = siteRootAddress + "/_vti_bin/Webpartpages.asmx";
+                    //client.Credentials = credential;
+                    //// webPartId is a property of WebPart Defenition from the above code
+                    //var webPartXmlString = client.GetWebPart2(pageAddress,
+                    //                                               webPartId,
+                    //                                               Storage.Shared,
+                    //                                               SPWebServiceBehavior.Version3);
+
+                    //var webPartNode = XElement.Parse(webPartXmlString);
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "ListWebParts", ex.Message);
+            }
+        }
+
+
+        private void UpdateInventory(ClientContext workCTX, string item, scriptItem oWorkItem)
+        {
+            try
+            {
+
+                string saveContextUrl = oWorkItem.GetParm("saveurl");
+                string scanContextUrl = oWorkItem.GetParm("scanurl");
+                ClientContext saveContext = new ClientContext(saveContextUrl);
+                saveContext.Credentials = workCTX.Credentials;
+                ShowProgress("Gathering Scan Information");
+                ClientContext scanContext = new ClientContext(scanContextUrl);
+    
+                if (oWorkItem.GetParmBool("CurrentCredentials")==true)
+                {
+
+                } else
+                {
+                    scanContext.Credentials = ctx.Credentials;
+                }
+
+
+
+                Int32 workCount = GetItemsToProcess(scanContext.Site.RootWeb);
+                TotalItems = workCount;
+                ShowProgress(workCount + " items to process");
+                WorkGallerySite(workCTX, oWorkItem);
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "Work Sites for Gallery -" + item, "");
+            }
+
+        }
+
+        private string GetRemaining(int iCount, int count, TimeSpan elapsed)
+        {
+            try
+            {
+
+                double avgSpeed = elapsed.TotalMilliseconds / iCount;
+                double estRemaining = avgSpeed * (count - iCount);
+                TimeSpan time = TimeSpan.FromSeconds(Convert.ToInt32(estRemaining / 1000));
+                string str = time.ToString(@"hh\:mm");
+                return str;
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "GetRemaining", "");
+            }
+            return "";
+        }
+
+
+        private void UpdateInventoryListItems(ClientContext workCTX, string item, scriptItem oWorkItem)
+        {
+            try
+            {
+
+                string saveContextUrl = oWorkItem.GetParm("saveurl");
+                //string scanContextUrl = oWorkItem.GetParm("scanurl");
+                ClientContext saveContext = new ClientContext(saveContextUrl);
+                saveContext.Credentials = workCTX.Credentials;
+                ShowProgress("Gathering Scan Information");
+                //ClientContext scanContext = new ClientContext(scanContextUrl);
+                //scanContext.Credentials = ctx.Credentials;
+
+                CamlQuery oQueryAll = CamlQuery.CreateAllItemsQuery();
+                ListItemCollection items = saveContext.Web.Lists.GetByTitle("spmiLists").GetItems(oQueryAll);
+                saveContext.Load(items, l => l.Include(li => li["spmiListID"], li => li["spmiSiteUrl"], li => li["spmiItemCount"], li => li["Title"]));
+                saveContext.ExecuteQuery();
+
+
+                foreach (ListItem listItem in items)
+                {
+                    TotalItems += Convert.ToInt32(listItem["spmiItemCount"].ToString());
+                }
+                ShowProgress("Processing " + TotalItems + " items");
+                RunCount = 1;
+                string lastUrl = "";
+                ClientContext scanContext = ctx;
+
+                List<Task> tasks = new List<Task>();
+
+                foreach (ListItem listItem in items)
+                {
+                    try
+                    {
+                        //if (listItem["spmiSiteUrl"].ToString() != lastUrl)
+                        //{
+                        //    string cSiteUrl = listItem["spmiSiteUrl"].ToString();
+                        //    scanContext = new ClientContext(cSiteUrl);
+                        //    scanContext.Credentials = ctx.Credentials;
+                        //    lastUrl = listItem["spmiSiteUrl"].ToString();
+                        //    ShowInfo("Scanning List: " + listItem["Title"].ToString()+ " in Site: " + cSiteUrl);
+                        //}
+                        string cSiteUrl = listItem["spmiSiteUrl"].ToString();
+                        string cListID = listItem["spmiListID"].ToString();
+
+                        //tasks.Add(Task.Run(() =>
+                        //{
+                        //ScanListitems(scanContext, saveContext, listItem["spmiListID"].ToString());
+                        ScanListItemsAsync(cSiteUrl, saveContextUrl, cListID, ctx.Credentials);
+                        /*}))*/
+                        ;
+                    }
+                    catch (Exception ex)
+                    {
+                        ShowError(ex, "UpdateInventoryListItems inside: " + item, "");
+                    }
+                }
+                Task.WaitAll(tasks.ToArray());
+                System.Diagnostics.Trace.WriteLine("Done with Items!");
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "UpdateInventoryListItems" + item, "");
+            }
+        }
+
+        private void ScanListItemsAsync(string cSiteUrl, string saveContextUrl, string cListID, ICredentials credentials)
+        {
+            try
+            {
+                using (ClientContext saveContext = new ClientContext(saveContextUrl))
+                {
+                    saveContext.Credentials = credentials;
+                    using (ClientContext scanContext = new ClientContext(cSiteUrl))
+                    {
+                        scanContext.Credentials = credentials;
+                        ScanListitems(scanContext, saveContext, cListID);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
+
+
+
+        }
+
+        private void ScanListitems(ClientContext scanContext, ClientContext saveContext, string cListId)
+        {
+            try
+            {
+                List workList = scanContext.Web.Lists.GetById(new Guid(cListId));
+                scanContext.Load(workList);
+                scanContext.ExecuteQuery();
+
+                CamlQuery camlQuery = new CamlQuery();
+                camlQuery.ViewXml = "<View Scope='RecursiveAll'><RowLimit>5000</RowLimit><ViewFields><FieldRef Name='ID' /></ViewFields></View>";
+
+                List<ListItem> items = new List<ListItem>();
+                do
+                {
+                    ListItemCollection listItemCollection = workList.GetItems(camlQuery);
+
+                    scanContext.Load(listItemCollection);//, l => l.Include(li => li.File, li => li.FieldValuesAsText, li => li.HasUniqueRoleAssignments, li => li.DisplayName, li => li["Title"], li => li["FileLeafRef"], li => li["GUID"], li => li["File_x0020_Size"]));
+
+
+                    scanContext.ExecuteQuery();
+
+                    //Adding the current set of ListItems in our single buffer
+                    items.AddRange(listItemCollection);
+                    //Reset the current pagination info
+                    camlQuery.ListItemCollectionPosition = listItemCollection.ListItemCollectionPosition;
+
+                } while (camlQuery.ListItemCollectionPosition != null);
+                foreach (ListItem li in items)
+                {
+                    if (workList.BaseTemplate == 101)
+                    {
+                        scanContext.Load(li, itm => itm.File.ServerRelativeUrl, itm => itm.File.Name, itm => itm.DisplayName, itm => itm.ContentType, itm => itm["File_x0020_Size"], itm => itm["GUID"], itm => itm.File, itm => itm.FieldValuesAsText, itm => itm.HasUniqueRoleAssignments);
+                    }
+                    else
+                    {
+                        scanContext.Load(li, itm => itm.DisplayName, itm => itm["GUID"], itm => itm.ContentType, itm => itm["Title"], itm => itm.FieldValuesAsText, itm => itm.HasUniqueRoleAssignments);
+                    }
+                    scanContext.ExecuteQuery();
+                    if (li.ContentType.Name != "Folder")
+                    {
+                        SaveItemInfo(saveContext, li, cListId, (workList.BaseTemplate == 101));
+                    }
+                    UpdateProgress();
+                }
+
+
+
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "ScanListitems" + cListId, "");
+            }
+        }
+
+
+
+        private void SaveItemInfo(ClientContext saveContext, ListItem itm, string cListId, bool isFile)
+        {
+            try
+            {
+                string itmGuid = itm["GUID"].ToString();
+                string viewXML = "<View><Query><Where><Eq><FieldRef Name = 'spmiItemGuid' /><Value Type = 'Text'>" + itmGuid + "</Value></Eq></Where></Query><RowLimit>5000</RowLimit></View>";
+                CamlQuery oQuery = new CamlQuery();
+                oQuery.ViewXml = viewXML;
+                List lst = saveContext.Web.Lists.GetByTitle("spmiItems");
+                ListItemCollection items = lst.GetItems(oQuery);
+                saveContext.Load(items);
+                saveContext.ExecuteQuery();
+                if (items.Count == 0)
+                {
+                    ListItemCreationInformation lici = new ListItemCreationInformation();
+                    ListItem workItem = lst.AddItem(lici);
+                    if (isFile)
+                    {
+                        if (itm["File_x0020_Size"] != null)
+                        {
+
+                            string cFileSize = itm["File_x0020_Size"].ToString();
+                            if (!string.IsNullOrEmpty(cFileSize))
+                            {
+                                int fileSize = Convert.ToInt32(cFileSize);
+                                workItem["spmiItemSize"] = fileSize;
+                            }
+                        }
+                        workItem["spmiItemType"] = "File";
+                        workItem["spmiItemUrl"] = itm.File.ServerRelativeUrl;
+                        workItem["Title"] = itm.File.Name;
+                    }
+                    else
+                    {
+                        workItem["Title"] = itm.DisplayName;
+                    }
+                    workItem["spmiListID"] = cListId;
+                    workItem["spmiItemData"] = JsonConvert.SerializeObject(itm.FieldValuesAsText.FieldValues);
+                    //workItem["spmiParentFolderUrl"] = itm.File.foldeworkFolder.ServerRelativeUrl
+                    workItem.Update();
+                    saveContext.ExecuteQuery();
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "SaveItemInfo -", "");
+            }
+
+        }
+
+        private Int32 GetItemsToProcess(Web oWeb)
+        {
+            oWeb.Context.Load(oWeb, w => w.ServerRelativeUrl);
+            oWeb.Context.ExecuteQuery();
+            ShowSiteInfo("Working: " + oWeb.ServerRelativeUrl);
+            Int32 runningCount = 1;
+            try
+            {
+                WebCollection webs = oWeb.Webs;
+                oWeb.Context.Load(webs);
+                oWeb.Context.ExecuteQuery();
+                foreach (Web web in webs)
+                {
+                    runningCount += GetItemsToProcess(web);
+                }
+                ListCollection lsts = oWeb.Lists;
+                oWeb.Context.Load(lsts, ls => ls.Include(l => l.Title), ls => ls.Include(l => l.BaseTemplate), ls => ls.Include(l => l.ItemCount), ls => ls.Where(l => l.Hidden == false && l.IsCatalog == false));
+                oWeb.Context.ExecuteQuery();
+                foreach (List list in lsts)
+                {
+                    runningCount = runningCount + 1;// +list.ItemCount;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "GetItemsToProcess -" + oWeb.ServerRelativeUrl, "");
+            }
+
+            return runningCount;
+        }
+        private void WorkGallerySite(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            try
+            {
+
+                string saveContextUrl = oWorkItem.GetParm("saveurl");
+                ClientContext saveContext = new ClientContext(saveContextUrl);
+                saveContext.Credentials = workCTX.Credentials;
+
+
+                ClientContext walkContext = new ClientContext(oWorkItem.GetParm("scanurl"));
+                walkContext.Credentials = workCTX.Credentials;
+                walkContext.Load(walkContext.Web, ww => ww.Title, ww => ww.ServerRelativeUrl, ww => ww.Id);
+                walkContext.ExecuteQuery();
+                ShowInfo(walkContext.Web.Title + " - " + walkContext.Web.ServerRelativeUrl);
+                ShowProgress("Walking Site: " + oWorkItem.GetParm("scanurl"));
+
+
+                EnsureSiteGallery(walkContext, saveContext, walkContext.Web, -1, oWorkItem);
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "Work Site for Gallery -", "");
+            }
+
+        }
 
     }
 }
