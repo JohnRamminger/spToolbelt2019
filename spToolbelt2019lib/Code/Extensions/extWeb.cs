@@ -112,7 +112,7 @@ namespace spToolbelt2019Lib
             }
             catch (Exception ex)
             {
-                
+                System.Diagnostics.Trace.WriteLine(ex.Message);
             }
             return cIncluded;
         }
@@ -882,10 +882,11 @@ namespace spToolbelt2019Lib
 
         public static Folder EnsureFolder(this Web web,string cSourceFolder)
         {
+            Folder fld = null;
             try
             {
-                string cWorkFolder="";
-                Folder fld = null;
+                //string cWorkFolder="";
+                
                 FolderCollection fc = web.Folders;
                 web.Context.Load(fc);
                 web.Context.ExecuteQuery();
@@ -904,16 +905,13 @@ namespace spToolbelt2019Lib
                         fld = fc.GetFolder(cFolder);
                         fc = fld.Folders;
                     }
-
                 }
-                return fld;
             }
             catch (Exception ex)
             {
                 throw new Exception("Error in extWeb.EnsureFolder -  " + ex.Message, ex);
-
             }
-            return null;
+            return fld;
         }
         
         #endregion

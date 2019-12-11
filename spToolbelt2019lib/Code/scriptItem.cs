@@ -130,8 +130,22 @@ namespace spToolbelt2019Lib
                         }
                         break;
 
+                    case "navigation-list":
+                    case "sync-list":
+                        if (parms.ContainsKey("url") &&
+                            parms.ContainsKey("listname") &&
+                            parms.ContainsKey("targeturl") &&
+                            parms.ContainsKey("syncfields"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
 
-                        
+
                     case "attach-workflow":
                         if (parms.ContainsKey("url") &&
                             parms.ContainsKey("listname") &&
@@ -248,7 +262,7 @@ namespace spToolbelt2019Lib
                         }
                         break;
 
-                        break;
+                        
 
                     case "ensure-listhascontenttype":
                         if (parms.ContainsKey("url") && parms.ContainsKey("listname") && parms.ContainsKey("contenttype"))
