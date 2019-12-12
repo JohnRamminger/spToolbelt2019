@@ -1,9 +1,13 @@
 ﻿using spc = Microsoft.SharePoint.Client;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using spToolbelt2019.Forms;
+using Squirrel;
+using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace spToolbelt2019
 {
@@ -24,7 +28,26 @@ namespace spToolbelt2019
         private void frmMain_Load(object sender, EventArgs e)
         {
             EnableUI(false);
+            CheckForUpdates();
+            AddVersionNumber();
         }
+
+        private void AddVersionNumber()
+        {
+            System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            FileVersionInfo versionInfo = FileVersionInfo.GetVersionInfo(assembly.Location);
+            this.Text += $"v.{versionInfo.ProductVersion}";// "SharePoint Toolbelt: Version ("+versionInfo.ProductVersion+")";
+        }
+
+        private async Task  CheckForUpdates()
+        {
+            using (var manager = new UpdateManager("https://rammware.s3.us-east-2.amazonaws.com/spToolBelt2019","spToolBelt2019"))
+            {
+                await manager.UpdateApp();
+                MessageBox.Show("Update Check Complete!");
+            }
+        }
+
 
         private void EnableUI(bool bEnableUI)
         {
@@ -114,6 +137,29 @@ namespace spToolbelt2019
             frmTest frmtest = new frmTest(ctx);
             frmtest.MdiParent = this;
             frmtest.Show();
+        }
+
+        private void checkForUpdatesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (var manager = new UpdateManager("https://rammware.s3.us-east-2.amazonaws.com/spToolBelt2019", "spToolBelt2019"))
+            {
+                
+                manager.UpdateApp();
+                MessageBox.Show("Update Check Complete!");
+            }
+
+
+        }
+
+        private void viewLogFilesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string cTempPath = Path.GetTempPath();
+            string cLogPath = cTempPath + @"\spToolBelt";
+            if (!Directory.Exists(cLogPath))
+            {
+                Directory.CreateDirectory(cLogPath);
+            }
+            Process.Start(cLogPath);
         }
     }
 }

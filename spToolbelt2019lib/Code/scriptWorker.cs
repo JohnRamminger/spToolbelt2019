@@ -125,7 +125,7 @@ namespace spToolbelt2019Lib
             }
             ctx = workerCTX;
             Command = cCommand;
-            string cLogName = string.Format(cWorkerName + "-{0:yyyy-MM-dd_hh-mm-ss-tt}.log", DateTime.Now);
+            string cLogName = string.Format(@"spToolBelt\"+cWorkerName + "-{0:yyyy-MM-dd_hh-mm-ss-tt}.log", DateTime.Now);
             string cLogFilename = Path.GetTempPath() + cLogName;
             cLogFile = cLogFilename;
             oOutputFile = new StreamWriter(cLogFilename);
@@ -4388,7 +4388,12 @@ namespace spToolbelt2019Lib
 
         void ShowError(Exception ex, string cLocation, string cMessage)
         {
+
             string cOutput = String.Format("{0}|{1}|{2}", ex.Message, cLocation, cMessage);
+            if (ex.InnerException!=null)
+            {
+                cOutput += "|InnerException|" + ex.InnerException.Message;
+            }
             oWorker.ReportProgress(-1, cOutput);
             oOutputFile.WriteLine("Error: " + cOutput);
         }
@@ -4631,9 +4636,10 @@ namespace spToolbelt2019Lib
     
                 if (oWorkItem.GetParmBool("CurrentCredentials")==true)
                 {
-
+                    ShowProgress("Using Current Credentials");
                 } else
                 {
+                    ShowProgress("Using Login Credentials");
                     scanContext.Credentials = ctx.Credentials;
                 }
 
