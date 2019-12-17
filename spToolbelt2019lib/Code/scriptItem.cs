@@ -55,6 +55,30 @@ namespace spToolbelt2019Lib
             {
                 switch (Command)
                 {
+                    case "update-inventorylistitems":
+                        if (parms.ContainsKey("scanurl") &&
+                            parms.ContainsKey("saveurl"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
+
+                    case "update-inventory":
+                        if (parms.ContainsKey("scanurl") &&
+                            parms.ContainsKey("saveurl"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
+
                     case "set-sitereadonly":
                     case "find-everyone":
                     case "enable-accessrequestsearch":
