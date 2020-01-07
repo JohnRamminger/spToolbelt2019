@@ -5,11 +5,9 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.SharePoint.Client;
-using Microsoft.SharePoint.Client.Search.Query;
 using OfficeDevPnP.Core.Framework.Provisioning.Connectors;
 using OfficeDevPnP.Core.Framework.Provisioning.Model;
 using OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers;
@@ -231,7 +229,7 @@ namespace spToolbelt2019.Forms
             WalkCustomActions();
         }
 
-
+        
 
         private void button5_Click(object sender, EventArgs e)
         {
@@ -244,23 +242,23 @@ namespace spToolbelt2019.Forms
             SearchExecutor searchExecutor = new SearchExecutor(ctx);
             ClientResult<ResultTableCollection> results = searchExecutor.ExecuteQuery(keywordQuery);
             ctx.ExecuteQuery();
-
-            foreach (ResultTable rt in results.Value)
+            
+            foreach(ResultTable rt in results.Value)
             {
-                foreach (IDictionary<string, object> result in rt.ResultRows)
+                foreach(IDictionary<string,object> result in rt.ResultRows)
                 {
                     string cListID = result["ListID"].ToString();
                     string cWebUrl = result["SPWebUrl"].ToString();
                     EventList el = new EventList();
                     el.ListId = cListID;
                     el.SiteUrl = cWebUrl;
-                    if (!HasItem(lists, cListID))
+                    if (!HasItem(lists,cListID))
                     {
                         lists.Add(el);
                     }
                     if (!lists.Contains(el))
                     {
-
+                        
                     }
                 }
             }
@@ -278,7 +276,7 @@ namespace spToolbelt2019.Forms
                 workCTX.ExecuteQuery();
                 CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
                 ListItemCollection items = lst.GetItems(oQuery);
-                workCTX.Load(items, i => i.Include(itm => itm.ContentType.Name, itm => itm["RecurrenceData"], itm => itm["atiEventRecurrence"]));
+                workCTX.Load(items, i => i.Include(itm => itm.ContentType.Name, itm => itm["RecurrenceData"],itm=>itm["atiEventRecurrence"]));
                 workCTX.ExecuteQuery();
                 foreach (ListItem itm in items)
                 {
@@ -316,7 +314,7 @@ namespace spToolbelt2019.Forms
                 lst.RemoveContentTypeByName("Event");
                 lst.DisableContentTypes();
                 workCTX.ExecuteQuery();
-            }
+           }
 
             MessageBox.Show("done ");
 
@@ -327,7 +325,7 @@ namespace spToolbelt2019.Forms
         {
             foreach (EventList eventList in lists)
             {
-                if (eventList.ListId == cListID)
+                if (eventList.ListId==cListID)
                 {
                     return true;
                 }
@@ -335,7 +333,7 @@ namespace spToolbelt2019.Forms
             return false;
         }
 
-        private void ActivateEventFeature(ClientContext ctxWork, string cFeatureID)
+        private void ActivateEventFeature(ClientContext ctxWork,string cFeatureID)
         {
             try
             {
@@ -343,7 +341,7 @@ namespace spToolbelt2019.Forms
                 ctxWork.Load(features);
 
                 ctxWork.Load(features, fcol => fcol.Include(f => f.DisplayName, f => f.DefinitionId));
-
+                
 
 
                 ctxWork.ExecuteQuery();
@@ -353,26 +351,21 @@ namespace spToolbelt2019.Forms
                     System.Diagnostics.Trace.WriteLine(item.DisplayName);
                     if (item.DefinitionId == new Guid(cFeatureID))
                     {
-                        return;
+                         return;
                     }
                 }
 
-                features.Add(new Guid(cFeatureID.ToUpper()), true, FeatureDefinitionScope.Web);
+                features.Add(new Guid(cFeatureID.ToUpper()), true,FeatureDefinitionScope.Web);
                 ctxWork.ExecuteQuery();
             }
             catch (Exception ex)
             {
-
+                
             }
 
 
 
 
-        }
-
-        private void button2_Click_2(object sender, EventArgs e)
-        {
-            AddSampleData();
         }
     }
     public class EventList
