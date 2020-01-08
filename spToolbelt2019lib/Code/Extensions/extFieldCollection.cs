@@ -10,7 +10,6 @@ namespace spToolbelt2019Lib
     public static class extFieldCollection
     {
 
-
         #region Site Columns
 
         #region Lookup
@@ -19,7 +18,7 @@ namespace spToolbelt2019Lib
         {
             try
             {
-                if (!flds.HasField(cDisplayName))
+                if (!flds.HasField(cDisplayName, cInternalName))
                 {
                     flds.AddFieldLookup(cInternalName, cDisplayName, cFieldDescription, cGroup, cListName, cShowField);
                 }
@@ -54,7 +53,7 @@ namespace spToolbelt2019Lib
         {
             try
             {
-                if (!flds.HasField(cFieldTitle))
+                if (!flds.HasField(cFieldTitle, cInternalName))
                 {
                     flds.AddField(cInternalName, cFieldTitle, cFieldDescription, cGroup);
                 }
@@ -89,7 +88,7 @@ namespace spToolbelt2019Lib
         {
             try
             {
-                if (!flds.HasField(cFieldTitle))
+                if (!flds.HasField(cFieldTitle, cInternalName))
                 {
                     flds.AddFieldNote(cInternalName, cFieldTitle, cFieldDescription, cGroup);
                 }
@@ -124,7 +123,7 @@ namespace spToolbelt2019Lib
         {
             try
             {
-                if (!flds.HasField(cFieldTitle))
+                if (!flds.HasField(cFieldTitle, cInternalName))
                 {
                     flds.AddFieldDateTime(cInternalName, cFieldTitle, cFieldDescription, cGroup);
                 }
@@ -159,7 +158,7 @@ namespace spToolbelt2019Lib
         {
             try
             {
-                if (!flds.HasField(cFieldTitle))
+                if (!flds.HasField(cFieldTitle, cInternalName))
                 {
                     flds.AddFieldBoolean(cInternalName, cFieldTitle, cFieldDescription, cGroup);
                 }
@@ -189,11 +188,11 @@ namespace spToolbelt2019Lib
         #region Choice
 
 
-        public static void EnsureFieldChoice(this FieldCollection flds, string cInternalName, string cFieldTitle, string cFieldDescription, string cGroup, string cChoices)
+        public static void EnsureFieldChoice(this FieldCollection flds, string cInternalName, string cFieldTitle, string cFieldDescription, string cGroup, string[] cChoices)
         {
             try
             {
-                if (!flds.HasField(cFieldTitle))
+                if (!flds.HasField(cFieldTitle, cInternalName))
                 {
                     flds.AddFieldChoice(cInternalName, cFieldTitle, cFieldDescription, cGroup, cChoices);
                 }
@@ -204,7 +203,7 @@ namespace spToolbelt2019Lib
             }
         }
 
-        public static void AddFieldChoice(this FieldCollection flds, string cInternalName, string cFieldTitle, string cFieldDescription, string cGroup, string cChoices)
+        public static void AddFieldChoice(this FieldCollection flds, string cInternalName, string cFieldTitle, string cFieldDescription, string cGroup, string[] cChoices)
         {
             try
             {
@@ -213,8 +212,7 @@ namespace spToolbelt2019Lib
 
                 string strNewField = string.Format("<Field Type='Choice' DisplayName='{0}'  StaticName='{1}' Name='{1}'  Description='{2}' Group='{3}' ><CHOICES>", cFieldTitle, cInternalName, cFieldDescription, cGroup);
 
-                string[] aChoices = cChoices.Split(';');
-                foreach (string item in aChoices)
+                foreach (string item in cChoices)
                 {
                     strNewField += string.Format("<CHOICE>{0}</CHOICE>", item);
                 }
@@ -228,6 +226,44 @@ namespace spToolbelt2019Lib
             }
         }
 
+        public static bool HasField(this FieldCollection flds, string cFieldTitle,string cInternalName)
+        {
+            Field fldOnTitle = flds.GetField(cFieldTitle);
+            if (fldOnTitle!=null)
+            {
+                return true;
+            }
+            return (flds.GetField(cInternalName) != null);
+        }
+
+        public static bool HasField(this FieldCollection flds, Guid fieldID)
+        {
+            Field fldOnTitle = flds.GetField(fieldID);
+            if (fldOnTitle != null)
+            {
+                return true;
+            }
+            return false;
+        }
+        public static Field GetField(this FieldCollection flds, Guid fieldID)
+        {
+            try
+            {
+                flds.Context.Load(flds, f => f.Include(finfo=>finfo.Id));
+                flds.Context.ExecuteQuery();
+                foreach(Field fld in flds)
+                {
+                    if (fld.Id==fieldID)
+                    {
+                        return fld;
+                    }
+                }
+            } catch (Exception)
+            {
+                throw new Exception("Eror finding Field with ID: " + fieldID.ToString());
+            }
+            return null;
+        }
 
 
         public static bool HasField(this FieldCollection flds, string cFieldTitle)
@@ -239,7 +275,7 @@ namespace spToolbelt2019Lib
             try
             {
 
-                flds.Context.Load(flds);
+                flds.Context.Load(flds,fs=>fs.Include(f=>f.Title,f=>f.InternalName,f=>f.TypeAsString));
                 flds.Context.ExecuteQuery();
                 foreach (Field fld in flds)
                 {
@@ -269,7 +305,7 @@ namespace spToolbelt2019Lib
         {
             try
             {
-                if (!flds.HasField(cFieldTitle))
+                if (!flds.HasField(cFieldTitle, cInternalName))
                 {
                     flds.AddFieldNumber(cInternalName, cFieldTitle, cFieldDescription, cGroup);
                 }
@@ -303,7 +339,7 @@ namespace spToolbelt2019Lib
         {
             try
             {
-                if (!flds.HasField(cFieldTitle))
+                if (!flds.HasField(cFieldTitle, cInternalName))
                 {
                     flds.AddFieldInteger(cInternalName, cFieldTitle, cFieldDescription, cGroup);
                 }
@@ -337,7 +373,7 @@ namespace spToolbelt2019Lib
         {
             try
             {
-                if (!flds.HasField(cFieldTitle))
+                if (!flds.HasField(cFieldTitle, cInternalName))
                 {
                     flds.AddFieldCurrency(cInternalName, cFieldTitle, cFieldDescription, cGroup);
                 }
@@ -383,6 +419,137 @@ namespace spToolbelt2019Lib
         #endregion
 
 
+        #endregion
+
+
+        #region Computed
+
+
+        public static void EnsureFieldComputed(this FieldCollection flds,string cFieldType, string cInternalName, string cFieldTitle, string cFieldDescription, string cGroup,string cCalc)
+        {
+            try
+            {
+                if (!flds.HasField(cFieldTitle, cInternalName))
+                {
+                    flds.AddFieldComputed(cInternalName, cFieldTitle, cFieldDescription, cGroup,cCalc);
+                } else
+                {
+                    Field fld = flds.GetField(cInternalName);
+                    if (fld.TypeAsString != cFieldType)
+                    {
+                        System.Diagnostics.Trace.WriteLine("Alert");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(string.Format("Error in extFieldCollection.EnsureField -  {0} - {1}", cFieldTitle, ex.Message), ex);
+            }
+        }
+
+        public static void AddFieldComputed(this FieldCollection flds, string cInternalName, string cFieldTitle, string cFieldDescription, string cGroup, string cCalc)
+        {
+            try
+            {
+                cInternalName = GetInternalName(cInternalName, cFieldTitle);
+
+                string strNewField = string.Format("<Field Type='Note' DisplayName='{0}'  StaticName='{1}' Name='{1}' Group = '{2}' Description='{3}' />", cFieldTitle, cInternalName, cGroup, cFieldDescription);
+                flds.AddFieldAsXml(strNewField, true, AddFieldOptions.AddFieldInternalNameHint);
+                flds.Context.ExecuteQuery();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(string.Format("Error in extFieldCollection.AddField -  {0} - {1}", cFieldTitle, ex.Message), ex);
+            }
+        }
+        #endregion
+
+
+        #region Url
+
+
+        public static void EnsureFieldUrl(this FieldCollection flds, string cFieldType,string cInternalName, string cFieldTitle, string cFieldDescription, string cGroup)
+        {
+            try
+            {
+                if (!flds.HasField(cFieldTitle, cInternalName))
+                {
+                    flds.AddFieldUrl(cInternalName, cFieldTitle, cFieldDescription, cGroup);
+                }
+             else
+            {
+                Field fld = flds.GetField(cInternalName);
+                if (fld.TypeAsString != cFieldType)
+                {
+                    System.Diagnostics.Trace.WriteLine("Alert");
+                }
+            }
+        }
+            catch (Exception ex)
+            {
+                throw new Exception(string.Format("Error in extFieldCollection.EnsureField -  {0} - {1}", cFieldTitle, ex.Message), ex);
+            }
+        }
+
+        public static void AddFieldUrl(this FieldCollection flds, string cInternalName, string cFieldTitle, string cFieldDescription, string cGroup)
+        {
+            try
+            {
+                cInternalName = GetInternalName(cInternalName, cFieldTitle);
+
+                string strNewField = string.Format("<Field Type='URL' DisplayName='{0}'  StaticName='{1}' Name='{1}' Group = '{2}' Description='{3}' />", cFieldTitle, cInternalName, cGroup, cFieldDescription);
+                flds.AddFieldAsXml(strNewField, true, AddFieldOptions.AddFieldInternalNameHint);
+                flds.Context.ExecuteQuery();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(string.Format("Error in extFieldCollection.AddField -  {0} - {1}", cFieldTitle, ex.Message), ex);
+            }
+        }
+        #endregion
+
+
+        #region HTML
+
+
+        public static void EnsureFieldHTML(this FieldCollection flds, string cFieldType, string cInternalName, string cFieldTitle, string cFieldDescription, string cGroup)
+        {
+            try
+            {
+                if (!flds.HasField(cFieldTitle, cInternalName))
+                {
+                    flds.AddFieldHTML(cInternalName, cFieldTitle, cFieldDescription, cGroup);
+                }
+                else
+                {
+                    Field fld = flds.GetField(cInternalName);
+                    if (fld.TypeAsString != cFieldType)
+                    {
+                        System.Diagnostics.Trace.WriteLine("Alert");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(string.Format("Error in extFieldCollection.EnsureField -  {0} - {1}", cFieldTitle, ex.Message), ex);
+            }
+        }
+
+        public static void AddFieldHTML(this FieldCollection flds, string cInternalName, string cFieldTitle, string cFieldDescription, string cGroup)
+        {
+            try
+            {
+                cInternalName = GetInternalName(cInternalName, cFieldTitle);
+
+                string strNewField = string.Format("<Field Type='HTML' DisplayName='{0}'  StaticName='{1}' Name='{1}' Group = '{2}' Description='{3}' />", cFieldTitle, cInternalName, cGroup, cFieldDescription);
+                flds.AddFieldAsXml(strNewField, true, AddFieldOptions.AddFieldInternalNameHint);
+                flds.Context.ExecuteQuery();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(string.Format("Error in extFieldCollection.AddField -  {0} - {1}", cFieldTitle, ex.Message), ex);
+            }
+        }
         #endregion
 
     }

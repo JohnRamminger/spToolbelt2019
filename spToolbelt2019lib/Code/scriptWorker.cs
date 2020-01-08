@@ -5,6 +5,7 @@ using Microsoft.SharePoint.Client.WebParts;
 using Microsoft.SharePoint.Client.WorkflowServices;
 using Newtonsoft.Json;
 using OfficeDevPnP.Core.Enums;
+using spToolbelt2019lib;
 using spToolbelt2019Lib.Objects;
 using System;
 using System.Collections.Generic;
@@ -49,25 +50,27 @@ namespace spToolbelt2019Lib
         {
             get
             {
-                if (RunCount == 0) return "";
-                    double RemainingSeconds = (sw.Elapsed.TotalSeconds / RunCount) * (TotalItems - RunCount);
+                return GetRemaining(RunCount, TotalItems, sw.Elapsed);
 
-                int iHours = 0;
-                int iMinutes = 0;
-                int iSeconds = 0;
+                //if (RunCount == 0) return "";
+                //    double RemainingSeconds = (sw.Elapsed.TotalSeconds / RunCount) * (TotalItems - RunCount);
 
-                if (RemainingSeconds > 3600)
-                {
-                    iHours = Convert.ToInt32(RemainingSeconds / 3600);
-                    RemainingSeconds = RemainingSeconds - (iHours * 3600);
-                }
-                if (RemainingSeconds > 60)
-                {
-                    iMinutes = Convert.ToInt32(RemainingSeconds / 60);
-                    RemainingSeconds = RemainingSeconds - (iMinutes * 60);
-                }
-                iSeconds = Convert.ToInt32(RemainingSeconds);
-                return new TimeSpan(iHours, iMinutes, iSeconds).ToString();
+                //int iHours = 0;
+                //int iMinutes = 0;
+                //int iSeconds = 0;
+
+                //if (RemainingSeconds > 3600)
+                //{
+                //    iHours = Convert.ToInt32(RemainingSeconds / 3600);
+                //    RemainingSeconds = RemainingSeconds - (iHours * 3600);
+                //}
+                //if (RemainingSeconds > 60)
+                //{
+                //    iMinutes = Convert.ToInt32(RemainingSeconds / 60);
+                //    RemainingSeconds = RemainingSeconds - (iMinutes * 60);
+                //}
+                //iSeconds = Convert.ToInt32(RemainingSeconds);
+                //return new TimeSpan(iHours, iMinutes, iSeconds).ToString();
             }
 
         }
@@ -112,7 +115,7 @@ namespace spToolbelt2019Lib
         #region Public Methods
 
         string cLogFile;
-        bool SiteCollectionsOnly;
+        
         scriptItems oWorkItems;
         public void Start(string cWorkerName, ClientContext workerCTX, scriptItems ScriptItems, string cCommand,bool bAllSites)
         {
@@ -212,10 +215,10 @@ namespace spToolbelt2019Lib
                 else
                 {
                     spwebs = new List<string>();
-                    TotalItems = GetSiteCount();
+                   // TotalItems = GetSiteCount();
                     ShowProgress(string.Format("Found {0} webs ", spwebs.Count()));
 
-                    sw.Start();
+                    //sw.Start();
                     
                     foreach (string spweb in spwebs)
                     {
@@ -282,6 +285,12 @@ namespace spToolbelt2019Lib
                     Trace.WriteLine(oWorkItem.Command);
                     switch (oWorkItem.Command.ToLower())
                     {
+                            case "ensure-targetfolders":
+                                EnsureTargetFolders(workCTX, item, oWorkItem);
+                                break;
+                            case "ensure-targetfields":
+                                EnsureTargetFields(workCTX, item, oWorkItem);
+                                break;
                         case "find-everyone":
                             FindEveryOne(workCTX);
                             break;
@@ -564,7 +573,9 @@ namespace spToolbelt2019Lib
                                 UpdateInventory(workCTX, item, oWorkItem);
                                 break;
 
-
+                            case "update-inventoryfromdatabase":
+                                UpdateInventoryFromDatabase(workCTX, item, oWorkItem);
+                                break;
 
                             default:
                             ShowProgress("Unrecognized command!"+oWorkItem.Command);
@@ -589,6 +600,7 @@ namespace spToolbelt2019Lib
 
         }
 
+        
         private void SetSiteReadOnly()
         {
             SetWebReadOnly(ctx, ctx.Web);
@@ -1091,7 +1103,7 @@ namespace spToolbelt2019Lib
             }
             catch (Exception ex)
             {
-                
+                ShowError(ex, "EnableARSearch", "");   
             }
         }
 
@@ -1198,7 +1210,7 @@ namespace spToolbelt2019Lib
             }
             catch (Exception ex)
             {
-                
+                ShowError(ex, "FindSiteCustomizations", "");
             }
 
         }
@@ -1920,24 +1932,27 @@ namespace spToolbelt2019Lib
         {
             try
             {
-                string cSkipKeys = oWorkItem.parms["skipkeys"];
-                if (!string.IsNullOrEmpty(cSkipKeys))
+                if (oWorkItem.parms.ContainsKey("skipkeys"))
                 {
-                    string[] aSkipKeys = cSkipKeys.Split(';');
-                    foreach (var aSkipKey in aSkipKeys)
+                    string cSkipKeys = oWorkItem.parms["skipkeys"];
+                    if (!string.IsNullOrEmpty(cSkipKeys))
                     {
-                        if (cUrl.ToLower().Contains(aSkipKey.ToLower()))
+                        string[] aSkipKeys = cSkipKeys.Split(';');
+                        foreach (var aSkipKey in aSkipKeys)
                         {
-                            return true;
+                            if (cUrl.ToLower().Contains(aSkipKey.ToLower()))
+                            {
+                                return true;
+                            }
                         }
+
+
                     }
-
-
                 }
             }
             catch (Exception ex)
             {
-                
+                ShowError(ex,"IsSkipSite: "+cUrl,"");   
             }
 
             return false; 
@@ -1991,6 +2006,8 @@ namespace spToolbelt2019Lib
                     
                     workCTX.Load(lists, lsts => lsts.Include(l => l.HasUniqueRoleAssignments,l=>l.Hidden,l=>l.Id,l=>l.Title, l => l.ItemCount,l=>l.LastItemModifiedDate,l=>l.LastItemUserModifiedDate));
                     workCTX.ExecuteQuery();
+
+
                     foreach (var list in lists)
                     {
                         bool bSkip = false;
@@ -2923,26 +2940,26 @@ namespace spToolbelt2019Lib
 
         private static ListTemplateType GetTemplateType(string cTypeName)
         {
-            
+            ListTemplateType ltt = ListTemplateType.GenericList;
             switch (cTypeName)
             {
                 case "Picture":
-                    return ListTemplateType.PictureLibrary;
+                    ltt=ListTemplateType.PictureLibrary;
                     break;
                 case "Document":
                 
                 case "DocumentLibrary":
-                    return ListTemplateType.DocumentLibrary;
+                    ltt = ListTemplateType.DocumentLibrary;
                     break;
                 case "Generic":
                 case "Custom":
-                    return ListTemplateType.GenericList;
+                    ltt = ListTemplateType.GenericList;
                     break;
                 default:
                     break;
             }
 
-            return ListTemplateType.GenericList;
+            return ltt;
             //switch (tp)
             //{
             //    case ListTemplateType.InvalidType:
@@ -4657,14 +4674,14 @@ namespace spToolbelt2019Lib
 
         }
 
-        private string GetRemaining(int iCount, int count, TimeSpan elapsed)
+        private string GetRemaining(int iCount, int totalitemcount, TimeSpan elapsed)
         {
             try
             {
 
                 double avgSpeed = elapsed.TotalMilliseconds / iCount;
-                double estRemaining = avgSpeed * (count - iCount);
-                TimeSpan time = TimeSpan.FromSeconds(Convert.ToInt32(estRemaining / 1000));
+                double estRemaining = avgSpeed * (totalitemcount - iCount);
+                TimeSpan time = TimeSpan.FromSeconds(Convert.ToInt64(estRemaining / 1000));
                 string str = time.ToString(@"hh\:mm");
                 return str;
             }
@@ -4701,7 +4718,7 @@ namespace spToolbelt2019Lib
                 }
                 ShowProgress("Processing " + TotalItems + " items");
                 RunCount = 1;
-                string lastUrl = "";
+                //string lastUrl = "";
                 ClientContext scanContext = ctx;
 
                 List<Task> tasks = new List<Task>();
@@ -4758,7 +4775,7 @@ namespace spToolbelt2019Lib
             }
             catch (Exception ex)
             {
-
+                ShowError(ex, "ScanListItemsAsync: " + cSiteUrl, "");
             }
 
 
@@ -4928,6 +4945,441 @@ namespace spToolbelt2019Lib
             }
 
         }
+
+        private void UpdateInventoryFromDatabase(ClientContext workCTX, string item, scriptItem oWorkItem)
+        {
+            try
+            {
+                string saveContextUrl = oWorkItem.GetParm("saveurl");
+                ClientContext saveContext = new ClientContext(saveContextUrl);
+                saveContext.Credentials = workCTX.Credentials;
+
+                List<SiteInfo> siItems = SQLDataAccess.LoadData<SiteInfo>("select * from SiteInfo", new Dictionary<string, object>(), "Default");
+                List<ListInfo> liItems = SQLDataAccess.LoadData<ListInfo>("select * from ListInfo", new Dictionary<string, object>(), "Default");
+                TotalItems = siItems.Count + liItems.Count;
+                RunCount = 0;
+                sw.Start();
+                List spmiSites = saveContext.Web.Lists.GetByTitle("spmiSites");
+                List spmiLists = saveContext.Web.Lists.GetByTitle("spmiLists");
+
+                foreach (SiteInfo si in siItems)
+                {
+                    RunCount++;
+                    try
+                    {
+                        ShowInfo("Processing Site: " + si.SiteUrl);
+                        Int32 iParentID = 0;
+                        ListItem workParent = spmiSites.GetListItemByField(saveContext, "spmiSiteID", "Text", si.ParentSiteID);
+                        if (workParent != null)
+                        {
+                            iParentID = workParent.Id;
+                        }
+
+                        UpdateSiteInfo(saveContext, spmiSites, si, iParentID);
+                    }
+                    catch (Exception ex)
+                    {
+                        ShowError(ex, "Error Processing Site: " + si.SiteUrl, "");
+                    }
+                    UpdateProgress();
+                }
+                foreach (ListInfo li in liItems)
+                {
+                    RunCount++;
+                    try
+                    {
+
+                        Int32 iParentID = 0;
+                        ListItem parentItem = spmiSites.GetListItemByField(saveContext, "spmiSiteID", "Text", li.SiteID);
+                        if (parentItem!=null)
+                        {
+                            iParentID = parentItem.Id;
+                        } else
+                        {
+                            System.Diagnostics.Trace.WriteLine(li.SiteUrl + "/" + li.Title);
+                        }
+                    UpdateListInfo(saveContext, spmiLists, li,iParentID);
+                    ShowInfo("Processing List: " + li.SiteUrl+"/"+li.Title);
+                    } catch (Exception ex)
+                    {
+                        ShowError(ex, "Error Processing List: " + li.SiteUrl + "/" + li.Title, "");
+                    }
+                    UpdateProgress();
+                }
+            }
+
+            catch (Exception ex)
+            {
+                ShowError(ex, "Update Inventory from Database", "");
+            }
+        }
+
+        private void UpdateListInfo(ClientContext saveContext, List spmiLists, ListInfo li,Int32 iParentID)
+        {
+            try
+            {
+                ListItem itm = spmiLists.GetListItemByField(saveContext, "spmiListID", "Text", li.ListID);
+                if (itm==null)
+                {
+                    ListItemCreationInformation lici = new ListItemCreationInformation();
+                    itm = spmiLists.AddItem(lici);
+                    itm["spmiListID"] = li.ListID;
+                    itm.Update();
+                    saveContext.ExecuteQuery();
+                }
+                itm["spmiItemCount"] = li.ItemCount;
+                itm["spmiLastItemModified"] = li.LastItemModified;
+                itm["spmiLastScan"] = li.LastScan;
+                //itm["spmiLastUserItemModified"] = li.LastUserItemModified;
+                //itm["spmiParentSite"] =li.p
+
+                if (iParentID > 0)
+                {
+                    FieldLookupValue lv = new FieldLookupValue();
+                    lv.LookupId = iParentID;
+                    itm["spmiParentSite"] = lv;
+                }
+
+
+                itm["spmiPermissions"] = li.Permissions;
+                itm["spmiPermissionsLastScan"] = li.LastScan;
+                itm["spmiSiteID"] = li.SiteID;
+                itm["spmiSiteUrl"] = li.SiteUrl;
+                itm["Title"] = li.Title;
+                itm["spmiUniquePermissions"] = li.UniquePermissions;
+
+                itm.Update();
+                saveContext.ExecuteQuery();
+
+            } catch (Exception ex)
+            {
+                ShowError(ex, "UpdateListInfo","");
+            }
+        }
+
+        private void UpdateSiteInfo(ClientContext saveContext, List spmiSites, SiteInfo si,Int32 iParentID)
+        {
+            try
+            {
+                ListItem itm = spmiSites.GetListItemByField(saveContext, "spmiSiteID", "Text", si.SiteID);
+                if (itm == null)
+                {
+                    ListItemCreationInformation lici = new ListItemCreationInformation();
+                    itm = spmiSites.AddItem(lici);
+                    itm["spmiSiteID"] = si.SiteID;
+                    itm["spmiSiteUrl"] = si.SiteUrl;
+                    itm["Title"] = si.Title;
+                    itm.Update();
+                    saveContext.ExecuteQuery();
+                }
+
+                ////itm["spmiAccessRequestEmail"] = si.AccessRequestEmail;
+                ////itm["spmiAdministrators"] = si.Adminsitrators;
+                ////itm["spmiFullControlUsers"] = si.FullControlUsers;
+                ////itm["spmiFullControlUsersCount"]=si.FullControlUserCount;
+                itm["spmiHasSubSites"] = si.HasSubSites;
+                itm["spmiLastItemModified"] = si.LastItemModified;
+                itm["spmiLastScan"] = si.LastScan;
+                itm["spmiLastUserItemModified"] = si.LastUserItemModified;
+
+                if (iParentID>0)
+                { 
+                    FieldLookupValue lv = new FieldLookupValue();
+                    lv.LookupId = iParentID;
+                    itm["spmiParentSite"] = lv;
+                }
+
+                itm["spmiPermissions"] = si.Permissions;
+                itm["spmiPermissionsLastScan"] = si.LastScan;
+                ////itm["spmiRequestApprovers"] = si.RequestApprovers;
+
+
+                itm["Title"] = si.Title;
+                itm["spmiUniquePermissions"] = si.UniquePermissions;
+                itm["spmiUserCount"] = si.UserCount;
+
+
+                itm.Update();
+                saveContext.ExecuteQuery();
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "UpdateSiteInfo", "");
+            }
+        }
+
+
+        private void EnsureTargetFields(ClientContext workCTX, string item, scriptItem oWorkItem)
+        {
+        try
+            {
+                string viewXML = "<View><Query><OrderBy><FieldRef Name='spmiSiteUrl' Ascending='TRUE'/></OrderBy><Where><And><IsNotNull><FieldRef Name='spmiTargetAction' /></IsNotNull><Neq><FieldRef Name = 'spmiTargetAction' /><Value Type = 'Text'>none</Value></Neq></And></Where></Query><RowLimit>5000</RowLimit></View>";
+                List lstLists = ctx.Web.Lists.GetByTitle("spmiLists");
+                CamlQuery oListQuery = new CamlQuery();
+                oListQuery.ViewXml = viewXML;
+                ListItemCollection listitems = lstLists.GetItems(oListQuery);
+                ctx.Load(listitems, itms => itms.Include(i => i.FieldValuesAsText,i=>i.Id, i => i["Title"], i => i["spmiSiteUrl"], i => i["TargetList"], i => i["spmiTargetAction"], i => i["spmiTargetLocation"], i => i["spmiSiteID"]));
+                ctx.ExecuteQuery();
+                RunCount = 0;
+                TotalItems = listitems.Count;
+                sw.Start();
+                List<ListInfo> listData = new List<ListInfo>();
+                foreach (ListItem itm in listitems)
+                {
+                    ListInfo li = BuildListInfo(itm);
+                    ShowInfo(li.SiteUrl + "/" + li.Title);
+                    UpdateProgress();
+                    ClientContext srcCTX = new ClientContext(li.SiteUrl);
+                    srcCTX.Credentials = ctx.Credentials;
+                    string cTargetUrl = li.TargetLocation.Substring(0, li.TargetLocation.LastIndexOf("/"));
+                    string cTargetList = li.TargetLocation.Substring(li.TargetLocation.LastIndexOf("/")+1);
+                    
+                    ClientContext tgtCTX = new ClientContext(li.SiteUrl);
+                    tgtCTX.Credentials = ctx.Credentials;
+                    FieldCollection tgtFields = tgtCTX.Web.AvailableFields;
+                    List tgtList = tgtCTX.Web.Lists.GetByTitle(itm["TargetList"].ToString());
+                    tgtCTX.Load(tgtList);
+                    tgtCTX.Load(tgtFields);
+                    tgtCTX.ExecuteQuery();
+                  
+                    FieldCollection srcFields = srcCTX.Web.Lists.GetByTitle(li.Title).Fields;
+                    srcCTX.Load(srcFields, sfs => sfs.Include(sf=>sf.Id,sf => sf.InternalName, sf => sf.Description, sf => sf.Hidden, sf => sf.Title, sf => sf.TypeAsString, sf => sf.Group));
+                    srcCTX.ExecuteQuery();
+                    foreach(Field srcFld in srcFields)
+                    {
+                        try
+                        {
+                            if (srcFld.InternalName=="Title" && srcFld.Title!=srcFld.InternalName)
+                            {
+                                System.Diagnostics.Trace.WriteLine("");
+                            }
+                            if (srcFld.Hidden == false && ProcessField(srcFld.InternalName)==true)
+                            {
+                                if (!tgtList.HasField(srcFld.Title))
+                                {
+                                    if (!tgtFields.HasField(srcFld.Title))
+                                    {
+                                        EnsureSourceFieldInTargetWeb(srcCTX, srcFld, tgtFields);
+                                    }
+                                    Field workField = tgtFields.GetByInternalNameOrTitle(srcFld.InternalName);
+                                    tgtCTX.Load(workField);
+                                    tgtCTX.ExecuteQuery();
+
+                                    if(!tgtList.Fields.HasField(workField.Id))
+                                    {
+                                        tgtList.Fields.Add(workField);
+                                        tgtList.Update();
+                                        tgtCTX.ExecuteQuery();
+                                    }
+
+                                    workField = tgtList.Fields.GetByInternalNameOrTitle(srcFld.InternalName);
+                                    tgtCTX.Load(workField);
+                                    tgtCTX.ExecuteQuery();
+
+                                    if (workField.Title != srcFld.Title)
+                                    {
+                                        if (workField.Title=="Title")
+                                        {
+                                            tgtList.Fields.AddField(srcFld.Title, srcFld.Title, srcFld.Description, srcFld.Group);
+                                        } else
+                                        {
+                                            workField.Title = srcFld.Title;
+                                            workField.Update();
+                                            tgtList.Update();
+                                            tgtCTX.ExecuteQuery();
+
+                                        }
+
+                                    }
+
+
+                                }
+
+
+
+                            }
+
+                        }
+                        catch (Exception ex)
+                        {
+                            ShowError(ex, "Ensure-TargetFields - " + srcFld.Title, "");
+                        }
+
+
+                    }
+
+
+
+
+
+                }
+
+
+            } catch (Exception ex)
+            {
+                ShowError(ex, "", "");
+
+            }
+
+
+
+
+        }
+
+        private bool ProcessField(string cFieldName)
+        {
+            bool bRetVal = true;
+            switch(cFieldName)
+            {
+                case "Attachments":
+                    bRetVal = false;
+                    break;
+            }
+            return bRetVal;
+        }
+
+        private void EnsureSourceFieldInTargetWeb(ClientContext srcCTX, Field srcFld, FieldCollection tgtFields)
+        {
+            try
+            {
+                switch (srcFld.TypeAsString)
+                {
+                    case "Text":
+                        tgtFields.EnsureField(srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group);
+                        break;
+                    case "Number":
+                        tgtFields.EnsureFieldNumber(srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group);
+                        break;
+                    case "Boolean":
+                        tgtFields.EnsureFieldBoolean(srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group);
+                        break;
+                    case "Choice":
+                        FieldChoice fc = (FieldChoice)srcFld;
+                        srcCTX.Load(fc);
+                        srcCTX.ExecuteQuery();
+                        
+                        tgtFields.EnsureFieldChoice(srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group, fc.Choices);
+                        break;
+                    case "Currency":
+                        tgtFields.EnsureFieldCurrency(srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group);
+                        break;
+                    case "DateTime":
+                        tgtFields.EnsureFieldDateTime(srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group);
+                        break;
+                    case "Note":
+                        tgtFields.EnsureFieldNote(srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group);
+                        break;
+
+                    case "Computed":
+                        FieldComputed fcomp = (FieldComputed)srcFld;
+                        srcCTX.Load(fcomp,f=>f.TypeAsString,f=>f.Title,f=>f.InternalName,f=>f.Description,f=>f.Group);
+                        srcCTX.ExecuteQuery();
+
+                        string cCalculation = "";
+                        tgtFields.EnsureFieldComputed(fcomp.TypeAsString,srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group,cCalculation);
+                        break;
+
+                    case "URL":
+                        tgtFields.EnsureFieldUrl(srcFld.TypeAsString, srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group);
+                        break;
+
+                    case "Integer":
+                        tgtFields.EnsureFieldInteger(srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group);
+                        break;
+                    case "HTML":
+                        tgtFields.EnsureFieldHTML(srcFld.TypeAsString, srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group);
+                        break;
+
+                    
+
+                    default:
+                        System.Diagnostics.Trace.WriteLine(srcFld.TypeAsString);
+                        break;
+
+
+                }
+
+            } catch (Exception ex)
+            {
+                ShowError(ex, "", "");
+            }
+        }
+
+        private ListInfo BuildListInfo(ListItem itm)
+        {
+
+            ListInfo li = new ListInfo();
+            try
+            {
+                li.SiteUrl = itm["spmiSiteUrl"].ToString();
+                li.Title = itm["Title"].ToString();
+                li.SiteID = itm["spmiSiteID"].ToString();
+                if (itm["spmiTargetAction"] != null)
+                {
+                    li.TargetAction = itm["spmiTargetAction"].ToString();
+                }
+                if (itm["spmiTargetLocation"] != null)
+                {
+                    li.TargetLocation = itm["spmiTargetLocation"].ToString();
+                }
+                li.Id = itm.Id;
+                li.TargetList = itm["TargetList"].ToString();
+             
+            } catch(Exception ex)
+            {
+                ShowError(ex, "Build ListInfo", "");
+            }
+            return li;
+        }
+        private void EnsureTargetFolders(ClientContext workCTX, string item, scriptItem oWorkItem)
+        {
+            try
+            {
+                string viewXML = "<View><Query><OrderBy><FieldRef Name='spmiSiteUrl' Ascending='TRUE'/></OrderBy><Where><And><IsNotNull><FieldRef Name='spmiTargetAction' /></IsNotNull><Neq><FieldRef Name = 'spmiTargetAction' /><Value Type = 'Text'>none</Value></Neq></And></Where></Query><RowLimit>5000</RowLimit></View>";
+                List lstLists = ctx.Web.Lists.GetByTitle("spmiLists");
+                CamlQuery oListQuery = new CamlQuery();
+                oListQuery.ViewXml = viewXML;
+                ListItemCollection listitems = lstLists.GetItems(oListQuery);
+                ctx.Load(listitems, itms => itms.Include(i => i.FieldValuesAsText, i => i.Id, i => i["Title"], i => i["spmiSiteUrl"], i => i["TargetList"], i => i["spmiTargetAction"], i => i["spmiTargetLocation"], i => i["spmiSiteID"]));
+                ctx.ExecuteQuery();
+                List<ListInfo> listData = new List<ListInfo>();
+                foreach (ListItem itm in listitems)
+                {
+                    try
+                    {
+                        ListInfo li = BuildListInfo(itm);
+                        ClientContext srcCTX = new ClientContext(li.SiteUrl);
+                        srcCTX.Credentials = ctx.Credentials;
+                        string cTargetUrl = li.TargetLocation.Substring(0, li.TargetLocation.LastIndexOf("/"));
+                        string cTargetList = li.TargetLocation.Substring(li.TargetLocation.LastIndexOf("/") + 1);
+
+                        ClientContext tgtCTX = new ClientContext(li.SiteUrl);
+                        tgtCTX.Credentials = ctx.Credentials;
+
+                        List tgtList = tgtCTX.Web.Lists.GetByTitle(itm["TargetList"].ToString());
+                        tgtCTX.Load(tgtList,tls=>tls.RootFolder);
+                        tgtCTX.ExecuteQuery();
+                        string cFolderTitle = itm["Title"].ToString();
+                        cFolderTitle = cFolderTitle.Replace("/", "-");
+                        tgtList.RootFolder.EnsureFolder(cFolderTitle);
+                    } catch (Exception ex)
+                    {
+                        ShowError(ex, "EnsureTargetFolders - inside", "");
+
+                    }
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "EnsureTargetFolders", "");
+
+            }
+
+
+        }
+
 
     }
 }

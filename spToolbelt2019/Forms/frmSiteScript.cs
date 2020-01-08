@@ -61,10 +61,21 @@ namespace spToolbelt2019
                 oWorker.Info += OWorker_Info;
                 oWorker.Progress += OWorker_Progress;
                 oWorker.Complete += OWorker_Complete1;
+                oWorker.ReaminingTimeInfo += OWorker_ReaminingTimeInfo;
                 oWorker.Start("SiteScript",ctx, scriptWorkItems, txtCommands.Text,chkAllSites.Checked);
 
             }
 
+
+        }
+
+        private void OWorker_ReaminingTimeInfo(string ReaminingTimeInfo)
+        {
+            progressMain.Maximum = oWorker.TotalItems;
+            lblRemaining.Text = oWorker.RemainingTime;
+            Int32 currentValue = Convert.ToInt32((oWorker.RunCount / oWorker.TotalItems) * 100);
+            progressMain.Increment(1);
+            
 
         }
 
@@ -102,6 +113,11 @@ namespace spToolbelt2019
         }
 
         private void splitMain_Panel2_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private void lblStatus_Click(object sender, EventArgs e)
         {
 
         }

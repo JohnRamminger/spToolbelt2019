@@ -36,13 +36,14 @@
             this.chkAllSites = new System.Windows.Forms.CheckBox();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.lblStatus = new System.Windows.Forms.ToolStripStatusLabel();
+            this.lblRunCount = new System.Windows.Forms.ToolStripStatusLabel();
+            this.lblRemaining = new System.Windows.Forms.ToolStripStatusLabel();
             this.chkTestMode = new System.Windows.Forms.CheckBox();
             this.cmdRunScript = new System.Windows.Forms.Button();
             this.txtResults = new System.Windows.Forms.TextBox();
             this.cmdLoadScipt = new System.Windows.Forms.Button();
             this.chkSingleSite = new System.Windows.Forms.CheckBox();
-            this.lblRunCount = new System.Windows.Forms.ToolStripStatusLabel();
-            this.lblRemaining = new System.Windows.Forms.ToolStripStatusLabel();
+            this.progressMain = new System.Windows.Forms.ToolStripProgressBar();
             ((System.ComponentModel.ISupportInitialize)(this.splitMain)).BeginInit();
             this.splitMain.Panel1.SuspendLayout();
             this.splitMain.Panel2.SuspendLayout();
@@ -122,10 +123,10 @@
             // 
             this.chkProcessSubWebs.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.chkProcessSubWebs.AutoSize = true;
-            this.chkProcessSubWebs.Location = new System.Drawing.Point(342, 273);
+            this.chkProcessSubWebs.Location = new System.Drawing.Point(342, 276);
             this.chkProcessSubWebs.Margin = new System.Windows.Forms.Padding(2);
             this.chkProcessSubWebs.Name = "chkProcessSubWebs";
-            this.chkProcessSubWebs.Size = new System.Drawing.Size(134, 19);
+            this.chkProcessSubWebs.Size = new System.Drawing.Size(117, 17);
             this.chkProcessSubWebs.TabIndex = 9;
             this.chkProcessSubWebs.Text = "Processs Sub Sites";
             this.chkProcessSubWebs.UseVisualStyleBackColor = true;
@@ -134,10 +135,10 @@
             // 
             this.chkAllSites.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.chkAllSites.AutoSize = true;
-            this.chkAllSites.Location = new System.Drawing.Point(241, 272);
+            this.chkAllSites.Location = new System.Drawing.Point(241, 275);
             this.chkAllSites.Margin = new System.Windows.Forms.Padding(2);
             this.chkAllSites.Name = "chkAllSites";
-            this.chkAllSites.Size = new System.Drawing.Size(72, 19);
+            this.chkAllSites.Size = new System.Drawing.Size(63, 17);
             this.chkAllSites.TabIndex = 8;
             this.chkAllSites.Text = "All Sites";
             this.chkAllSites.UseVisualStyleBackColor = true;
@@ -146,29 +147,43 @@
             // 
             this.statusStrip1.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.lblStatus,
+            this.lblRemaining,
             this.lblRunCount,
-            this.lblRemaining});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 291);
+            this.progressMain,
+            this.lblStatus});
+            this.statusStrip1.Location = new System.Drawing.Point(0, 294);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(815, 25);
+            this.statusStrip1.Size = new System.Drawing.Size(815, 22);
             this.statusStrip1.TabIndex = 7;
             this.statusStrip1.Text = "statusStrip1";
             // 
             // lblStatus
             // 
             this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(49, 20);
+            this.lblStatus.Size = new System.Drawing.Size(39, 17);
             this.lblStatus.Text = "Status";
+            this.lblStatus.Click += new System.EventHandler(this.lblStatus_Click);
+            // 
+            // lblRunCount
+            // 
+            this.lblRunCount.Name = "lblRunCount";
+            this.lblRunCount.Size = new System.Drawing.Size(13, 17);
+            this.lblRunCount.Text = "0";
+            // 
+            // lblRemaining
+            // 
+            this.lblRemaining.Name = "lblRemaining";
+            this.lblRemaining.Size = new System.Drawing.Size(49, 17);
+            this.lblRemaining.Text = "00:00:00";
             // 
             // chkTestMode
             // 
             this.chkTestMode.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.chkTestMode.AutoSize = true;
-            this.chkTestMode.Location = new System.Drawing.Point(129, 272);
+            this.chkTestMode.Location = new System.Drawing.Point(129, 275);
             this.chkTestMode.Margin = new System.Windows.Forms.Padding(2);
             this.chkTestMode.Name = "chkTestMode";
-            this.chkTestMode.Size = new System.Drawing.Size(94, 19);
+            this.chkTestMode.Size = new System.Drawing.Size(83, 17);
             this.chkTestMode.TabIndex = 6;
             this.chkTestMode.Text = "Test Mode?";
             this.chkTestMode.UseVisualStyleBackColor = true;
@@ -176,7 +191,7 @@
             // cmdRunScript
             // 
             this.cmdRunScript.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.cmdRunScript.Location = new System.Drawing.Point(701, 265);
+            this.cmdRunScript.Location = new System.Drawing.Point(701, 266);
             this.cmdRunScript.Margin = new System.Windows.Forms.Padding(2);
             this.cmdRunScript.Name = "cmdRunScript";
             this.cmdRunScript.Size = new System.Drawing.Size(103, 30);
@@ -195,13 +210,13 @@
             this.txtResults.Multiline = true;
             this.txtResults.Name = "txtResults";
             this.txtResults.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtResults.Size = new System.Drawing.Size(803, 256);
+            this.txtResults.Size = new System.Drawing.Size(803, 257);
             this.txtResults.TabIndex = 3;
             // 
             // cmdLoadScipt
             // 
             this.cmdLoadScipt.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.cmdLoadScipt.Location = new System.Drawing.Point(5, 265);
+            this.cmdLoadScipt.Location = new System.Drawing.Point(5, 266);
             this.cmdLoadScipt.Margin = new System.Windows.Forms.Padding(2);
             this.cmdLoadScipt.Name = "cmdLoadScipt";
             this.cmdLoadScipt.Size = new System.Drawing.Size(103, 30);
@@ -222,17 +237,10 @@
             this.chkSingleSite.Text = "Current Site Only";
             this.chkSingleSite.UseVisualStyleBackColor = true;
             // 
-            // lblRunCount
+            // progressMain
             // 
-            this.lblRunCount.Name = "lblRunCount";
-            this.lblRunCount.Size = new System.Drawing.Size(151, 20);
-            this.lblRunCount.Text = "toolStripStatusLabel1";
-            // 
-            // lblRemaining
-            // 
-            this.lblRemaining.Name = "lblRemaining";
-            this.lblRemaining.Size = new System.Drawing.Size(151, 20);
-            this.lblRemaining.Text = "toolStripStatusLabel2";
+            this.progressMain.Name = "progressMain";
+            this.progressMain.Size = new System.Drawing.Size(100, 16);
             // 
             // frmSiteScript
             // 
@@ -277,5 +285,6 @@
         private System.Windows.Forms.CheckBox chkProcessSubWebs;
         private System.Windows.Forms.ToolStripStatusLabel lblRunCount;
         private System.Windows.Forms.ToolStripStatusLabel lblRemaining;
+        private System.Windows.Forms.ToolStripProgressBar progressMain;
     }
 }

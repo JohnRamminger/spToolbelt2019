@@ -233,90 +233,90 @@ namespace spToolbelt2019.Forms
 
         private void button5_Click(object sender, EventArgs e)
         {
-            List<EventList> lists = new List<EventList>();
-            KeywordQuery keywordQuery = new KeywordQuery(ctx);
-            keywordQuery.QueryText = "ContentTypeId:0x0102*";
-            keywordQuery.RowLimit = 500;
-            keywordQuery.SelectProperties.Add("SPWebUrl");
-            keywordQuery.SelectProperties.Add("ListID");
-            SearchExecutor searchExecutor = new SearchExecutor(ctx);
-            ClientResult<ResultTableCollection> results = searchExecutor.ExecuteQuery(keywordQuery);
-            ctx.ExecuteQuery();
+           // List<EventList> lists = new List<EventList>();
+           // KeywordQuery keywordQuery = new KeywordQuery(ctx);
+           // keywordQuery.QueryText = "ContentTypeId:0x0102*";
+           // keywordQuery.RowLimit = 500;
+           // keywordQuery.SelectProperties.Add("SPWebUrl");
+           // keywordQuery.SelectProperties.Add("ListID");
+           // SearchExecutor searchExecutor = new SearchExecutor(ctx);
+           // ClientResult<ResultTableCollection> results = searchExecutor.ExecuteQuery(keywordQuery);
+           // ctx.ExecuteQuery();
             
-            foreach(ResultTable rt in results.Value)
-            {
-                foreach(IDictionary<string,object> result in rt.ResultRows)
-                {
-                    string cListID = result["ListID"].ToString();
-                    string cWebUrl = result["SPWebUrl"].ToString();
-                    EventList el = new EventList();
-                    el.ListId = cListID;
-                    el.SiteUrl = cWebUrl;
-                    if (!HasItem(lists,cListID))
-                    {
-                        lists.Add(el);
-                    }
-                    if (!lists.Contains(el))
-                    {
+           // foreach(ResultTable rt in results.Value)
+           // {
+           //     foreach(IDictionary<string,object> result in rt.ResultRows)
+           //     {
+           //         string cListID = result["ListID"].ToString();
+           //         string cWebUrl = result["SPWebUrl"].ToString();
+           //         EventList el = new EventList();
+           //         el.ListId = cListID;
+           //         el.SiteUrl = cWebUrl;
+           //         if (!HasItem(lists,cListID))
+           //         {
+           //             lists.Add(el);
+           //         }
+           //         if (!lists.Contains(el))
+           //         {
                         
-                    }
-                }
-            }
+           //         }
+           //     }
+           // }
 
-            foreach (EventList eventList in lists)
-            {
-                ClientContext workCTX = new ClientContext(eventList.SiteUrl);
-                workCTX.Credentials = ctx.Credentials;
-                List lst = workCTX.Web.Lists.GetById(new Guid(eventList.ListId));
-                ActivateEventFeature(workCTX, "bb635f49-78bb-406a-94c9-e28a5ac07375");
+           // foreach (EventList eventList in lists)
+           // {
+           //     ClientContext workCTX = new ClientContext(eventList.SiteUrl);
+           //     workCTX.Credentials = ctx.Credentials;
+           //     List lst = workCTX.Web.Lists.GetById(new Guid(eventList.ListId));
+           //     ActivateEventFeature(workCTX, "bb635f49-78bb-406a-94c9-e28a5ac07375");
 
-                lst.EnsureListHasContenttype(workCTX.Site, "atiEvent");
-                Microsoft.SharePoint.Client.ContentType ct = lst.GetContentType("atiEvent");
-                workCTX.Load(ct, t => t.Name, t => t.Id);
-                workCTX.ExecuteQuery();
-                CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
-                ListItemCollection items = lst.GetItems(oQuery);
-                workCTX.Load(items, i => i.Include(itm => itm.ContentType.Name, itm => itm["RecurrenceData"],itm=>itm["atiEventRecurrence"]));
-                workCTX.ExecuteQuery();
-                foreach (ListItem itm in items)
-                {
-                    try
-                    {
-                        bool bUpdate = false;
-                        if (itm.ContentType.Name == "Event")
-                        {
-                            itm["ContentTypeId"] = ct.Id;
-                            bUpdate = true;
-                        }
-                        if (itm["RecurrenceData"] != null)
-                        {
-                            if (itm["RecurrenceData"] != itm["atiEventRecurrence"])
-                            {
-                                itm["atiEventRecurrence"] = itm["RecurrenceData"];
-                                bUpdate = true;
-                            }
-                        }
-
-
-                        if (bUpdate)
-                        {
-                            itm.SystemUpdate();
-                            workCTX.ExecuteQuery();
-                        }
+           //     lst.EnsureListHasContenttype(workCTX.Site, "atiEvent");
+           //     Microsoft.SharePoint.Client.ContentType ct = lst.GetContentType("atiEvent");
+           //     workCTX.Load(ct, t => t.Name, t => t.Id);
+           //     workCTX.ExecuteQuery();
+           //     CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
+           //     ListItemCollection items = lst.GetItems(oQuery);
+           //     workCTX.Load(items, i => i.Include(itm => itm.ContentType.Name, itm => itm["RecurrenceData"],itm=>itm["atiEventRecurrence"]));
+           //     workCTX.ExecuteQuery();
+           //     foreach (ListItem itm in items)
+           //     {
+           //         try
+           //         {
+           //             bool bUpdate = false;
+           //             if (itm.ContentType.Name == "Event")
+           //             {
+           //                 itm["ContentTypeId"] = ct.Id;
+           //                 bUpdate = true;
+           //             }
+           //             if (itm["RecurrenceData"] != null)
+           //             {
+           //                 if (itm["RecurrenceData"] != itm["atiEventRecurrence"])
+           //                 {
+           //                     itm["atiEventRecurrence"] = itm["RecurrenceData"];
+           //                     bUpdate = true;
+           //                 }
+           //             }
 
 
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Error: " + ex.Message);
-                    }
-                }
-                lst.RemoveContentTypeByName("Event");
-                lst.DisableContentTypes();
-                workCTX.ExecuteQuery();
-           }
+           //             if (bUpdate)
+           //             {
+           //                 itm.SystemUpdate();
+           //                 workCTX.ExecuteQuery();
+           //             }
 
-            MessageBox.Show("done ");
+
+           //         }
+           //         catch (Exception ex)
+           //         {
+           //             MessageBox.Show("Error: " + ex.Message);
+           //         }
+           //     }
+           //     lst.RemoveContentTypeByName("Event");
+           //     lst.DisableContentTypes();
+           //     workCTX.ExecuteQuery();
+           //}
+
+           // MessageBox.Show("done ");
 
 
         }
@@ -360,7 +360,7 @@ namespace spToolbelt2019.Forms
             }
             catch (Exception ex)
             {
-                
+                MessageBox.Show(ex.Message);
             }
 
 

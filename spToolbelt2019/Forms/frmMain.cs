@@ -28,7 +28,7 @@ namespace spToolbelt2019
         private void frmMain_Load(object sender, EventArgs e)
         {
             EnableUI(false);
-            CheckForUpdates();
+           
             AddVersionNumber();
         }
 
@@ -39,11 +39,11 @@ namespace spToolbelt2019
             this.Text += $"v.{versionInfo.ProductVersion}";// "SharePoint Toolbelt: Version ("+versionInfo.ProductVersion+")";
         }
 
-        private async Task  CheckForUpdates()
+        private void  CheckForUpdates()
         {
             using (var manager = new UpdateManager("https://rammware.s3.us-east-2.amazonaws.com/spToolBelt2019","spToolBelt2019"))
             {
-                await manager.UpdateApp();
+                 manager.UpdateApp();
                 MessageBox.Show("Update Check Complete!");
             }
         }
@@ -127,9 +127,9 @@ namespace spToolbelt2019
 
         private void shareGateScriptBuilderToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            //Forms.frmBuildShareGateScript fb = new frmBuildShareGateScript(ctx);
-            //fb.MdiParent = this;
-            //fb.Show();
+            Forms.frmBuildShareGateScript fb = new frmBuildShareGateScript(ctx);
+            fb.MdiParent = this;
+            fb.Show();
         }
 
         private void TestToolStripMenuItem_Click(object sender, EventArgs e)
@@ -160,6 +160,13 @@ namespace spToolbelt2019
                 Directory.CreateDirectory(cLogPath);
             }
             Process.Start(cLogPath);
+        }
+
+        private void toolStripButton2_Click(object sender, EventArgs e)
+        {
+            Forms.frmBuildShareGateScript fb = new frmBuildShareGateScript(ctx);
+            fb.MdiParent = this;
+            fb.Show();
         }
     }
 }

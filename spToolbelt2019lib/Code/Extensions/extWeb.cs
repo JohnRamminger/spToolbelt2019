@@ -9,7 +9,6 @@ namespace spToolbelt2019Lib
     public static class extWeb
     {
 
-
         public static void RemoveList(this Web workWeb, string cListName)
         {
             try

@@ -55,6 +55,16 @@ namespace spToolbelt2019Lib
             {
                 switch (Command)
                 {
+                    case "ensure-targetfolders":
+                        bRetVal = true;
+                        break;
+
+                    case "ensure-targetfields":
+                        bRetVal = true;
+
+
+
+                        break;
                     case "update-inventorylistitems":
                         if (parms.ContainsKey("scanurl") &&
                             parms.ContainsKey("saveurl"))
@@ -66,6 +76,20 @@ namespace spToolbelt2019Lib
                             bRetVal = false;
                         }
                         break;
+
+
+                        
+                    case "update-inventoryfromdatabase":
+                        if (parms.ContainsKey("saveurl"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
+
 
                     case "update-inventory":
                         if (parms.ContainsKey("scanurl") &&
