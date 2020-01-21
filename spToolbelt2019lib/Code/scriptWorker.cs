@@ -435,6 +435,25 @@ namespace spToolbelt2019Lib
                             workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
                             workCTX.Web.EnsureContentType(oWorkItem.GetParm("Name"), oWorkItem.GetParm("ParentName"), oWorkItem.GetParm("Group"));
                             break;
+                            case "set-fielddefaultvalue":
+                                ShowProgress("Working Required Filed: " + oWorkItem.GetParm("fieldname"));
+                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
+                                SetDefaultValue(workCTX, oWorkItem);
+
+                                break;
+
+
+
+                            case "set-fieldrequired":
+                                ShowProgress("Working Required Filed: " + oWorkItem.GetParm("fieldname"));
+                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
+                                SetRequiredField(workCTX, oWorkItem);
+                                
+                                break;
+
+
                             case "ensure-sitecolumnuser":
                                 ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
                                 workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
@@ -443,8 +462,6 @@ namespace spToolbelt2019Lib
 
                                 workCTX.Web.EnsureSiteColumnUser(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"), bMultiUser, bAllowGroups);
                                 break;
-
-
                             case "ensure-sitecolumn":
                             ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
                             workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
@@ -600,7 +617,49 @@ namespace spToolbelt2019Lib
 
         }
 
-        
+        private void SetDefaultValue(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            try
+            {
+                List lstWork = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("listname"));
+                Field fld = lstWork.Fields.GetByInternalNameOrTitle(oWorkItem.GetParm("fieldname"));
+                workCTX.Load(fld, f => f.Required);
+                workCTX.ExecuteQuery();
+                string cDefault = oWorkItem.GetParm("defaultvalue");
+                
+                    fld.DefaultValue = cDefault;
+                    fld.Update();
+                    workCTX.ExecuteQuery();
+                
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "SetDefaultValue", "");
+            }
+
+        }
+
+        private void SetRequiredField(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            try
+            {
+                List lstWork = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("listname"));
+                Field fld = lstWork.Fields.GetByInternalNameOrTitle(oWorkItem.GetParm("fieldname"));
+                workCTX.Load(fld, f => f.Required);
+                workCTX.ExecuteQuery();
+                bool bRequired = oWorkItem.GetParmBool("required");
+                if (fld.Required != bRequired)
+                {
+                    fld.Required = bRequired;
+                    fld.Update();
+                    workCTX.ExecuteQuery();
+                }
+            } catch (Exception ex)
+            {
+                ShowError(ex, "SetRequiredField","");
+            }
+        }
+
         private void SetSiteReadOnly()
         {
             SetWebReadOnly(ctx, ctx.Web);

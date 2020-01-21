@@ -153,6 +153,34 @@ namespace spToolbelt2019Lib
                             bRetVal = false;
                         }
                         break;
+                    case "set-fielddefaultvalue":
+                        if (parms.ContainsKey("url") &&
+                            parms.ContainsKey("listname") &&
+                            parms.ContainsKey("fieldname") &&
+                            parms.ContainsKey("defaultvalue"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
+
+
+                    case "set-fieldrequired":
+                        if (parms.ContainsKey("url") &&
+                            parms.ContainsKey("listname") &&
+                            parms.ContainsKey("fieldname") &&
+                            parms.ContainsKey("required"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
 
                     case "navigation-list":
                     case "sync-list":
