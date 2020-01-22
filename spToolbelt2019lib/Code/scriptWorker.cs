@@ -3,8 +3,10 @@ using Microsoft.SharePoint.Client;
 using Microsoft.SharePoint.Client.Taxonomy;
 using Microsoft.SharePoint.Client.Utilities;
 using Microsoft.SharePoint.Client.WebParts;
+using Microsoft.SharePoint.Client.WorkflowServices;
 using Newtonsoft.Json;
 using OfficeDevPnP.Core.Enums;
+using spToolbelt2019lib;
 using spToolbelt2019Lib.Objects;
 using System;
 using System.Collections.Generic;
@@ -15,7 +17,7 @@ using System.Linq;
 using System.Net;
 using System.Security;
 using System.Text;
-
+using System.Threading.Tasks;
 
 namespace spToolbelt2019Lib
 {
@@ -34,29 +36,42 @@ namespace spToolbelt2019Lib
         public bool ProcessSubWebs { get; set; }
         public bool bSingleSite { get; set; }
 
+
+        public void UpdateProgress()
+        {
+            RunCount += 1;
+            string cRemainingTime = RemainingTime;
+            oWorker.ReportProgress(4, cRemainingTime);
+
+
+        }
+
+
         public string RemainingTime
         {
             get
             {
-                if (RunCount == 0) return "";
-                    double RemainingSeconds = (sw.Elapsed.TotalSeconds / RunCount) * (TotalItems - RunCount);
+                return GetRemaining(RunCount, TotalItems, sw.Elapsed);
 
-                int iHours = 0;
-                int iMinutes = 0;
-                int iSeconds = 0;
+                //if (RunCount == 0) return "";
+                //    double RemainingSeconds = (sw.Elapsed.TotalSeconds / RunCount) * (TotalItems - RunCount);
 
-                if (RemainingSeconds > 3600)
-                {
-                    iHours = Convert.ToInt32(RemainingSeconds / 3600);
-                    RemainingSeconds = RemainingSeconds - (iHours * 3600);
-                }
-                if (RemainingSeconds > 60)
-                {
-                    iMinutes = Convert.ToInt32(RemainingSeconds / 60);
-                    RemainingSeconds = RemainingSeconds - (iMinutes * 60);
-                }
-                iSeconds = Convert.ToInt32(RemainingSeconds);
-                return new TimeSpan(iHours, iMinutes, iSeconds).ToString();
+                //int iHours = 0;
+                //int iMinutes = 0;
+                //int iSeconds = 0;
+
+                //if (RemainingSeconds > 3600)
+                //{
+                //    iHours = Convert.ToInt32(RemainingSeconds / 3600);
+                //    RemainingSeconds = RemainingSeconds - (iHours * 3600);
+                //}
+                //if (RemainingSeconds > 60)
+                //{
+                //    iMinutes = Convert.ToInt32(RemainingSeconds / 60);
+                //    RemainingSeconds = RemainingSeconds - (iMinutes * 60);
+                //}
+                //iSeconds = Convert.ToInt32(RemainingSeconds);
+                //return new TimeSpan(iHours, iMinutes, iSeconds).ToString();
             }
 
         }
@@ -81,6 +96,16 @@ namespace spToolbelt2019Lib
         public delegate void InfoHandler(string cInfo);
         public event InfoHandler Info;
 
+
+        public delegate void ReaminingTimeHandler(string ReaminingTimeInfo);
+        public event ReaminingTimeHandler ReaminingTimeInfo;
+
+
+        public delegate void SiteInfoHandler(string cInfo);
+        public event SiteInfoHandler SiteInfo;
+
+
+
         public delegate void WorkerErrorHandler(string cExceptionMessage, string cLocation, string cMessage);
         public event WorkerErrorHandler Error;
 
@@ -104,7 +129,7 @@ namespace spToolbelt2019Lib
             }
             ctx = workerCTX;
             Command = cCommand;
-            string cLogName = string.Format(cWorkerName + "-{0:yyyy-MM-dd_hh-mm-ss-tt}.log", DateTime.Now);
+            string cLogName = string.Format(@"spToolBelt\"+cWorkerName + "-{0:yyyy-MM-dd_hh-mm-ss-tt}.log", DateTime.Now);
             string cLogFilename = Path.GetTempPath() + cLogName;
             cLogFile = cLogFilename;
             oOutputFile = new StreamWriter(cLogFilename);
@@ -191,10 +216,10 @@ namespace spToolbelt2019Lib
                 else
                 {
                     spwebs = new List<string>();
-                    TotalItems = GetSiteCount();
+                   // TotalItems = GetSiteCount();
                     ShowProgress(string.Format("Found {0} webs ", spwebs.Count()));
 
-                    sw.Start();
+                    //sw.Start();
                     
                     foreach (string spweb in spwebs)
                     {
@@ -261,6 +286,12 @@ namespace spToolbelt2019Lib
                     Trace.WriteLine(oWorkItem.Command);
                     switch (oWorkItem.Command.ToLower())
                     {
+                            case "ensure-targetfolders":
+                                EnsureTargetFolders(workCTX, item, oWorkItem);
+                                break;
+                            case "ensure-targetfields":
+                                EnsureTargetFields(workCTX, item, oWorkItem);
+                                break;
                         case "find-everyone":
                             FindEveryOne(workCTX);
                             break;
@@ -405,6 +436,25 @@ namespace spToolbelt2019Lib
                             workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
                             workCTX.Web.EnsureContentType(oWorkItem.GetParm("Name"), oWorkItem.GetParm("ParentName"), oWorkItem.GetParm("Group"));
                             break;
+                            case "set-fielddefaultvalue":
+                                ShowProgress("Working Required Filed: " + oWorkItem.GetParm("fieldname"));
+                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
+                                SetDefaultValue(workCTX, oWorkItem);
+
+                                break;
+
+
+
+                            case "set-fieldrequired":
+                                ShowProgress("Working Required Filed: " + oWorkItem.GetParm("fieldname"));
+                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
+                                SetRequiredField(workCTX, oWorkItem);
+                                
+                                break;
+
+
                             case "ensure-sitecolumnuser":
                                 ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
                                 workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
@@ -413,8 +463,6 @@ namespace spToolbelt2019Lib
 
                                 workCTX.Web.EnsureSiteColumnUser(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"), bMultiUser, bAllowGroups);
                                 break;
-
-
                             case "ensure-sitecolumn":
                             ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
                             workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
@@ -533,7 +581,21 @@ namespace spToolbelt2019Lib
 
 
                             break;
-                        default:
+
+                            case "update-inventorylistitems":
+                                UpdateInventoryListItems(workCTX, item, oWorkItem);
+                                break;
+
+
+                            case "update-inventory":
+                                UpdateInventory(workCTX, item, oWorkItem);
+                                break;
+
+                            case "update-inventoryfromdatabase":
+                                UpdateInventoryFromDatabase(workCTX, item, oWorkItem);
+                                break;
+
+                            default:
                             ShowProgress("Unrecognized command!"+oWorkItem.Command);
                             break;
                     }
@@ -554,6 +616,49 @@ namespace spToolbelt2019Lib
                 ShowError(ex, "ProcessSites.WorkSite - "+item, "");
             }
 
+        }
+
+        private void SetDefaultValue(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            try
+            {
+                List lstWork = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("listname"));
+                Field fld = lstWork.Fields.GetByInternalNameOrTitle(oWorkItem.GetParm("fieldname"));
+                workCTX.Load(fld, f => f.Required);
+                workCTX.ExecuteQuery();
+                string cDefault = oWorkItem.GetParm("defaultvalue");
+                
+                    fld.DefaultValue = cDefault;
+                    fld.Update();
+                    workCTX.ExecuteQuery();
+                
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "SetDefaultValue", "");
+            }
+
+        }
+
+        private void SetRequiredField(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            try
+            {
+                List lstWork = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("listname"));
+                Field fld = lstWork.Fields.GetByInternalNameOrTitle(oWorkItem.GetParm("fieldname"));
+                workCTX.Load(fld, f => f.Required);
+                workCTX.ExecuteQuery();
+                bool bRequired = oWorkItem.GetParmBool("required");
+                if (fld.Required != bRequired)
+                {
+                    fld.Required = bRequired;
+                    fld.Update();
+                    workCTX.ExecuteQuery();
+                }
+            } catch (Exception ex)
+            {
+                ShowError(ex, "SetRequiredField","");
+            }
         }
 
         private void SetSiteReadOnly()
@@ -837,10 +942,8 @@ namespace spToolbelt2019Lib
                     e2.WebRequestExecutor.WebRequest.UserAgent = "NONISV|RammWare|spToolbelt2019/1.0";
                 };
                 List lstSites = workCTX.Web.Lists.GetByTitle("spmiSites");
-                CamlQuery oQuery = new CamlQuery
-                {
-                    ViewXml = "<View><Query><Where><Eq><FieldRef Name='UniquePermissions' /><Value Type='Boolean'>1</Value></Eq></Where></Query></View>"
-                };
+                CamlQuery oQuery = new CamlQuery();
+                oQuery.ViewXml = "<View><Query><Where><Eq><FieldRef Name='UniquePermissions' /><Value Type='Boolean'>1</Value></Eq></Where></Query></View>";
                 ListItemCollection items = lstSites.GetItems(oQuery);
                 workCTX.Load(items, i => i.Include(itm => itm["SiteUrl"]));
                 workCTX.ExecuteQuery();
@@ -871,10 +974,8 @@ namespace spToolbelt2019Lib
         {
             try
             {
-                ClientContext siteCTX = new ClientContext(cSiteUrl)
-                {
-                    Credentials = ctx.Credentials
-                };
+                ClientContext siteCTX = new ClientContext(cSiteUrl);
+                siteCTX.Credentials = ctx.Credentials;
                 siteCTX.ExecutingWebRequest += delegate (object sender2, WebRequestEventArgs e2)
                 {
                     e2.WebRequestExecutor.WebRequest.UserAgent = "NONISV|RammWare|spToolbelt2019/1.0";
@@ -1062,7 +1163,7 @@ namespace spToolbelt2019Lib
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.WriteLine(ex.Message);
+                ShowError(ex, "EnableARSearch", "");   
             }
         }
 
@@ -1169,7 +1270,7 @@ namespace spToolbelt2019Lib
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.WriteLine(ex.Message);
+                ShowError(ex, "FindSiteCustomizations", "");
             }
 
         }
@@ -1303,10 +1404,8 @@ namespace spToolbelt2019Lib
         private void UpdateSitePermissions(scriptItem workItem)
         {
             string saveUrl = workItem.GetParm("SaveContext");
-            ClientContext workCTX = new ClientContext(saveUrl)
-            {
-                Credentials = ctx.Credentials
-            };
+            ClientContext workCTX = new ClientContext(saveUrl);
+            workCTX.Credentials = ctx.Credentials;
             workCTX.ExecutingWebRequest += delegate (object sender2, WebRequestEventArgs e2)
             {
                 e2.WebRequestExecutor.WebRequest.UserAgent = "NONISV|RammWare|spToolbelt2019/1.0";
@@ -1893,24 +1992,27 @@ namespace spToolbelt2019Lib
         {
             try
             {
-                string cSkipKeys = oWorkItem.parms["skipkeys"];
-                if (!string.IsNullOrEmpty(cSkipKeys))
+                if (oWorkItem.parms.ContainsKey("skipkeys"))
                 {
-                    string[] aSkipKeys = cSkipKeys.Split(';');
-                    foreach (var aSkipKey in aSkipKeys)
+                    string cSkipKeys = oWorkItem.parms["skipkeys"];
+                    if (!string.IsNullOrEmpty(cSkipKeys))
                     {
-                        if (cUrl.ToLower().Contains(aSkipKey.ToLower()))
+                        string[] aSkipKeys = cSkipKeys.Split(';');
+                        foreach (var aSkipKey in aSkipKeys)
                         {
-                            return true;
+                            if (cUrl.ToLower().Contains(aSkipKey.ToLower()))
+                            {
+                                return true;
+                            }
                         }
+
+
                     }
-
-
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.WriteLine(ex.Message);
+                ShowError(ex,"IsSkipSite: "+cUrl,"");   
             }
 
             return false; 
@@ -1964,6 +2066,8 @@ namespace spToolbelt2019Lib
                     
                     workCTX.Load(lists, lsts => lsts.Include(l => l.HasUniqueRoleAssignments,l=>l.Hidden,l=>l.Id,l=>l.Title, l => l.ItemCount,l=>l.LastItemModifiedDate,l=>l.LastItemUserModifiedDate));
                     workCTX.ExecuteQuery();
+
+
                     foreach (var list in lists)
                     {
                         bool bSkip = false;
@@ -2534,43 +2638,43 @@ namespace spToolbelt2019Lib
             try
             {
 
-                //var workflowServicesManager = new WorkflowServicesManager(workCTX, workCTX.Web);
-                //var workflowInteropService = workflowServicesManager.GetWorkflowInteropService();
-                //var workflowSubscriptionService = workflowServicesManager.GetWorkflowSubscriptionService();
-                //var workflowDeploymentService = workflowServicesManager.GetWorkflowDeploymentService();
-                //var workflowInstanceService = workflowServicesManager.GetWorkflowInstanceService();
+                var workflowServicesManager = new WorkflowServicesManager(workCTX, workCTX.Web);
+                var workflowInteropService = workflowServicesManager.GetWorkflowInteropService();
+                var workflowSubscriptionService = workflowServicesManager.GetWorkflowSubscriptionService();
+                var workflowDeploymentService = workflowServicesManager.GetWorkflowDeploymentService();
+                var workflowInstanceService = workflowServicesManager.GetWorkflowInstanceService();
 
-                //var publishedWorkflowDefinitions = workflowDeploymentService.EnumerateDefinitions(true);
-                //workCTX.Load(publishedWorkflowDefinitions);
-                //workCTX.ExecuteQuery();
+                var publishedWorkflowDefinitions = workflowDeploymentService.EnumerateDefinitions(true);
+                workCTX.Load(publishedWorkflowDefinitions);
+                workCTX.ExecuteQuery();
 
-                //var def = from defs in publishedWorkflowDefinitions
-                //          where defs.DisplayName == cWorkflowName
-                //          select defs;
+                var def = from defs in publishedWorkflowDefinitions
+                          where defs.DisplayName == cWorkflowName
+                          select defs;
 
-                //WorkflowDefinition workflow = def.FirstOrDefault();
+                WorkflowDefinition workflow = def.FirstOrDefault();
 
-                //if (workflow != null)
-                //{
-
-
-                //    // get all workflow associations
-                //    var workflowAssociations = workflowSubscriptionService.EnumerateSubscriptionsByDefinition(workflow.Id);
-                //    workCTX.Load(workflowAssociations);
-                //    workCTX.ExecuteQuery();
-
-                //    // find the first association
-                //    var firstWorkflowAssociation = workflowAssociations.First();
-
-                //    // start the workflow
-                //    var startParameters = new Dictionary<string, object>();
+                if (workflow != null)
+                {
 
 
-                //    ShowProgress("Starting workflow for item: " + itm.Id);
-                //    workflowInstanceService.StartWorkflowOnListItem(firstWorkflowAssociation, itm.Id, startParameters);
-                //    workCTX.ExecuteQuery();
+                    // get all workflow associations
+                    var workflowAssociations = workflowSubscriptionService.EnumerateSubscriptionsByDefinition(workflow.Id);
+                    workCTX.Load(workflowAssociations);
+                    workCTX.ExecuteQuery();
 
-                //}
+                    // find the first association
+                    var firstWorkflowAssociation = workflowAssociations.First();
+
+                    // start the workflow
+                    var startParameters = new Dictionary<string, object>();
+
+
+                    ShowProgress("Starting workflow for item: " + itm.Id);
+                    workflowInstanceService.StartWorkflowOnListItem(firstWorkflowAssociation, itm.Id, startParameters);
+                    workCTX.ExecuteQuery();
+
+                }
 
             }
             catch (Exception ex)
@@ -2896,223 +3000,222 @@ namespace spToolbelt2019Lib
 
         private static ListTemplateType GetTemplateType(string cTypeName)
         {
-            ListTemplateType returnType=ListTemplateType.GenericList;
-            
+            ListTemplateType ltt = ListTemplateType.GenericList;
             switch (cTypeName)
             {
                 case "Picture":
-                    returnType= ListTemplateType.PictureLibrary;
+                    ltt=ListTemplateType.PictureLibrary;
                     break;
                 case "Document":
                 
                 case "DocumentLibrary":
-                    returnType= ListTemplateType.DocumentLibrary;
+                    ltt = ListTemplateType.DocumentLibrary;
                     break;
                 case "Generic":
                 case "Custom":
-                    returnType= ListTemplateType.GenericList;
+                    ltt = ListTemplateType.GenericList;
                     break;
                 default:
                     break;
             }
 
-            return returnType;
+            return ltt;
             //switch (tp)
             //{
             //    case ListTemplateType.InvalidType:
-
+                    
             //        break;
             //    case ListTemplateType.NoListTemplate:
-
+                    
             //        break;
             //    case ListTemplateType.GenericList:
-
+                    
             //        break;
             //    case ListTemplateType.DocumentLibrary:
-
+                    
             //        break;
             //    case ListTemplateType.Survey:
-
+                    
             //        break;
             //    case ListTemplateType.Links:
-
+                    
             //        break;
             //    case ListTemplateType.Announcements:
-
+                    
             //        break;
             //    case ListTemplateType.Contacts:
-
+                    
             //        break;
             //    case ListTemplateType.Events:
-
+                    
             //        break;
             //    case ListTemplateType.Tasks:
-
+                    
             //        break;
             //    case ListTemplateType.DiscussionBoard:
-
+                    
             //        break;
             //    case ListTemplateType.PictureLibrary:
-
+                    
             //        break;
             //    case ListTemplateType.DataSources:
-
+                    
             //        break;
             //    case ListTemplateType.WebTemplateCatalog:
-
+                    
             //        break;
             //    case ListTemplateType.UserInformation:
-
+                    
             //        break;
             //    case ListTemplateType.WebPartCatalog:
-
+                    
             //        break;
             //    case ListTemplateType.ListTemplateCatalog:
-
+                    
             //        break;
             //    case ListTemplateType.XMLForm:
-
+                    
             //        break;
             //    case ListTemplateType.MasterPageCatalog:
-
+                    
             //        break;
             //    case ListTemplateType.NoCodeWorkflows:
-
+                    
             //        break;
             //    case ListTemplateType.WorkflowProcess:
-
+                    
             //        break;
             //    case ListTemplateType.WebPageLibrary:
-
+                    
             //        break;
             //    case ListTemplateType.CustomGrid:
-
+                    
             //        break;
             //    case ListTemplateType.SolutionCatalog:
-
+                    
             //        break;
             //    case ListTemplateType.NoCodePublic:
-
+                    
             //        break;
             //    case ListTemplateType.ThemeCatalog:
-
+                    
             //        break;
             //    case ListTemplateType.DesignCatalog:
-
+                    
             //        break;
             //    case ListTemplateType.AppDataCatalog:
-
+                    
             //        break;
             //    case ListTemplateType.DataConnectionLibrary:
-
+                    
             //        break;
             //    case ListTemplateType.WorkflowHistory:
-
+                    
             //        break;
             //    case ListTemplateType.GanttTasks:
-
+                    
             //        break;
             //    case ListTemplateType.HelpLibrary:
-
+                    
             //        break;
             //    case ListTemplateType.AccessRequest:
-
+                    
             //        break;
             //    case ListTemplateType.TasksWithTimelineAndHierarchy:
-
+                    
             //        break;
             //    case ListTemplateType.MaintenanceLogs:
-
+                    
             //        break;
             //    case ListTemplateType.Meetings:
-
+                    
             //        break;
             //    case ListTemplateType.Agenda:
-
+                    
             //        break;
             //    case ListTemplateType.MeetingUser:
-
+                    
             //        break;
             //    case ListTemplateType.Decision:
-
+                    
             //        break;
             //    case ListTemplateType.MeetingObjective:
-
+                    
             //        break;
             //    case ListTemplateType.TextBox:
-
+                    
             //        break;
             //    case ListTemplateType.ThingsToBring:
-
+                    
             //        break;
             //    case ListTemplateType.HomePageLibrary:
-
+                    
             //        break;
             //    case ListTemplateType.Posts:
-
+                    
             //        break;
             //    case ListTemplateType.Comments:
-
+                    
             //        break;
             //    case ListTemplateType.Categories:
-
+                    
             //        break;
             //    case ListTemplateType.Facility:
-
+                    
             //        break;
             //    case ListTemplateType.Whereabouts:
-
+                    
             //        break;
             //    case ListTemplateType.CallTrack:
-
+                    
             //        break;
             //    case ListTemplateType.Circulation:
-
+                    
             //        break;
             //    case ListTemplateType.Timecard:
-
+                    
             //        break;
             //    case ListTemplateType.Holidays:
-
+                    
             //        break;
             //    case ListTemplateType.IMEDic:
-
+                    
             //        break;
             //    case ListTemplateType.ExternalList:
-
+                    
             //        break;
             //    case ListTemplateType.MySiteDocumentLibrary:
-
+                    
             //        break;
             //    case ListTemplateType.IssueTracking:
-
+                    
             //        break;
             //    case ListTemplateType.AdminTasks:
-
+                    
             //        break;
             //    case ListTemplateType.HealthRules:
-
+                    
             //        break;
             //    case ListTemplateType.HealthReports:
-
+                    
             //        break;
             //    case ListTemplateType.DeveloperSiteDraftApps:
-
+                    
             //        break;
             //    case ListTemplateType.AccessApp:
-
+                    
             //        break;
             //    case ListTemplateType.AlchemyMobileForm:
-
+                    
             //        break;
             //    case ListTemplateType.AlchemyApprovalWorkflow:
-
+                    
             //        break;
             //    case ListTemplateType.SharingLinks:
-
+                    
             //        break;
             //    case ListTemplateType.HashtagStore:
-
+                    
             //        break;
 
             //}
@@ -3915,15 +4018,19 @@ namespace spToolbelt2019Lib
                 case -1:
                     string cParms = (string)e.UserState;
                     string[] parms = cParms.Split('|');
-                    Error?.Invoke(parms[0], parms[1], parms[2]);
+                    if (Error != null) Error(parms[0], parms[1], parms[2]);
                     break;
                 case 1:
-                    Progress?.Invoke((string)e.UserState);
+                    if (Progress != null) Progress((string)e.UserState);
                     break;
                 case 2:
-                    Info?.Invoke((string)e.UserState);
+                    if (Info != null) Info((string)e.UserState);
                     break;
-                default:
+                case 3:
+                    if (SiteInfo != null) SiteInfo((string)e.UserState);
+                    break;
+                case 4:
+                    if (ReaminingTimeInfo != null) ReaminingTimeInfo((string)e.UserState);
                     break;
             }
         }
@@ -3933,10 +4040,10 @@ namespace spToolbelt2019Lib
             sw.Stop();
             if (oWorker.CancellationPending)
             {
-                Canceled?.Invoke();
+                if (Canceled != null) Canceled();
                 return;
             }
-            Complete?.Invoke();
+            if (Complete != null) Complete();
             oOutputFile.Flush();
             oOutputFile.Close();
         }
@@ -4338,7 +4445,11 @@ namespace spToolbelt2019Lib
         #endregion
 
         #region ProgressMethods
-
+        void ShowSiteInfo(string cSiteInfo)
+        {
+            oWorker.ReportProgress(3, cSiteInfo);
+            oOutputFile.WriteLine("SiteInfo: " + cSiteInfo);
+        }
         void ShowProgress(string cProgress)
         {
             oWorker.ReportProgress(1, cProgress);
@@ -4354,7 +4465,12 @@ namespace spToolbelt2019Lib
 
         void ShowError(Exception ex, string cLocation, string cMessage)
         {
+
             string cOutput = String.Format("{0}|{1}|{2}", ex.Message, cLocation, cMessage);
+            if (ex.InnerException!=null)
+            {
+                cOutput += "|InnerException|" + ex.InnerException.Message;
+            }
             oWorker.ReportProgress(-1, cOutput);
             oOutputFile.WriteLine("Error: " + cOutput);
         }
@@ -4378,10 +4494,8 @@ namespace spToolbelt2019Lib
                     }
                 }
                 var user_group = web.EnsureUser(cUserName);
-                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX)
-                {
-                    web.RoleDefinitions.GetByType(role)
-                };
+                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX);
+                roleDefBindCol.Add(web.RoleDefinitions.GetByType(role));
                 roleAssignments.Add(user_group, roleDefBindCol);
                 workCTX.Load(roleAssignments);
                 web.Update();
@@ -4410,10 +4524,8 @@ namespace spToolbelt2019Lib
                     }
                 }
                 var user_group = list.ParentWeb.EnsureUser(cUserName);
-                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX)
-                {
-                    list.ParentWeb.RoleDefinitions.GetByType(role)
-                };
+                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX);
+                roleDefBindCol.Add(list.ParentWeb.RoleDefinitions.GetByType(role));
                 roleAssignments.Add(user_group, roleDefBindCol);
                 workCTX.Load(roleAssignments);
                 list.Update();
@@ -4443,10 +4555,8 @@ namespace spToolbelt2019Lib
                     }
                 }
                 var user_group = item.ParentList.ParentWeb.EnsureUser(cUserName);
-                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX)
-                {
-                    item.ParentList.ParentWeb.RoleDefinitions.GetByType(role)
-                };
+                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX);
+                roleDefBindCol.Add(item.ParentList.ParentWeb.RoleDefinitions.GetByType(role));
                 roleAssignments.Add(user_group, roleDefBindCol);
                 workCTX.Load(roleAssignments);
                 item.SystemUpdate();
@@ -4475,10 +4585,8 @@ namespace spToolbelt2019Lib
                     }
                 }
                 var user_group = web.SiteGroups.GetByName(cGroupName);
-                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX)
-                {
-                    web.RoleDefinitions.GetByType(role)
-                };
+                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX);
+                roleDefBindCol.Add(web.RoleDefinitions.GetByType(role));
                 roleAssignments.Add(user_group, roleDefBindCol);
                 workCTX.Load(roleAssignments);
                 web.Update();
@@ -4507,10 +4615,8 @@ namespace spToolbelt2019Lib
                     }
                 }
                 var user_group = list.ParentWeb.SiteGroups.GetByName(cGroupName);
-                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX)
-                {
-                    list.ParentWeb.RoleDefinitions.GetByType(role)
-                };
+                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX);
+                roleDefBindCol.Add(list.ParentWeb.RoleDefinitions.GetByType(role));
                 roleAssignments.Add(user_group, roleDefBindCol);
                 workCTX.Load(roleAssignments);
                 list.Update();
@@ -4541,10 +4647,8 @@ namespace spToolbelt2019Lib
                     }
                 }
                 var user_group = item.ParentList.ParentWeb.SiteGroups.GetByName(cGroupName);
-                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX)
-                {
-                    item.ParentList.ParentWeb.RoleDefinitions.GetByType(role)
-                };
+                var roleDefBindCol = new RoleDefinitionBindingCollection(workCTX);
+                roleDefBindCol.Add(item.ParentList.ParentWeb.RoleDefinitions.GetByType(role));
                 roleAssignments.Add(user_group, roleDefBindCol);
                 workCTX.Load(roleAssignments);
                 item.SystemUpdate();
@@ -4599,9 +4703,747 @@ namespace spToolbelt2019Lib
             }
         }
 
-        
-        
-        
+
+        private void UpdateInventory(ClientContext workCTX, string item, scriptItem oWorkItem)
+        {
+            try
+            {
+
+                string saveContextUrl = oWorkItem.GetParm("saveurl");
+                string scanContextUrl = oWorkItem.GetParm("scanurl");
+                ClientContext saveContext = new ClientContext(saveContextUrl);
+                saveContext.Credentials = workCTX.Credentials;
+                ShowProgress("Gathering Scan Information");
+                ClientContext scanContext = new ClientContext(scanContextUrl);
+    
+                if (oWorkItem.GetParmBool("CurrentCredentials")==true)
+                {
+                    ShowProgress("Using Current Credentials");
+                } else
+                {
+                    ShowProgress("Using Login Credentials");
+                    scanContext.Credentials = ctx.Credentials;
+                }
+
+
+
+                Int32 workCount = GetItemsToProcess(scanContext.Site.RootWeb);
+                TotalItems = workCount;
+                ShowProgress(workCount + " items to process");
+                WorkGallerySite(workCTX, oWorkItem);
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "Work Sites for Gallery -" + item, "");
+            }
+
+        }
+
+        private string GetRemaining(int iCount, int totalitemcount, TimeSpan elapsed)
+        {
+            try
+            {
+
+                double avgSpeed = elapsed.TotalMilliseconds / iCount;
+                double estRemaining = avgSpeed * (totalitemcount - iCount);
+                TimeSpan time = TimeSpan.FromSeconds(Convert.ToInt64(estRemaining / 1000));
+                string str = time.ToString(@"hh\:mm");
+                return str;
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "GetRemaining", "");
+            }
+            return "";
+        }
+
+
+        private void UpdateInventoryListItems(ClientContext workCTX, string item, scriptItem oWorkItem)
+        {
+            try
+            {
+
+                string saveContextUrl = oWorkItem.GetParm("saveurl");
+                //string scanContextUrl = oWorkItem.GetParm("scanurl");
+                ClientContext saveContext = new ClientContext(saveContextUrl);
+                saveContext.Credentials = workCTX.Credentials;
+                ShowProgress("Gathering Scan Information");
+                //ClientContext scanContext = new ClientContext(scanContextUrl);
+                //scanContext.Credentials = ctx.Credentials;
+
+                CamlQuery oQueryAll = CamlQuery.CreateAllItemsQuery();
+                ListItemCollection items = saveContext.Web.Lists.GetByTitle("spmiLists").GetItems(oQueryAll);
+                saveContext.Load(items, l => l.Include(li => li["spmiListID"], li => li["spmiSiteUrl"], li => li["spmiItemCount"], li => li["Title"]));
+                saveContext.ExecuteQuery();
+
+
+                foreach (ListItem listItem in items)
+                {
+                    TotalItems += Convert.ToInt32(listItem["spmiItemCount"].ToString());
+                }
+                ShowProgress("Processing " + TotalItems + " items");
+                RunCount = 1;
+                //string lastUrl = "";
+                ClientContext scanContext = ctx;
+
+                List<Task> tasks = new List<Task>();
+
+                foreach (ListItem listItem in items)
+                {
+                    try
+                    {
+                        //if (listItem["spmiSiteUrl"].ToString() != lastUrl)
+                        //{
+                        //    string cSiteUrl = listItem["spmiSiteUrl"].ToString();
+                        //    scanContext = new ClientContext(cSiteUrl);
+                        //    scanContext.Credentials = ctx.Credentials;
+                        //    lastUrl = listItem["spmiSiteUrl"].ToString();
+                        //    ShowInfo("Scanning List: " + listItem["Title"].ToString()+ " in Site: " + cSiteUrl);
+                        //}
+                        string cSiteUrl = listItem["spmiSiteUrl"].ToString();
+                        string cListID = listItem["spmiListID"].ToString();
+
+                        //tasks.Add(Task.Run(() =>
+                        //{
+                        //ScanListitems(scanContext, saveContext, listItem["spmiListID"].ToString());
+                        ScanListItemsAsync(cSiteUrl, saveContextUrl, cListID, ctx.Credentials);
+                        /*}))*/
+                        ;
+                    }
+                    catch (Exception ex)
+                    {
+                        ShowError(ex, "UpdateInventoryListItems inside: " + item, "");
+                    }
+                }
+                Task.WaitAll(tasks.ToArray());
+                System.Diagnostics.Trace.WriteLine("Done with Items!");
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "UpdateInventoryListItems" + item, "");
+            }
+        }
+
+        private void ScanListItemsAsync(string cSiteUrl, string saveContextUrl, string cListID, ICredentials credentials)
+        {
+            try
+            {
+                using (ClientContext saveContext = new ClientContext(saveContextUrl))
+                {
+                    saveContext.Credentials = credentials;
+                    using (ClientContext scanContext = new ClientContext(cSiteUrl))
+                    {
+                        scanContext.Credentials = credentials;
+                        ScanListitems(scanContext, saveContext, cListID);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "ScanListItemsAsync: " + cSiteUrl, "");
+            }
+
+
+
+        }
+
+        private void ScanListitems(ClientContext scanContext, ClientContext saveContext, string cListId)
+        {
+            try
+            {
+                List workList = scanContext.Web.Lists.GetById(new Guid(cListId));
+                scanContext.Load(workList);
+                scanContext.ExecuteQuery();
+
+                CamlQuery camlQuery = new CamlQuery();
+                camlQuery.ViewXml = "<View Scope='RecursiveAll'><RowLimit>5000</RowLimit><ViewFields><FieldRef Name='ID' /></ViewFields></View>";
+
+                List<ListItem> items = new List<ListItem>();
+                do
+                {
+                    ListItemCollection listItemCollection = workList.GetItems(camlQuery);
+
+                    scanContext.Load(listItemCollection);//, l => l.Include(li => li.File, li => li.FieldValuesAsText, li => li.HasUniqueRoleAssignments, li => li.DisplayName, li => li["Title"], li => li["FileLeafRef"], li => li["GUID"], li => li["File_x0020_Size"]));
+
+
+                    scanContext.ExecuteQuery();
+
+                    //Adding the current set of ListItems in our single buffer
+                    items.AddRange(listItemCollection);
+                    //Reset the current pagination info
+                    camlQuery.ListItemCollectionPosition = listItemCollection.ListItemCollectionPosition;
+
+                } while (camlQuery.ListItemCollectionPosition != null);
+                foreach (ListItem li in items)
+                {
+                    if (workList.BaseTemplate == 101)
+                    {
+                        scanContext.Load(li, itm => itm.File.ServerRelativeUrl, itm => itm.File.Name, itm => itm.DisplayName, itm => itm.ContentType, itm => itm["File_x0020_Size"], itm => itm["GUID"], itm => itm.File, itm => itm.FieldValuesAsText, itm => itm.HasUniqueRoleAssignments);
+                    }
+                    else
+                    {
+                        scanContext.Load(li, itm => itm.DisplayName, itm => itm["GUID"], itm => itm.ContentType, itm => itm["Title"], itm => itm.FieldValuesAsText, itm => itm.HasUniqueRoleAssignments);
+                    }
+                    scanContext.ExecuteQuery();
+                    if (li.ContentType.Name != "Folder")
+                    {
+                        SaveItemInfo(saveContext, li, cListId, (workList.BaseTemplate == 101));
+                    }
+                    UpdateProgress();
+                }
+
+
+
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "ScanListitems" + cListId, "");
+            }
+        }
+
+
+
+        private void SaveItemInfo(ClientContext saveContext, ListItem itm, string cListId, bool isFile)
+        {
+            try
+            {
+                string itmGuid = itm["GUID"].ToString();
+                string viewXML = "<View><Query><Where><Eq><FieldRef Name = 'spmiItemGuid' /><Value Type = 'Text'>" + itmGuid + "</Value></Eq></Where></Query><RowLimit>5000</RowLimit></View>";
+                CamlQuery oQuery = new CamlQuery();
+                oQuery.ViewXml = viewXML;
+                List lst = saveContext.Web.Lists.GetByTitle("spmiItems");
+                ListItemCollection items = lst.GetItems(oQuery);
+                saveContext.Load(items);
+                saveContext.ExecuteQuery();
+                if (items.Count == 0)
+                {
+                    ListItemCreationInformation lici = new ListItemCreationInformation();
+                    ListItem workItem = lst.AddItem(lici);
+                    if (isFile)
+                    {
+                        if (itm["File_x0020_Size"] != null)
+                        {
+
+                            string cFileSize = itm["File_x0020_Size"].ToString();
+                            if (!string.IsNullOrEmpty(cFileSize))
+                            {
+                                int fileSize = Convert.ToInt32(cFileSize);
+                                workItem["spmiItemSize"] = fileSize;
+                            }
+                        }
+                        workItem["spmiItemType"] = "File";
+                        workItem["spmiItemUrl"] = itm.File.ServerRelativeUrl;
+                        workItem["Title"] = itm.File.Name;
+                    }
+                    else
+                    {
+                        workItem["Title"] = itm.DisplayName;
+                    }
+                    workItem["spmiListID"] = cListId;
+                    workItem["spmiItemData"] = JsonConvert.SerializeObject(itm.FieldValuesAsText.FieldValues);
+                    //workItem["spmiParentFolderUrl"] = itm.File.foldeworkFolder.ServerRelativeUrl
+                    workItem.Update();
+                    saveContext.ExecuteQuery();
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "SaveItemInfo -", "");
+            }
+
+        }
+
+        private Int32 GetItemsToProcess(Web oWeb)
+        {
+            oWeb.Context.Load(oWeb, w => w.ServerRelativeUrl);
+            oWeb.Context.ExecuteQuery();
+            ShowSiteInfo("Working: " + oWeb.ServerRelativeUrl);
+            Int32 runningCount = 1;
+            try
+            {
+                WebCollection webs = oWeb.Webs;
+                oWeb.Context.Load(webs);
+                oWeb.Context.ExecuteQuery();
+                foreach (Web web in webs)
+                {
+                    runningCount += GetItemsToProcess(web);
+                }
+                ListCollection lsts = oWeb.Lists;
+                oWeb.Context.Load(lsts, ls => ls.Include(l => l.Title), ls => ls.Include(l => l.BaseTemplate), ls => ls.Include(l => l.ItemCount), ls => ls.Where(l => l.Hidden == false && l.IsCatalog == false));
+                oWeb.Context.ExecuteQuery();
+                foreach (List list in lsts)
+                {
+                    runningCount = runningCount + 1;// +list.ItemCount;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "GetItemsToProcess -" + oWeb.ServerRelativeUrl, "");
+            }
+
+            return runningCount;
+        }
+        private void WorkGallerySite(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            try
+            {
+
+                string saveContextUrl = oWorkItem.GetParm("saveurl");
+                ClientContext saveContext = new ClientContext(saveContextUrl);
+                saveContext.Credentials = workCTX.Credentials;
+
+
+                ClientContext walkContext = new ClientContext(oWorkItem.GetParm("scanurl"));
+                walkContext.Credentials = workCTX.Credentials;
+                walkContext.Load(walkContext.Web, ww => ww.Title, ww => ww.ServerRelativeUrl, ww => ww.Id);
+                walkContext.ExecuteQuery();
+                ShowInfo(walkContext.Web.Title + " - " + walkContext.Web.ServerRelativeUrl);
+                ShowProgress("Walking Site: " + oWorkItem.GetParm("scanurl"));
+
+
+                EnsureSiteGallery(walkContext, saveContext, walkContext.Web, -1, oWorkItem);
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "Work Site for Gallery -", "");
+            }
+
+        }
+
+        private void UpdateInventoryFromDatabase(ClientContext workCTX, string item, scriptItem oWorkItem)
+        {
+            try
+            {
+                string saveContextUrl = oWorkItem.GetParm("saveurl");
+                ClientContext saveContext = new ClientContext(saveContextUrl);
+                saveContext.Credentials = workCTX.Credentials;
+
+                List<SiteInfo> siItems = SQLDataAccess.LoadData<SiteInfo>("select * from SiteInfo", new Dictionary<string, object>(), "Default");
+                List<ListInfo> liItems = SQLDataAccess.LoadData<ListInfo>("select * from ListInfo", new Dictionary<string, object>(), "Default");
+                TotalItems = siItems.Count + liItems.Count;
+                RunCount = 0;
+                sw.Start();
+                List spmiSites = saveContext.Web.Lists.GetByTitle("spmiSites");
+                List spmiLists = saveContext.Web.Lists.GetByTitle("spmiLists");
+
+                foreach (SiteInfo si in siItems)
+                {
+                    RunCount++;
+                    try
+                    {
+                        ShowInfo("Processing Site: " + si.SiteUrl);
+                        Int32 iParentID = 0;
+                        ListItem workParent = spmiSites.GetListItemByField(saveContext, "spmiSiteID", "Text", si.ParentSiteID);
+                        if (workParent != null)
+                        {
+                            iParentID = workParent.Id;
+                        }
+
+                        UpdateSiteInfo(saveContext, spmiSites, si, iParentID);
+                    }
+                    catch (Exception ex)
+                    {
+                        ShowError(ex, "Error Processing Site: " + si.SiteUrl, "");
+                    }
+                    UpdateProgress();
+                }
+                foreach (ListInfo li in liItems)
+                {
+                    RunCount++;
+                    try
+                    {
+
+                        Int32 iParentID = 0;
+                        ListItem parentItem = spmiSites.GetListItemByField(saveContext, "spmiSiteID", "Text", li.SiteID);
+                        if (parentItem!=null)
+                        {
+                            iParentID = parentItem.Id;
+                        } else
+                        {
+                            System.Diagnostics.Trace.WriteLine(li.SiteUrl + "/" + li.Title);
+                        }
+                    UpdateListInfo(saveContext, spmiLists, li,iParentID);
+                    ShowInfo("Processing List: " + li.SiteUrl+"/"+li.Title);
+                    } catch (Exception ex)
+                    {
+                        ShowError(ex, "Error Processing List: " + li.SiteUrl + "/" + li.Title, "");
+                    }
+                    UpdateProgress();
+                }
+            }
+
+            catch (Exception ex)
+            {
+                ShowError(ex, "Update Inventory from Database", "");
+            }
+        }
+
+        private void UpdateListInfo(ClientContext saveContext, List spmiLists, ListInfo li,Int32 iParentID)
+        {
+            try
+            {
+                ListItem itm = spmiLists.GetListItemByField(saveContext, "spmiListID", "Text", li.ListID);
+                if (itm==null)
+                {
+                    ListItemCreationInformation lici = new ListItemCreationInformation();
+                    itm = spmiLists.AddItem(lici);
+                    itm["spmiListID"] = li.ListID;
+                    itm.Update();
+                    saveContext.ExecuteQuery();
+                }
+                itm["spmiItemCount"] = li.ItemCount;
+                itm["spmiLastItemModified"] = li.LastItemModified;
+                itm["spmiLastScan"] = li.LastScan;
+                //itm["spmiLastUserItemModified"] = li.LastUserItemModified;
+                //itm["spmiParentSite"] =li.p
+
+                if (iParentID > 0)
+                {
+                    FieldLookupValue lv = new FieldLookupValue();
+                    lv.LookupId = iParentID;
+                    itm["spmiParentSite"] = lv;
+                }
+
+
+                itm["spmiPermissions"] = li.Permissions;
+                itm["spmiPermissionsLastScan"] = li.LastScan;
+                itm["spmiSiteID"] = li.SiteID;
+                itm["spmiSiteUrl"] = li.SiteUrl;
+                itm["Title"] = li.Title;
+                itm["spmiUniquePermissions"] = li.UniquePermissions;
+
+                itm.Update();
+                saveContext.ExecuteQuery();
+
+            } catch (Exception ex)
+            {
+                ShowError(ex, "UpdateListInfo","");
+            }
+        }
+
+        private void UpdateSiteInfo(ClientContext saveContext, List spmiSites, SiteInfo si,Int32 iParentID)
+        {
+            try
+            {
+                ListItem itm = spmiSites.GetListItemByField(saveContext, "spmiSiteID", "Text", si.SiteID);
+                if (itm == null)
+                {
+                    ListItemCreationInformation lici = new ListItemCreationInformation();
+                    itm = spmiSites.AddItem(lici);
+                    itm["spmiSiteID"] = si.SiteID;
+                    itm["spmiSiteUrl"] = si.SiteUrl;
+                    itm["Title"] = si.Title;
+                    itm.Update();
+                    saveContext.ExecuteQuery();
+                }
+
+                ////itm["spmiAccessRequestEmail"] = si.AccessRequestEmail;
+                ////itm["spmiAdministrators"] = si.Adminsitrators;
+                ////itm["spmiFullControlUsers"] = si.FullControlUsers;
+                ////itm["spmiFullControlUsersCount"]=si.FullControlUserCount;
+                itm["spmiHasSubSites"] = si.HasSubSites;
+                itm["spmiLastItemModified"] = si.LastItemModified;
+                itm["spmiLastScan"] = si.LastScan;
+                itm["spmiLastUserItemModified"] = si.LastUserItemModified;
+
+                if (iParentID>0)
+                { 
+                    FieldLookupValue lv = new FieldLookupValue();
+                    lv.LookupId = iParentID;
+                    itm["spmiParentSite"] = lv;
+                }
+
+                itm["spmiPermissions"] = si.Permissions;
+                itm["spmiPermissionsLastScan"] = si.LastScan;
+                ////itm["spmiRequestApprovers"] = si.RequestApprovers;
+
+
+                itm["Title"] = si.Title;
+                itm["spmiUniquePermissions"] = si.UniquePermissions;
+                itm["spmiUserCount"] = si.UserCount;
+
+
+                itm.Update();
+                saveContext.ExecuteQuery();
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "UpdateSiteInfo", "");
+            }
+        }
+
+
+        private void EnsureTargetFields(ClientContext workCTX, string item, scriptItem oWorkItem)
+        {
+        try
+            {
+                string viewXML = "<View><Query><OrderBy><FieldRef Name='spmiSiteUrl' Ascending='TRUE'/></OrderBy><Where><And><IsNotNull><FieldRef Name='spmiTargetAction' /></IsNotNull><Neq><FieldRef Name = 'spmiTargetAction' /><Value Type = 'Text'>none</Value></Neq></And></Where></Query><RowLimit>5000</RowLimit></View>";
+                List lstLists = ctx.Web.Lists.GetByTitle("spmiLists");
+                CamlQuery oListQuery = new CamlQuery();
+                oListQuery.ViewXml = viewXML;
+                ListItemCollection listitems = lstLists.GetItems(oListQuery);
+                ctx.Load(listitems, itms => itms.Include(i => i.FieldValuesAsText,i=>i.Id, i => i["Title"], i => i["spmiSiteUrl"], i => i["TargetList"], i => i["spmiTargetAction"], i => i["spmiTargetLocation"], i => i["spmiSiteID"]));
+                ctx.ExecuteQuery();
+                RunCount = 0;
+                TotalItems = listitems.Count;
+                sw.Start();
+                List<ListInfo> listData = new List<ListInfo>();
+                foreach (ListItem itm in listitems)
+                {
+                    ListInfo li = BuildListInfo(itm);
+                    ShowInfo(li.SiteUrl + "/" + li.Title);
+                    UpdateProgress();
+                    ClientContext srcCTX = new ClientContext(li.SiteUrl);
+                    srcCTX.Credentials = ctx.Credentials;
+                    string cTargetUrl = li.TargetLocation.Substring(0, li.TargetLocation.LastIndexOf("/"));
+                    string cTargetList = li.TargetLocation.Substring(li.TargetLocation.LastIndexOf("/")+1);
+                    
+                    ClientContext tgtCTX = new ClientContext(li.SiteUrl);
+                    tgtCTX.Credentials = ctx.Credentials;
+                    FieldCollection tgtFields = tgtCTX.Web.AvailableFields;
+                    List tgtList = tgtCTX.Web.Lists.GetByTitle(itm["TargetList"].ToString());
+                    tgtCTX.Load(tgtList);
+                    tgtCTX.Load(tgtFields);
+                    tgtCTX.ExecuteQuery();
+                  
+                    FieldCollection srcFields = srcCTX.Web.Lists.GetByTitle(li.Title).Fields;
+                    srcCTX.Load(srcFields, sfs => sfs.Include(sf=>sf.Id,sf => sf.InternalName, sf => sf.Description, sf => sf.Hidden, sf => sf.Title, sf => sf.TypeAsString, sf => sf.Group));
+                    srcCTX.ExecuteQuery();
+                    foreach(Field srcFld in srcFields)
+                    {
+                        try
+                        {
+                            if (srcFld.InternalName=="Title" && srcFld.Title!=srcFld.InternalName)
+                            {
+                                System.Diagnostics.Trace.WriteLine("");
+                            }
+                            if (srcFld.Hidden == false && ProcessField(srcFld.InternalName)==true)
+                            {
+                                if (!tgtList.HasField(srcFld.Title))
+                                {
+                                    if (!tgtFields.HasField(srcFld.Title))
+                                    {
+                                        EnsureSourceFieldInTargetWeb(srcCTX, srcFld, tgtFields);
+                                    }
+                                    Field workField = tgtFields.GetByInternalNameOrTitle(srcFld.InternalName);
+                                    tgtCTX.Load(workField);
+                                    tgtCTX.ExecuteQuery();
+
+                                    if(!tgtList.Fields.HasField(workField.Id))
+                                    {
+                                        tgtList.Fields.Add(workField);
+                                        tgtList.Update();
+                                        tgtCTX.ExecuteQuery();
+                                    }
+
+                                    workField = tgtList.Fields.GetByInternalNameOrTitle(srcFld.InternalName);
+                                    tgtCTX.Load(workField);
+                                    tgtCTX.ExecuteQuery();
+
+                                    if (workField.Title != srcFld.Title)
+                                    {
+                                        if (workField.Title=="Title")
+                                        {
+                                            tgtList.Fields.AddField(srcFld.Title, srcFld.Title, srcFld.Description, srcFld.Group);
+                                        } else
+                                        {
+                                            workField.Title = srcFld.Title;
+                                            workField.Update();
+                                            tgtList.Update();
+                                            tgtCTX.ExecuteQuery();
+
+                                        }
+
+                                    }
+
+
+                                }
+
+
+
+                            }
+
+                        }
+                        catch (Exception ex)
+                        {
+                            ShowError(ex, "Ensure-TargetFields - " + srcFld.Title, "");
+                        }
+
+
+                    }
+
+
+
+
+
+                }
+
+
+            } catch (Exception ex)
+            {
+                ShowError(ex, "", "");
+
+            }
+
+
+
+
+        }
+
+        private bool ProcessField(string cFieldName)
+        {
+            bool bRetVal = true;
+            switch(cFieldName)
+            {
+                case "Attachments":
+                    bRetVal = false;
+                    break;
+            }
+            return bRetVal;
+        }
+
+        private void EnsureSourceFieldInTargetWeb(ClientContext srcCTX, Field srcFld, FieldCollection tgtFields)
+        {
+            try
+            {
+                switch (srcFld.TypeAsString)
+                {
+                    case "Text":
+                        tgtFields.EnsureField(srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group);
+                        break;
+                    case "Number":
+                        tgtFields.EnsureFieldNumber(srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group);
+                        break;
+                    case "Boolean":
+                        tgtFields.EnsureFieldBoolean(srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group);
+                        break;
+                    case "Choice":
+                        FieldChoice fc = (FieldChoice)srcFld;
+                        srcCTX.Load(fc);
+                        srcCTX.ExecuteQuery();
+                        
+                        tgtFields.EnsureFieldChoice(srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group, fc.Choices);
+                        break;
+                    case "Currency":
+                        tgtFields.EnsureFieldCurrency(srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group);
+                        break;
+                    case "DateTime":
+                        tgtFields.EnsureFieldDateTime(srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group);
+                        break;
+                    case "Note":
+                        tgtFields.EnsureFieldNote(srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group);
+                        break;
+
+                    case "Computed":
+                        FieldComputed fcomp = (FieldComputed)srcFld;
+                        srcCTX.Load(fcomp,f=>f.TypeAsString,f=>f.Title,f=>f.InternalName,f=>f.Description,f=>f.Group);
+                        srcCTX.ExecuteQuery();
+
+                        string cCalculation = "";
+                        tgtFields.EnsureFieldComputed(fcomp.TypeAsString,srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group,cCalculation);
+                        break;
+
+                    case "URL":
+                        tgtFields.EnsureFieldUrl(srcFld.TypeAsString, srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group);
+                        break;
+
+                    case "Integer":
+                        tgtFields.EnsureFieldInteger(srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group);
+                        break;
+                    case "HTML":
+                        tgtFields.EnsureFieldHTML(srcFld.TypeAsString, srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group);
+                        break;
+
+                    
+
+                    default:
+                        System.Diagnostics.Trace.WriteLine(srcFld.TypeAsString);
+                        break;
+
+
+                }
+
+            } catch (Exception ex)
+            {
+                ShowError(ex, "", "");
+            }
+        }
+
+        private ListInfo BuildListInfo(ListItem itm)
+        {
+
+            ListInfo li = new ListInfo();
+            try
+            {
+                li.SiteUrl = itm["spmiSiteUrl"].ToString();
+                li.Title = itm["Title"].ToString();
+                li.SiteID = itm["spmiSiteID"].ToString();
+                if (itm["spmiTargetAction"] != null)
+                {
+                    li.TargetAction = itm["spmiTargetAction"].ToString();
+                }
+                if (itm["spmiTargetLocation"] != null)
+                {
+                    li.TargetLocation = itm["spmiTargetLocation"].ToString();
+                }
+                li.Id = itm.Id;
+                li.TargetList = itm["TargetList"].ToString();
+             
+            } catch(Exception ex)
+            {
+                ShowError(ex, "Build ListInfo", "");
+            }
+            return li;
+        }
+        private void EnsureTargetFolders(ClientContext workCTX, string item, scriptItem oWorkItem)
+        {
+            try
+            {
+                string viewXML = "<View><Query><OrderBy><FieldRef Name='spmiSiteUrl' Ascending='TRUE'/></OrderBy><Where><And><IsNotNull><FieldRef Name='spmiTargetAction' /></IsNotNull><Neq><FieldRef Name = 'spmiTargetAction' /><Value Type = 'Text'>none</Value></Neq></And></Where></Query><RowLimit>5000</RowLimit></View>";
+                List lstLists = ctx.Web.Lists.GetByTitle("spmiLists");
+                CamlQuery oListQuery = new CamlQuery();
+                oListQuery.ViewXml = viewXML;
+                ListItemCollection listitems = lstLists.GetItems(oListQuery);
+                ctx.Load(listitems, itms => itms.Include(i => i.FieldValuesAsText, i => i.Id, i => i["Title"], i => i["spmiSiteUrl"], i => i["TargetList"], i => i["spmiTargetAction"], i => i["spmiTargetLocation"], i => i["spmiSiteID"]));
+                ctx.ExecuteQuery();
+                List<ListInfo> listData = new List<ListInfo>();
+                foreach (ListItem itm in listitems)
+                {
+                    try
+                    {
+                        ListInfo li = BuildListInfo(itm);
+                        ClientContext srcCTX = new ClientContext(li.SiteUrl);
+                        srcCTX.Credentials = ctx.Credentials;
+                        string cTargetUrl = li.TargetLocation.Substring(0, li.TargetLocation.LastIndexOf("/"));
+                        string cTargetList = li.TargetLocation.Substring(li.TargetLocation.LastIndexOf("/") + 1);
+
+                        ClientContext tgtCTX = new ClientContext(li.SiteUrl);
+                        tgtCTX.Credentials = ctx.Credentials;
+
+                        List tgtList = tgtCTX.Web.Lists.GetByTitle(itm["TargetList"].ToString());
+                        tgtCTX.Load(tgtList,tls=>tls.RootFolder);
+                        tgtCTX.ExecuteQuery();
+                        string cFolderTitle = itm["Title"].ToString();
+                        cFolderTitle = cFolderTitle.Replace("/", "-");
+                        tgtList.RootFolder.EnsureFolder(cFolderTitle);
+                    } catch (Exception ex)
+                    {
+                        ShowError(ex, "EnsureTargetFolders - inside", "");
+
+                    }
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "EnsureTargetFolders", "");
+
+            }
+
+
+        }
 
 
     }

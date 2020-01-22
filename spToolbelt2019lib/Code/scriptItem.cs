@@ -55,6 +55,54 @@ namespace spToolbelt2019Lib
             {
                 switch (Command)
                 {
+                    case "ensure-targetfolders":
+                        bRetVal = true;
+                        break;
+
+                    case "ensure-targetfields":
+                        bRetVal = true;
+
+
+
+                        break;
+                    case "update-inventorylistitems":
+                        if (parms.ContainsKey("scanurl") &&
+                            parms.ContainsKey("saveurl"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
+
+
+                        
+                    case "update-inventoryfromdatabase":
+                        if (parms.ContainsKey("saveurl"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
+
+
+                    case "update-inventory":
+                        if (parms.ContainsKey("scanurl") &&
+                            parms.ContainsKey("saveurl"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
+
                     case "set-sitereadonly":
                     case "find-everyone":
                     case "enable-accessrequestsearch":
@@ -105,9 +153,51 @@ namespace spToolbelt2019Lib
                             bRetVal = false;
                         }
                         break;
+                    case "set-fielddefaultvalue":
+                        if (parms.ContainsKey("url") &&
+                            parms.ContainsKey("listname") &&
+                            parms.ContainsKey("fieldname") &&
+                            parms.ContainsKey("defaultvalue"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
 
 
-                        
+                    case "set-fieldrequired":
+                        if (parms.ContainsKey("url") &&
+                            parms.ContainsKey("listname") &&
+                            parms.ContainsKey("fieldname") &&
+                            parms.ContainsKey("required"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
+
+                    case "navigation-list":
+                    case "sync-list":
+                        if (parms.ContainsKey("url") &&
+                            parms.ContainsKey("listname") &&
+                            parms.ContainsKey("targeturl") &&
+                            parms.ContainsKey("syncfields"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
+
+
                     case "attach-workflow":
                         if (parms.ContainsKey("url") &&
                             parms.ContainsKey("listname") &&

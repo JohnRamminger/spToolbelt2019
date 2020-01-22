@@ -57,7 +57,7 @@ namespace spToolbelt2019Lib
                     int iOrder = 1;
                     try
                     {
-                        if (!string.IsNullOrEmpty(line))
+                        if (!string.IsNullOrEmpty(line) && !line.StartsWith("#"))
                         {
                             scriptItem itm = new scriptItem(line);
                             cResults += itm.Status;

@@ -40,8 +40,9 @@ namespace spToolbelt2019Lib
                         flds.EnsureFieldCurrency(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"));
                         break;
                     case "ensure-fieldchoice":
+                        string[] aChoices = oWorkItem.GetParm("choices").Split(';');
 
-                        flds.EnsureFieldChoice(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("choices"));
+                        flds.EnsureFieldChoice(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Description"), aChoices);
                         break;
                     case "ensure-fieldboolean":
 

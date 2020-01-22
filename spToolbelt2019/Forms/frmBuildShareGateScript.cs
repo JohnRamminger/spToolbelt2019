@@ -1,10 +1,16 @@
-﻿using System;
+﻿using HandlebarsDotNet;
+using Microsoft.SharePoint.Client;
+using Newtonsoft.Json;
+using spToolbelt2019lib;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -13,92 +19,274 @@ namespace spToolbelt2019.Forms
 {
     public partial class frmBuildShareGateScript : System.Windows.Forms.Form
     {
-        //ClientContext ctx;
-        public frmBuildShareGateScript(/*ClientContext inCTX*/)
+        ClientContext ctx;
+        public frmBuildShareGateScript(ClientContext inCTX)
         {
-            //ctx = inCTX;
+            ctx = inCTX;
             InitializeComponent();
+        }
+
+        private void GetData()
+        {
+
+
+            string viewXML = "<View><Query><OrderBy><FieldRef Name='spmiSiteUrl' Ascending='TRUE'/></OrderBy><Where><And><IsNotNull><FieldRef Name='spmiTargetAction' /></IsNotNull><Neq><FieldRef Name = 'spmiTargetAction' /><Value Type = 'Text'>none</Value></Neq></And></Where></Query><RowLimit>5000</RowLimit></View>";
+
+            List lstSites = ctx.Web.Lists.GetByTitle("spmiSites");
+            CamlQuery oQuery = new CamlQuery();
+            oQuery.ViewXml = viewXML;
+            ListItemCollection items = lstSites.GetItems(oQuery);
+            ctx.Load(items,itms=>itms.Include(i=>i.FieldValuesAsText,i=>i["Title"], i => i["spmiSiteUrl"], i => i["spmiTargetAction"], i => i["spmiTargetLocation"], i => i["spmiSiteID"]));
+            ctx.ExecuteQuery();
+            List<SiteInfo> siteData = new List<SiteInfo>();
+            foreach (ListItem itm in items)
+            {
+                SiteInfo si = new SiteInfo();
+                si.SiteUrl = itm["spmiSiteUrl"].ToString();
+                si.Title = itm["Title"].ToString();
+                si.SiteID = itm["spmiSiteID"].ToString();
+                if (itm["spmiTargetAction"]!=null)
+                {
+                    si.TargetAction = itm["spmiTargetAction"].ToString();
+                }
+                if(itm["spmiTargetLocation"]!=null)
+                {
+                    si.TargetLocation = itm["spmiTargetLocation"].ToString();
+                }
+                siteData.Add(si);
+            }
+            //string template = "{{#each this}}{{Title}}{{/each}}";
+            //Func<object, string> compiledTemplate = Handlebars.Compile(template);
+            //string templateOutput = compiledTemplate(siteData);
+
+
+            List lstLists = ctx.Web.Lists.GetByTitle("spmiLists");
+            CamlQuery oListQuery = new CamlQuery();
+            oListQuery.ViewXml = viewXML;
+            ListItemCollection listitems = lstLists.GetItems(oListQuery);
+            ctx.Load(listitems, itms => itms.Include(i => i.FieldValuesAsText, i => i["spmiListType"], i => i["spmiRootFolderUrl"], i => i["Title"], i => i["TargetList"], i => i.Id, i => i["spmiSiteUrl"], i => i["spmiTargetAction"], i => i["spmiTargetLocation"], i => i["spmiSiteID"]));
+            ctx.ExecuteQuery();
+            List<ListInfo> listData = new List<ListInfo>();
+            foreach (ListItem itm in listitems)
+            {
+                ListInfo li = new ListInfo();
+                li.Id = itm.Id;
+                li.TargetList = GetFieldValue(itm,"TargetList");
+                li.ListType = GetFieldValue(itm,"spmiListType");
+                li.RootFolderUrl = GetFieldValue(itm,"spmiRootFolderUrl");
+                li.SiteUrl = GetFieldValue(itm,"spmiSiteUrl");
+                li.Title = itm["Title"].ToString();
+                li.SiteID = GetFieldValue(itm,"spmiSiteID");
+                li.TargetAction = GetFieldValue(itm,"spmiTargetAction");
+                li.TargetLocation = GetFieldValue(itm,"spmiTargetLocation");
+                
+                listData.Add(li);
+            }
+            
+            foreach(SiteInfo si in siteData)
+            {
+                ListViewItem lvitem = lvSites.Items.Add(si.SiteUrl);
+                lvitem.Tag = si;
+                lvitem.SubItems.Add(si.Title);
+                lvitem.SubItems.Add(si.TargetAction);
+                lvitem.SubItems.Add(si.TargetLocation);
+
+            }
+
+            foreach (ListInfo li in listData)
+            {
+                ListViewItem lvitem = lvLists.Items.Add(li.SiteUrl);
+                lvitem.Tag = li;
+                lvitem.SubItems.Add(li.Title);
+                lvitem.SubItems.Add(li.TargetAction);
+                lvitem.SubItems.Add(li.TargetLocation);
+
+            }
+
+
+        }
+
+        private string GetFieldValue(ListItem itm, string cFieldName)
+        {
+            try
+            {
+                if (itm[cFieldName]!=null)
+                {
+                    return itm[cFieldName].ToString();
+                }
+            } catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + " - " + cFieldName);
+            }
+            return "";
         }
 
         private void frmBuildShareGateScript_Load(object sender, EventArgs e)
         {
-            //comboBox1.Items.Clear();
-            //ListCollection lists = ctx.Web.Lists;
-            //ctx.Load(lists, lsts => lsts.Include(l => l.Hidden,l=>l.Title,l=>l.Fields));
-            //ctx.ExecuteQuery();
-            //foreach (List list in lists)
-            //{
-            //    if (!list.Hidden)
-            //    {
-            //        foreach (Field fld in list.Fields)
-            //        {
-            //            if (fld.Title.ToLower().Contains("targeturl"))
-            //            {
-            //                comboBox1.Items.Add(list.Title);
-            //            }
-            //        }
-            //    }
-            //}
-
-
-
-
+            GetData();
         }
 
-        private void BuildScript(string cOutFile)
-        {
-            //if (!cOutFile.ToLower().EndsWith(".ps1"))
-            //{
-            //    cOutFile += ".ps1";
-            //}
-            //StreamWriter oOutfile = new StreamWriter(cOutFile);
-            //oOutfile.WriteLine("Import-Module ShareGate");
-            //oOutfile.WriteLine("$copysettings = New-CopySettings -OnContentItemExists IncrementalUpdate");
-            //oOutfile.WriteLine("$Pwd = ConvertTo-SecureString \"vqpjfxbcqdfmrnqb\" -AsPlainText -Force");
-          
-            //List lst = ctx.Web.Lists.GetByTitle(comboBox1.Text);
-            //CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
-            //ListItemCollection items = lst.GetItems(oQuery);
-            //ctx.Load(items, itms => itms.Include(i => i.Id, i => i["Title"],  i => i["SourceURL"], i => i["TargetURL"]));
-            //ctx.ExecuteQuery();
-
-            //foreach (ListItem listItem in items)
-            //{
-            //    oOutfile.WriteLine("#--------------------------------------------------------------------");
-            //    string cLoc = @"C:\Temp\Log-" + listItem.Id + "-" + listItem["TargetURL"].ToString().Replace("/", "-") + listItem["Title"].ToString().Replace("/", "-").Replace(" ", "");
-            //    oOutfile.WriteLine("$CopyResultFile" + listItem.Id + @" = """ + cLoc + "\"");
-            //    string cSourceUrl = txtSourceBase.Text + listItem["SourceURL"].ToString();
-            //    string cDestUrl = txtTargetBase.Text + listItem["TargetURL"].ToString();
-            //    oOutfile.WriteLine("$srcSite" + listItem.Id + " = Connect-Site -Url " + cSourceUrl + " -username \"john.ramminger@cfacorp.onmicrosoft.com\" -password $Pwd");
-            //    oOutfile.WriteLine("$tgtSite" + listItem.Id + " = Connect-Site -Url " + cDestUrl + " -username \"john.ramminger@cfacorp.onmicrosoft.com\"  -password $Pwd");
-            //    oOutfile.WriteLine("$copyResult" + listItem.Id + " = Copy-List -Name \"" + listItem["Title"].ToString() + "\" -SourceSite $srcSite" + listItem.Id + " -DestinationSite $tgtSite" + listItem.Id + " -InsaneMode -CopySettings $copysettings ");
-            //    oOutfile.WriteLine("Export-Report $copyResult" + listItem.Id + " -Path $CopyResultFile" + listItem.Id + " -Overwrite");
-            //}
-            //oOutfile.Flush();
-            //oOutfile.Close();
-        }
-
+       
         private void button1_Click(object sender, EventArgs e)
         {
-            //SaveFileDialog saveFileDialog1 = new SaveFileDialog();
-            //saveFileDialog1.InitialDirectory = @"C:\";
-            //saveFileDialog1.Title = "Save PowerShell Script";
-            //saveFileDialog1.CheckPathExists = true;
-            //saveFileDialog1.DefaultExt = "ps1";
-            //saveFileDialog1.Filter = "PowerShell Script (*.ps1)|*.ps1";
-            ////saveFileDialog1.FilterIndex = 0;
-            ////saveFileDialog1.RestoreDirectory = true;
-
-
-
-            //if (saveFileDialog1.ShowDialog() == DialogResult.OK)
-
-            //{
-            //    BuildScript(saveFileDialog1.FileName);
-            //}
+            GetData();
         }
 
         private void textBox2_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(txtListTemplate.Text))
+            {
+                MessageBox.Show("Please Select a File");
+                return;
+            }
+
+            if (!Directory.Exists(txtOutputFolder.Text))
+            {
+                Directory.CreateDirectory(txtOutputFolder.Text);
+            }
+
+            string cTemplate = System.IO.File.ReadAllText(txtListTemplate.Text);
+            List<ListInfo> items = GetSelectLists();
+
+
+            foreach (ListInfo lst in items)
+            {
+                using (ClientContext workCTX = new ClientContext(lst.TargetLocation))
+                {
+                    try
+                    {
+                        lst.Title = lst.Title.Replace("/", "-");
+                        workCTX.Credentials = ctx.Credentials;
+                        List workList = workCTX.Web.Lists.GetByTitle(lst.TargetList);
+                        workCTX.Load(workList);
+                        workCTX.ExecuteQuery();
+                        workList.RootFolder.Folders.Add(lst.Title);
+                        workList.Update();
+                        workCTX.ExecuteQuery();
+                    } catch (Exception ex)
+                    {
+                        System.Diagnostics.Trace.WriteLine(ex.Message);
+                    }
+                }
+            }
+
+
+            Func<object, string> compiledTemplate = Handlebars.Compile(cTemplate);
+            string templateOutput = compiledTemplate(items);
+            string cOutputPath = txtOutputFolder.Text + @"\" + txtListOutput.Text;
+            System.IO.File.WriteAllText(cOutputPath, templateOutput);
+
+            MessageBox.Show("Complete!");
+
+
+
+
+        }
+
+        private List<ListInfo> GetSelectLists()
+        {
+            List<ListInfo> items = new List<ListInfo>();
+            foreach(ListViewItem lvi in lvLists.Items)
+            {
+                if (lvi.Checked)
+                {
+                    items.Add((ListInfo)lvi.Tag);
+                }
+            }
+            return items;
+        }
+
+        private List<SiteInfo> GetSelectSites()
+        {
+            List<SiteInfo> items = new List<SiteInfo>();
+            foreach (ListViewItem lvi in lvLists.Items)
+            {
+                if (lvi.Checked)
+                {
+                    items.Add((SiteInfo)lvi.Tag);
+                }
+            }
+            return items;
+        }
+
+
+
+        private void button1_Click_1(object sender, EventArgs e)
+        {
+            string cFilename = GetFilename("Inventory Migration Template (.migrationtemplate)|*.migrationtemplate|All Files (*.*)|*.*");
+            txtListTemplate.Text = cFilename;
+        }
+
+        private string GetFilename(string cFilter)
+        {
+            OpenFileDialog oDlg = new OpenFileDialog() { Filter = cFilter, FilterIndex = 1 };
+            DialogResult retVal = oDlg.ShowDialog();
+            if (retVal == DialogResult.OK)
+            {
+                if (System.IO.File.Exists(oDlg.FileName))
+                {
+                    return oDlg.FileName;
+                }
+            }
+            return "";
+        }
+
+        private void cmdSelectSiteTemplate_Click(object sender, EventArgs e)
+        {
+            string cFilename = GetFilename("Inventory Migration Template (.migrationtemplate)|*.migrationtemplate|All Files (*.*)|*.*");
+            txtSiteTemplate.Text = cFilename;
+        }
+
+        private void chkSelectAllLists_CheckedChanged(object sender, EventArgs e)
+        {
+            CheckBox chkLists = (CheckBox)sender;
+            if (chkLists.Checked)
+            {
+                foreach(ListViewItem lvi in lvLists.Items)
+                {
+                    lvi.Selected = true;
+                    lvi.Checked = true;
+                }
+            } else
+            {
+                foreach (ListViewItem lvi in lvLists.Items)
+                {
+                    lvi.Selected = false;
+                    lvi.Checked = false;
+                }
+
+            }
+        }
+
+        private void chkSelectAllSites_CheckedChanged(object sender, EventArgs e)
+        {
+            CheckBox chkLists = (CheckBox)sender;
+            if (chkLists.Checked)
+            {
+                foreach (ListViewItem lvi in lvLists.Items)
+                {
+                    lvi.Selected = true;
+                    lvi.Checked = true;
+                }
+            }
+            else
+            {
+                foreach (ListViewItem lvi in lvLists.Items)
+                {
+                    lvi.Selected = false;
+                    lvi.Checked = false;
+                }
+
+            }
+
+        }
+
+        private void cmdProcessSites_Click(object sender, EventArgs e)
         {
 
         }
