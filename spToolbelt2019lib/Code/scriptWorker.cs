@@ -6,6 +6,8 @@ using Microsoft.SharePoint.Client.WebParts;
 using Microsoft.SharePoint.Client.WorkflowServices;
 using Newtonsoft.Json;
 using OfficeDevPnP.Core.Enums;
+using OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers;
+using OfficeDevPnP.Core.Framework.Provisioning.Providers.Xml;
 using spToolbelt2019lib;
 using spToolbelt2019Lib.Objects;
 using System;
@@ -437,10 +439,18 @@ namespace spToolbelt2019Lib
                             workCTX.Web.EnsureContentType(oWorkItem.GetParm("Name"), oWorkItem.GetParm("ParentName"), oWorkItem.GetParm("Group"));
                             break;
                             case "set-fielddefaultvalue":
-                                ShowProgress("Working Required Filed: " + oWorkItem.GetParm("fieldname"));
+                                ShowProgress("Working Default Value: " + oWorkItem.GetParm("fieldname"));
                                 workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
 
                                 SetDefaultValue(workCTX, oWorkItem);
+
+                                break;
+
+                            case "save-template":
+                                ShowProgress("Working Required Filed: " + oWorkItem.GetParm("fieldname"));
+                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
+                                SavePNPTemplate(workCTX, oWorkItem);
 
                                 break;
 
@@ -618,6 +628,39 @@ namespace spToolbelt2019Lib
 
         }
 
+        private void SavePNPTemplate(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            try
+            {
+                string appPath = @"C:\temp";
+                string cTemplateName = oWorkItem.GetParm("template");
+                var web = workCTX.Web;
+                var ptci = new ProvisioningTemplateCreationInformation(web)
+                {
+                    IncludeHiddenLists=false,
+                    IncludeAllClientSidePages = false,
+                    PersistBrandingFiles = true,
+                    IncludeSearchConfiguration = false,
+                    
+                };
+                ptci.MessagesDelegate += (msg,mtype) =>
+                 {
+                     ShowProgress($"   - {msg}");
+                 };
+                ptci.ProgressDelegate += (msg, step, total) =>
+                {
+                    ShowProgress($"{step}|{total} - {msg}");
+                };
+                var template = web.GetProvisioningTemplate(ptci);
+                var provider = new XMLFileSystemTemplateProvider(appPath, "");
+                provider.SaveAs(template, cTemplateName);
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "SavePNPTemplate", "");
+            }
+
+        }
         private void SetDefaultValue(ClientContext workCTX, scriptItem oWorkItem)
         {
             try

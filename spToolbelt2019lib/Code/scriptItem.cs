@@ -55,6 +55,20 @@ namespace spToolbelt2019Lib
             {
                 switch (Command)
                 {
+                    case "save-template":
+                        if (parms.ContainsKey("url") &&
+                            parms.ContainsKey("templatefile"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
+
+
+                        break;
                     case "ensure-targetfolders":
                         bRetVal = true;
                         break;
