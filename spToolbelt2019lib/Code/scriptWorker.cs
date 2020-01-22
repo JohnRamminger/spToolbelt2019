@@ -1,5 +1,6 @@
 ﻿using Microsoft.Online.SharePoint.TenantAdministration;
 using Microsoft.SharePoint.Client;
+using Microsoft.SharePoint.Client.Taxonomy;
 using Microsoft.SharePoint.Client.Utilities;
 using Microsoft.SharePoint.Client.WebParts;
 using Newtonsoft.Json;
@@ -4574,7 +4575,11 @@ namespace spToolbelt2019Lib
                     workCTX.Load(wp, wpi => wpi.WebPart);
                     workCTX.ExecuteQuery();
                     System.Diagnostics.Trace.WriteLine(wp.ToString());
-                    
+
+
+
+
+
                     //var client = new WebPartPagesWebService();
                     //client.Url = siteRootAddress + "/_vti_bin/Webpartpages.asmx";
                     //client.Credentials = credential;
@@ -4585,6 +4590,7 @@ namespace spToolbelt2019Lib
                     //                                               SPWebServiceBehavior.Version3);
 
                     //var webPartNode = XElement.Parse(webPartXmlString);
+                    
                 }
             }
             catch (Exception ex)
