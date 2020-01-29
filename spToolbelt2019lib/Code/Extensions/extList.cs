@@ -148,7 +148,15 @@ namespace spToolbelt2019Lib
                         string[] aFields = cSyncFields.Split('|');
                         foreach(string cField in aFields)
                         {
-                            tgtItem[cField.Trim()] = item[cField.Trim()];
+                            if(cField.Contains("="))
+                            {
+                                string[] cFieldInfo = cField.Split('=');
+                                tgtItem[cFieldInfo[0]] = cFieldInfo[1];
+                            } else
+                            {
+                                tgtItem[cField.Trim()] = item[cField.Trim()];
+                            }
+                            
                         }
                         tgtItem.Update();
                         ctxTarget.ExecuteQuery();
