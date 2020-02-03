@@ -2546,9 +2546,9 @@ namespace spToolbelt2019Lib
                 
                 if (FieldSettingsValid(SourceList,TargetList, cFieldSettings))
                 {
-                    SourceList.SyncList(tgtCTX, cTargetList, cFieldSettings, new Date(1970, 1, 1));
+                    SourceList.SyncList(tgtCTX, cTargetList, cFieldSettings, new DateTime(1970, 1, 1));
 
-# CopyList(srcCTX, SourceList, tgtCTX, TargetList, cFieldSettings,cQuery,bLargeList);
+                //# CopyList(srcCTX, SourceList, tgtCTX, TargetList, cFieldSettings,cQuery,bLargeList);
                 } else
                 {
                     ShowProgress("Field Settings Do Not Match for:"+SourceList.Title);
@@ -2694,6 +2694,8 @@ namespace spToolbelt2019Lib
 
         private void CopyList(ClientContext srcCTX, List SourceList, ClientContext tgtCTX, List TargetList, string cFieldSettings)
         {
+            bool bLargeList = true;
+            string cQuery = "";
             try
             {
                 if (bLargeList)
