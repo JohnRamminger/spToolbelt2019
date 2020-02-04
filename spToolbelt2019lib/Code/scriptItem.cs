@@ -279,10 +279,6 @@ namespace spToolbelt2019Lib
                             parms.ContainsKey("sourcelist") &&
                             parms.ContainsKey("targetsite") &&
                             parms.ContainsKey("targetlist") &&
-                            parms.ContainsKey("sourceuser") &&
-                            parms.ContainsKey("sourcepassword") &&
-                            parms.ContainsKey("targetuser") &&
-                            parms.ContainsKey("targetpassword") &&
                             parms.ContainsKey("fieldsettings"))
                         {
 

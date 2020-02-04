@@ -2533,50 +2533,10 @@ namespace spToolbelt2019Lib
                 string cSourceList = oWorkItem.GetParm("sourcelist");
                 string cTargetSite = oWorkItem.GetParm("targetsite");
                 string cTargetList = oWorkItem.GetParm("targetlist");
-                string cSourceUser = oWorkItem.GetParm("sourceuser");
-                string cSourcePassword = oWorkItem.GetParm("sourcepassword");
-                string cTargetUser = oWorkItem.GetParm("targetuser");
-                string cTargetPassword = oWorkItem.GetParm("targetpassword");
                 string cFieldSettings = oWorkItem.GetParm("fieldsettings");
-                string cSourceIsOffice365 = oWorkItem.GetParm("sourceoffice365");
-                string cTargetIsOffice365 = oWorkItem.GetParm("targetoffice365");
-                string cQuery = oWorkItem.GetParm("query");
-                string cLargeList = oWorkItem.GetParm("largelist");
-                bool bLargeList = cLargeList.ToLower().Contains("true");
 
                 ClientContext srcCTX = new ClientContext(cSourceSite);
-                if (cSourceIsOffice365.ToLower() == "true")
-                {
-                    SecureString password = new SecureString();
-                    foreach (char c in cSourcePassword.ToCharArray()) password.AppendChar(c);
-                    srcCTX.Credentials = new  SharePointOnlineCredentials(cSourceUser, password);
-
-                }
-                else
-                {
-                    srcCTX.Credentials = new NetworkCredential(cSourceUser, cSourcePassword);
-                }
-                srcCTX.ExecutingWebRequest += delegate (object sender2, WebRequestEventArgs e2)
-                {
-                    e2.WebRequestExecutor.WebRequest.UserAgent = "NONISV|RammWare|spToolbelt2019/1.0";
-                };
                 ClientContext tgtCTX = new ClientContext(cTargetSite);
-                if (cTargetIsOffice365.ToLower() == "true")
-                {
-
-                    SecureString password = new SecureString();
-                    foreach (char c in cTargetPassword.ToCharArray()) password.AppendChar(c);
-                    tgtCTX.Credentials = new SharePointOnlineCredentials(cTargetUser, password);
-
-                }
-                else
-                {
-                    tgtCTX.Credentials = new NetworkCredential(cTargetUser, cTargetPassword);
-                }
-                tgtCTX.ExecutingWebRequest += delegate (object sender2, WebRequestEventArgs e2)
-                {
-                    e2.WebRequestExecutor.WebRequest.UserAgent = "NONISV|RammWare|spToolbelt2019/1.0";
-                };
                 List SourceList = srcCTX.Web.Lists.GetByTitle(cSourceList);
                 srcCTX.Load(SourceList);
                 srcCTX.ExecuteQuery();
@@ -2586,7 +2546,9 @@ namespace spToolbelt2019Lib
                 
                 if (FieldSettingsValid(SourceList,TargetList, cFieldSettings))
                 {
-                    CopyList(srcCTX, SourceList, tgtCTX, TargetList, cFieldSettings,cQuery,bLargeList);
+                    SourceList.SyncList(tgtCTX, cTargetList, cFieldSettings, new DateTime(1970, 1, 1));
+
+                //# CopyList(srcCTX, SourceList, tgtCTX, TargetList, cFieldSettings,cQuery,bLargeList);
                 } else
                 {
                     ShowProgress("Field Settings Do Not Match for:"+SourceList.Title);
@@ -2730,8 +2692,10 @@ namespace spToolbelt2019Lib
 
 
 
-        private void CopyList(ClientContext srcCTX, List SourceList, ClientContext tgtCTX, List TargetList, string cFieldSettings, string cQuery, bool bLargeList)
+        private void CopyList(ClientContext srcCTX, List SourceList, ClientContext tgtCTX, List TargetList, string cFieldSettings)
         {
+            bool bLargeList = true;
+            string cQuery = "";
             try
             {
                 if (bLargeList)

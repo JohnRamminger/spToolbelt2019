@@ -1,8 +1,6 @@
 ﻿using Microsoft.SharePoint.Client;
 using spToolbelt2019Lib;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Windows.Forms;
 
 namespace spToolbelt2019
