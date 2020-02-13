@@ -288,6 +288,9 @@ namespace spToolbelt2019Lib
                     Trace.WriteLine(oWorkItem.Command);
                     switch (oWorkItem.Command.ToLower())
                     {
+                            case "update-url":
+                                UpdateUurl();
+                                break;
                             case "ensure-targetfolders":
                                 EnsureTargetFolders(workCTX, item, oWorkItem);
                                 break;
@@ -626,6 +629,39 @@ namespace spToolbelt2019Lib
                 ShowError(ex, "ProcessSites.WorkSite - "+item, "");
             }
 
+        }
+
+        private void UpdateUurl()
+        {
+            try
+            {
+                CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
+                List srcList = ctx.Web.GetListByTitle("MenuLinks");
+                ListItemCollection items = srcList.GetItems(oQuery);
+                ctx.Load(items,li=>li.Include(i=>i["BackgroundImageLocation"]));
+                ctx.ExecuteQuery();
+                foreach (ListItem itm in items)
+                {
+                    FieldUrlValue fuv = (FieldUrlValue)itm["BackgroundImageLocation"];
+                    if (fuv.Url.ToLower().Contains("siteassets") || fuv.Description.ToLower().Contains("siteassets"))
+                    {
+                      
+                        fuv.Description = fuv.Description.ToLower().Replace("siteassets", "linkimages");
+                        fuv.Url = fuv.Url.ToLower().Replace("siteassets", "linkimages");
+                        itm["BackgroundImageLocation"] = fuv;
+                        itm.Update();
+                        ctx.ExecuteQuery();
+                    }
+                }
+
+
+
+
+
+            } catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine(ex.Message);
+            }
         }
 
         private void SavePNPTemplate(ClientContext workCTX, scriptItem oWorkItem)
@@ -2546,9 +2582,9 @@ namespace spToolbelt2019Lib
                 
                 if (FieldSettingsValid(SourceList,TargetList, cFieldSettings))
                 {
-                    SourceList.SyncList(tgtCTX, cTargetList, cFieldSettings, new Date(1970, 1, 1));
+                    SourceList.SyncList(tgtCTX, cTargetList, cFieldSettings, new DateTime(1970, 1, 1));
 
-# CopyList(srcCTX, SourceList, tgtCTX, TargetList, cFieldSettings,cQuery,bLargeList);
+                    //CopyList(srcCTX, SourceList, tgtCTX, TargetList, cFieldSettings,cQuery,bLargeList);
                 } else
                 {
                     ShowProgress("Field Settings Do Not Match for:"+SourceList.Title);
@@ -2694,6 +2730,7 @@ namespace spToolbelt2019Lib
 
         private void CopyList(ClientContext srcCTX, List SourceList, ClientContext tgtCTX, List TargetList, string cFieldSettings)
         {
+            bool bLargeList = true;
             try
             {
                 if (bLargeList)
@@ -2720,7 +2757,7 @@ namespace spToolbelt2019Lib
                 else
                 {
 
-
+                    string cQuery = "";
                     CamlQuery oQuery = null;
                     if (string.IsNullOrEmpty(cQuery))
                     {
@@ -2760,20 +2797,16 @@ namespace spToolbelt2019Lib
             StringBuilder sbFieldResults = new StringBuilder();
             try
             {
-                string[] aFieldSettings = cFieldSettings.Split(';');
+                string[] aFieldSettings = cFieldSettings.Split('|');
                 foreach (string aFieldSetting in aFieldSettings)
                 {
-                    string[] aFldSet = aFieldSetting.Split(':');
-                    if (!TargetList.Fields.HasField(aFldSet[0]))
+                    if (aFieldSetting.Contains('`'))
                     {
-                        sbFieldResults.AppendLine(string.Format("{0} is missing: {1}", TargetList.Title, aFldSet[0]));
-                    }
-                    if(!aFldSet[1].Contains("'"))
+
+                    } else 
+                    if (!TargetList.Fields.HasField(aFieldSetting))
                     {
-                        if (!SourceList.Fields.HasField(aFldSet[1]))
-                        {
-                            sbFieldResults.AppendLine(string.Format("{0} is missing: {1}", SourceList.Title, aFldSet[1]));
-                        }
+                        sbFieldResults.AppendLine(string.Format("{0} is missing: {1}", TargetList.Title, aFieldSetting));
                     }
                 }
 
