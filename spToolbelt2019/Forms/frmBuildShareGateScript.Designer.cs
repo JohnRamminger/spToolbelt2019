@@ -163,6 +163,7 @@
             this.txtSiteOutput.Name = "txtSiteOutput";
             this.txtSiteOutput.Size = new System.Drawing.Size(199, 20);
             this.txtSiteOutput.TabIndex = 12;
+            this.txtSiteOutput.Text = "SiteMigrate.ps1";
             // 
             // cmdProcessSites
             // 
@@ -289,7 +290,7 @@
             this.txtListOutput.Name = "txtListOutput";
             this.txtListOutput.Size = new System.Drawing.Size(199, 20);
             this.txtListOutput.TabIndex = 2;
-            this.txtListOutput.Text = "Output.ps1";
+            this.txtListOutput.Text = "ListMigrate.ps1";
             // 
             // txtListTemplate
             // 
