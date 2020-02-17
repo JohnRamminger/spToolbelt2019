@@ -105,8 +105,9 @@ namespace spToolbelt2019.Forms
                 }
             } catch (Exception ex)
             {
-
+                System.Diagnostics.Trace.WriteLine(ex.Message);
             }
+
 
         }
 
@@ -208,7 +209,7 @@ namespace spToolbelt2019.Forms
         private List<SiteInfo> GetSelectSites()
         {
             List<SiteInfo> items = new List<SiteInfo>();
-            foreach (ListViewItem lvi in lvLists.Items)
+            foreach (ListViewItem lvi in lvSites.Items)
             {
                 if (lvi.Checked)
                 {
@@ -272,7 +273,7 @@ namespace spToolbelt2019.Forms
             CheckBox chkLists = (CheckBox)sender;
             if (chkLists.Checked)
             {
-                foreach (ListViewItem lvi in lvLists.Items)
+                foreach (ListViewItem lvi in lvSites.Items)
                 {
                     lvi.Selected = true;
                     lvi.Checked = true;
@@ -280,7 +281,7 @@ namespace spToolbelt2019.Forms
             }
             else
             {
-                foreach (ListViewItem lvi in lvLists.Items)
+                foreach (ListViewItem lvi in lvSites.Items)
                 {
                     lvi.Selected = false;
                     lvi.Checked = false;
@@ -292,6 +293,29 @@ namespace spToolbelt2019.Forms
 
         private void cmdProcessSites_Click(object sender, EventArgs e)
         {
+            if (string.IsNullOrEmpty(txtSiteTemplate.Text))
+            {
+                MessageBox.Show("Please Select a File");
+                return;
+            }
+
+            if (!Directory.Exists(txtOutputFolder.Text))
+            {
+                Directory.CreateDirectory(txtOutputFolder.Text);
+            }
+
+            string cTemplate = System.IO.File.ReadAllText(txtSiteTemplate.Text);
+            List<SiteInfo> items = GetSelectSites();
+            Func<object, string> compiledTemplate = Handlebars.Compile(cTemplate);
+            string templateOutput = compiledTemplate(items);
+            string cOutputPath = txtOutputFolder.Text + @"\" + txtSiteOutput.Text;
+            System.IO.File.WriteAllText(cOutputPath, templateOutput);
+
+            MessageBox.Show("Complete!");
+
+
+
+
 
         }
     }

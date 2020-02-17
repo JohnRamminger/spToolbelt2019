@@ -5028,8 +5028,8 @@ namespace spToolbelt2019Lib
         {
             try
             {
-                string saveContextUrl = oWorkItem.GetParm("saveurl");
-                ClientContext saveContext = new ClientContext(saveContextUrl);
+                
+                ClientContext saveContext = GetClientContext(ctx, oWorkItem.GetParm("saveurl"));
                 saveContext.Credentials = workCTX.Credentials;
 
                 List<SiteInfo> siItems = SQLDataAccess.LoadData<SiteInfo>("select * from SiteInfo", new Dictionary<string, object>(), "Default");
