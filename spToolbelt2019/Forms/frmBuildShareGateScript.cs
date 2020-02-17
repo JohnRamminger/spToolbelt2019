@@ -29,80 +29,84 @@ namespace spToolbelt2019.Forms
         private void GetData()
         {
 
-
-            string viewXML = "<View><Query><OrderBy><FieldRef Name='spmiSiteUrl' Ascending='TRUE'/></OrderBy><Where><And><IsNotNull><FieldRef Name='spmiTargetAction' /></IsNotNull><Neq><FieldRef Name = 'spmiTargetAction' /><Value Type = 'Text'>none</Value></Neq></And></Where></Query><RowLimit>5000</RowLimit></View>";
-
-            List lstSites = ctx.Web.Lists.GetByTitle("spmiSites");
-            CamlQuery oQuery = new CamlQuery();
-            oQuery.ViewXml = viewXML;
-            ListItemCollection items = lstSites.GetItems(oQuery);
-            ctx.Load(items,itms=>itms.Include(i=>i.FieldValuesAsText,i=>i["Title"], i => i["spmiSiteUrl"], i => i["spmiTargetAction"], i => i["spmiTargetLocation"], i => i["spmiSiteID"]));
-            ctx.ExecuteQuery();
-            List<SiteInfo> siteData = new List<SiteInfo>();
-            foreach (ListItem itm in items)
+            try
             {
-                SiteInfo si = new SiteInfo();
-                si.SiteUrl = itm["spmiSiteUrl"].ToString();
-                si.Title = itm["Title"].ToString();
-                si.SiteID = itm["spmiSiteID"].ToString();
-                if (itm["spmiTargetAction"]!=null)
+                string viewXML = "<View><Query><OrderBy><FieldRef Name='spmiSiteUrl' Ascending='TRUE'/></OrderBy><Where><And><IsNotNull><FieldRef Name='spmiTargetAction' /></IsNotNull><Neq><FieldRef Name = 'spmiTargetAction' /><Value Type = 'Text'>none</Value></Neq></And></Where></Query><RowLimit>5000</RowLimit></View>";
+
+                List lstSites = ctx.Web.Lists.GetByTitle("spmiSites");
+                CamlQuery oQuery = new CamlQuery();
+                oQuery.ViewXml = viewXML;
+                ListItemCollection items = lstSites.GetItems(oQuery);
+                ctx.Load(items, itms => itms.Include(i => i.FieldValuesAsText, i => i["Title"], i => i["spmiSiteUrl"], i => i["spmiTargetAction"], i => i["spmiTargetLocation"], i => i["spmiSiteID"]));
+                ctx.ExecuteQuery();
+                List<SiteInfo> siteData = new List<SiteInfo>();
+                foreach (ListItem itm in items)
                 {
-                    si.TargetAction = itm["spmiTargetAction"].ToString();
+                    SiteInfo si = new SiteInfo();
+                    si.SiteUrl = itm["spmiSiteUrl"].ToString();
+                    si.Title = itm["Title"].ToString();
+                    si.SiteID = itm["spmiSiteID"].ToString();
+                    if (itm["spmiTargetAction"] != null)
+                    {
+                        si.TargetAction = itm["spmiTargetAction"].ToString();
+                    }
+                    if (itm["spmiTargetLocation"] != null)
+                    {
+                        si.TargetLocation = itm["spmiTargetLocation"].ToString();
+                    }
+                    siteData.Add(si);
                 }
-                if(itm["spmiTargetLocation"]!=null)
+                //string template = "{{#each this}}{{Title}}{{/each}}";
+                //Func<object, string> compiledTemplate = Handlebars.Compile(template);
+                //string templateOutput = compiledTemplate(siteData);
+
+
+                List lstLists = ctx.Web.Lists.GetByTitle("spmiLists");
+                CamlQuery oListQuery = new CamlQuery();
+                oListQuery.ViewXml = viewXML;
+                ListItemCollection listitems = lstLists.GetItems(oListQuery);
+                ctx.Load(listitems, itms => itms.Include(i => i.FieldValuesAsText, i => i["spmiListType"], i => i["spmiRootFolderUrl"], i => i["Title"], i => i["TargetList"], i => i.Id, i => i["spmiSiteUrl"], i => i["spmiTargetAction"], i => i["spmiTargetLocation"], i => i["spmiSiteID"]));
+                ctx.ExecuteQuery();
+                List<ListInfo> listData = new List<ListInfo>();
+                foreach (ListItem itm in listitems)
                 {
-                    si.TargetLocation = itm["spmiTargetLocation"].ToString();
+                    ListInfo li = new ListInfo();
+                    li.Id = itm.Id;
+                    li.TargetList = GetFieldValue(itm, "TargetList");
+                    li.ListType = GetFieldValue(itm, "spmiListType");
+                    li.RootFolderUrl = GetFieldValue(itm, "spmiRootFolderUrl");
+                    li.SiteUrl = GetFieldValue(itm, "spmiSiteUrl");
+                    li.Title = itm["Title"].ToString();
+                    li.SiteID = GetFieldValue(itm, "spmiSiteID");
+                    li.TargetAction = GetFieldValue(itm, "spmiTargetAction");
+                    li.TargetLocation = GetFieldValue(itm, "spmiTargetLocation");
+
+                    listData.Add(li);
                 }
-                siteData.Add(si);
-            }
-            //string template = "{{#each this}}{{Title}}{{/each}}";
-            //Func<object, string> compiledTemplate = Handlebars.Compile(template);
-            //string templateOutput = compiledTemplate(siteData);
 
+                foreach (SiteInfo si in siteData)
+                {
+                    ListViewItem lvitem = lvSites.Items.Add(si.SiteUrl);
+                    lvitem.Tag = si;
+                    lvitem.SubItems.Add(si.Title);
+                    lvitem.SubItems.Add(si.TargetAction);
+                    lvitem.SubItems.Add(si.TargetLocation);
 
-            List lstLists = ctx.Web.Lists.GetByTitle("spmiLists");
-            CamlQuery oListQuery = new CamlQuery();
-            oListQuery.ViewXml = viewXML;
-            ListItemCollection listitems = lstLists.GetItems(oListQuery);
-            ctx.Load(listitems, itms => itms.Include(i => i.FieldValuesAsText, i => i["spmiListType"], i => i["spmiRootFolderUrl"], i => i["Title"], i => i["TargetList"], i => i.Id, i => i["spmiSiteUrl"], i => i["spmiTargetAction"], i => i["spmiTargetLocation"], i => i["spmiSiteID"]));
-            ctx.ExecuteQuery();
-            List<ListInfo> listData = new List<ListInfo>();
-            foreach (ListItem itm in listitems)
+                }
+
+                foreach (ListInfo li in listData)
+                {
+                    ListViewItem lvitem = lvLists.Items.Add(li.SiteUrl);
+                    lvitem.Tag = li;
+                    lvitem.SubItems.Add(li.Title);
+                    lvitem.SubItems.Add(li.TargetAction);
+                    lvitem.SubItems.Add(li.TargetLocation);
+
+                }
+            } catch (Exception ex)
             {
-                ListInfo li = new ListInfo();
-                li.Id = itm.Id;
-                li.TargetList = GetFieldValue(itm,"TargetList");
-                li.ListType = GetFieldValue(itm,"spmiListType");
-                li.RootFolderUrl = GetFieldValue(itm,"spmiRootFolderUrl");
-                li.SiteUrl = GetFieldValue(itm,"spmiSiteUrl");
-                li.Title = itm["Title"].ToString();
-                li.SiteID = GetFieldValue(itm,"spmiSiteID");
-                li.TargetAction = GetFieldValue(itm,"spmiTargetAction");
-                li.TargetLocation = GetFieldValue(itm,"spmiTargetLocation");
-                
-                listData.Add(li);
-            }
-            
-            foreach(SiteInfo si in siteData)
-            {
-                ListViewItem lvitem = lvSites.Items.Add(si.SiteUrl);
-                lvitem.Tag = si;
-                lvitem.SubItems.Add(si.Title);
-                lvitem.SubItems.Add(si.TargetAction);
-                lvitem.SubItems.Add(si.TargetLocation);
 
             }
-
-            foreach (ListInfo li in listData)
-            {
-                ListViewItem lvitem = lvLists.Items.Add(li.SiteUrl);
-                lvitem.Tag = li;
-                lvitem.SubItems.Add(li.Title);
-                lvitem.SubItems.Add(li.TargetAction);
-                lvitem.SubItems.Add(li.TargetLocation);
-
-            }
-
 
         }
 

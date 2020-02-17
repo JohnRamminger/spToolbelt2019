@@ -131,6 +131,12 @@ namespace spToolbelt2019Lib
             }
             ctx = workerCTX;
             Command = cCommand;
+            string cTempPath = Path.GetTempPath();
+            string cLogPath = cTempPath + @"\spToolBelt";
+            if (!Directory.Exists(cLogPath))
+            {
+                Directory.CreateDirectory(cLogPath);
+            }
             string cLogName = string.Format(@"spToolBelt\"+cWorkerName + "-{0:yyyy-MM-dd_hh-mm-ss-tt}.log", DateTime.Now);
             string cLogFilename = Path.GetTempPath() + cLogName;
             cLogFile = cLogFilename;
