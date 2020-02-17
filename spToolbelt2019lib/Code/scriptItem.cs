@@ -274,6 +274,9 @@ namespace spToolbelt2019Lib
                             bRetVal = false;
                         }
                         break;
+                    case "update-url":
+                        bRetVal = true;
+                        break;
                     case "copy-list":
                         if (parms.ContainsKey("sourcesite") &&
                             parms.ContainsKey("sourcelist") &&
