@@ -314,6 +314,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Code\ErrorHandling.cs" />
+    <Compile Include="Code\updateWorker.cs" />
     <Compile Include="Forms\frmAbout.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -356,6 +357,12 @@
     <Compile Include="Forms\frmTest.Designer.cs">
       <DependentUpon>frmTest.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\frmUpdateConfig.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\frmUpdateConfig.Designer.cs">
+      <DependentUpon>frmUpdateConfig.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\frmViewShareGateSummary.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -384,6 +391,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\frmTest.resx">
       <DependentUpon>frmTest.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\frmUpdateConfig.resx">
+      <DependentUpon>frmUpdateConfig.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\frmViewShareGateSummary.resx">
       <DependentUpon>frmViewShareGateSummary.cs</DependentUpon>
