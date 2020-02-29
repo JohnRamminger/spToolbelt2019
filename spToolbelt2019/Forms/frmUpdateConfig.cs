@@ -24,7 +24,14 @@ namespace spToolbelt2019.Forms
             oWorker.Info += OWorker_Info;
             oWorker.Progress += OWorker_Progress;
             oWorker.Error += OWorker_Error;
-            oWorker.Start(textBox2.Text);
+            oWorker.Complete += OWorker_Complete;
+            oWorker.Start(textBox2.Text,"Update");
+            
+        }
+
+        private void OWorker_Complete()
+        {
+            textBox1.Text += Environment.NewLine + "Complete";
         }
 
         private void OWorker_Error(string cExceptionMessage, string cLocation, string cMessage)
@@ -40,6 +47,22 @@ namespace spToolbelt2019.Forms
         private void OWorker_Info(string cInfo)
         {
             lblStatusInfo.Text = cInfo;
+        }
+
+        private void frmUpdateConfig_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            oWorker = new updateWorker();
+            oWorker.Info += OWorker_Info;
+            oWorker.Progress += OWorker_Progress;
+            oWorker.Error += OWorker_Error;
+            oWorker.Complete += OWorker_Complete;
+            oWorker.Start(textBox2.Text, "Find");
+
         }
     }
 }

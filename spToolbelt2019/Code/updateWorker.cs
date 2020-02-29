@@ -14,6 +14,7 @@ namespace spToolbelt2019
         #region Properties
         BackgroundWorker oWorker;
         string cStartLoc = "";
+        string cCommand = "";
         #endregion
 
         #region Events
@@ -39,8 +40,9 @@ namespace spToolbelt2019
 
         #region Public Methods
 
-        public void Start(string cLocation)
+        public void Start(string cLocation,string command)
         {
+            cCommand = command;
             cStartLoc = cLocation;
             if (oWorker == null)
             {
@@ -69,9 +71,18 @@ namespace spToolbelt2019
 
         void oWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-            DirectoryInfo di = new DirectoryInfo(cStartLoc);
-            List<string> locations = ScanDrive(di,"*.config");
-     
+            if (cCommand=="Update")
+            { 
+               DirectoryInfo di = new DirectoryInfo(cStartLoc);
+                List<string> locations = ScanDrive(di,"*.config");
+                //UpdateConfigFile(fi.FullName);
+            } 
+            if (cCommand=="Find")
+            {
+                DirectoryInfo di = new DirectoryInfo(cStartLoc);
+                List<string> locations = ScanDrive(di, "*anglesharp.dll");
+
+            }
         }
 
         private List<string> ScanDrive(DirectoryInfo di,string cPattern)
@@ -95,14 +106,14 @@ namespace spToolbelt2019
                     string cFileText = File.ReadAllText(fi.FullName);
                     //if (fi.FullName.ToLower().Contains("web.config"))
                     {
-                        UpdateConfigFile(fi.FullName);
+        
                     }
-                    
+                    ShowProgress(fi.FullName);
                     //if (cFileText.ToLower().Contains("anglesharp"))
                     //{
                     //    ShowProgress(fi.FullName);
                     //}
-                    
+
                 }
 
             }
@@ -117,14 +128,20 @@ namespace spToolbelt2019
         {
             try
             {
+                EnsureDependentAssembly(cFileName, "AngleSharp", "", "", "");
+
+
                 string savedir = @"c:\temp\configFileUpdates";
                 if (!Directory.Exists(savedir))
                 {
                     Directory.CreateDirectory(savedir);
                 }
-                string cSafeName = cFileName.Replace(":", "-").Replace("\\","-");
+                //string cRestoreFile = cFileName + ".bak";
+                //File.Copy(cRestoreFile, cFileName,true);
+                //return;
+                string cSafeName = cFileName.Replace(":", "-").Replace("\\", "-");
                 File.Copy(cFileName, savedir + @"\" + cSafeName);
-                File.Copy(cFileName, cFileName+".bak");
+                File.Copy(cFileName, cFileName + ".bak");
 
                 //string configFile = SPUtility.GetGenericSetupPath("TEMPLATE").ToLower().Replace("\\template", "\\bin") + "\\OWSTIMER.EXE.CONFIG";
                 //string XMLData = System.IO.File.ReadAllText(configFile, Encoding.UTF8);
@@ -166,8 +183,7 @@ namespace spToolbelt2019
                     if (current.FirstChild != null)
                     {
                         var asmIdn = (current.FirstChild as XmlElement);
-                        if (asmIdn.GetAttribute("name").ToLower().Equals("anglesharp") ||
-                            asmIdn.GetAttribute("name").ToLower().Equals("anglesharp"))
+                        if (asmIdn.GetAttribute("name").ToLower().Equals("anglesharp"))
                             elmToRemove = current;
                     }
                     current = current.NextSibling as XmlElement;
@@ -194,7 +210,173 @@ namespace spToolbelt2019
             }
 
 
+
         }
+
+
+
+        private void EnsureDependentAssembly(string cFileName,string cAssemblyName,string cPublicToken,string cLowerVerions,string cHigherVersion)
+        {
+            try
+            {
+                File.Copy(cFileName, cFileName + ".bak");
+                XmlDocument config = new XmlDocument();
+                config.Load(cFileName);
+
+                XmlNode cfg = config.SelectSingleNode("configuration");
+                if (cfg == null)
+                {
+                    cfg = config.CreateNode(XmlNodeType.Element, "configuration", "");
+                    config.AppendChild(cfg);
+                }
+
+
+
+                XmlNode runtime = config.SelectSingleNode("configuration/runtime");
+                if (runtime == null)
+                {
+                    runtime = config.CreateNode(XmlNodeType.Element, "runtime", "");
+                    config.SelectSingleNode("configuration").AppendChild(runtime);
+                }
+
+
+
+                //ensure assemblyBinding exists
+                XmlNode assemblyBinding = config.SelectSingleNode("configuration/runtime/*[local-name()='assemblyBinding' and namespace-uri()='urn:schemas-microsoft-com:asm.v1']");
+
+                if (assemblyBinding == null)
+                {
+                    assemblyBinding = config.CreateNode(XmlNodeType.Element, "assemblyBinding", "urn:schemas-microsoft-com:asm.v1");
+                    config.SelectSingleNode("configuration/runtime").AppendChild(assemblyBinding);
+                }
+
+                //Delete old entrees if exist
+                XmlElement current = assemblyBinding.FirstChild as XmlElement;
+                while (current != null)
+                {
+                    XmlElement elmToRemove = null;
+                    if (current.FirstChild != null)
+                    {
+                        var asmIdn = (current.FirstChild as XmlElement);
+                        if (asmIdn.GetAttribute("name").ToLower().Equals(cAssemblyName.ToLower()))
+                            elmToRemove = current;
+                    }
+                    current = current.NextSibling as XmlElement;
+
+                    if (elmToRemove != null)
+                        assemblyBinding.RemoveChild(elmToRemove);
+                }
+
+                XmlElement dependentAssembly = null;
+                if (dependentAssembly == null)//create it
+                {
+                    dependentAssembly = config.CreateElement("dependentAssembly");
+                    dependentAssembly.InnerXml = "<assemblyIdentity name = \""+cAssemblyName.ToLower()+"\" publicKeyToken = \""+cPublicToken+"\" culture = \"neutral\" />" +
+                                                 "<bindingRedirect oldVersion = \""+cLowerVerions+"-"+cHigherVersion+"\" newVersion = \""+cHigherVersion+"\" />";
+                    assemblyBinding.AppendChild(dependentAssembly);
+                }
+
+
+                config.LoadXml(config.OuterXml.Replace("xmlns=\"\"", ""));
+                config.Save(cFileName);
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "UpdateConfigFile", ex.Message);
+            }
+
+
+        }
+
+
+        private void UpdateConfigFileOld(string cFileName)
+        {
+            try
+            {
+                string savedir = @"c:\temp\configFileUpdates";
+                if (!Directory.Exists(savedir))
+                {
+                    Directory.CreateDirectory(savedir);
+                }
+                //string cRestoreFile = cFileName + ".bak";
+                //File.Copy(cRestoreFile, cFileName,true);
+                //return;
+                string cSafeName = cFileName.Replace(":", "-").Replace("\\", "-");
+                File.Copy(cFileName, savedir + @"\" + cSafeName);
+                File.Copy(cFileName, cFileName + ".bak");
+
+                //string configFile = SPUtility.GetGenericSetupPath("TEMPLATE").ToLower().Replace("\\template", "\\bin") + "\\OWSTIMER.EXE.CONFIG";
+                //string XMLData = System.IO.File.ReadAllText(configFile, Encoding.UTF8);
+                XmlDocument config = new XmlDocument();
+                config.Load(cFileName);
+
+                XmlNode cfg = config.SelectSingleNode("configuration");
+                if (cfg == null)
+                {
+                    cfg = config.CreateNode(XmlNodeType.Element, "configuration", "");
+                    config.AppendChild(cfg);
+                }
+
+
+
+                XmlNode runtime = config.SelectSingleNode("configuration/runtime");
+                if (runtime == null)
+                {
+                    runtime = config.CreateNode(XmlNodeType.Element, "runtime", "");
+                    config.SelectSingleNode("configuration").AppendChild(runtime);
+                }
+
+
+
+                //ensure assemblyBinding exists
+                XmlNode assemblyBinding = config.SelectSingleNode("configuration/runtime/*[local-name()='assemblyBinding' and namespace-uri()='urn:schemas-microsoft-com:asm.v1']");
+
+                if (assemblyBinding == null)
+                {
+                    assemblyBinding = config.CreateNode(XmlNodeType.Element, "assemblyBinding", "urn:schemas-microsoft-com:asm.v1");
+                    config.SelectSingleNode("configuration/runtime").AppendChild(assemblyBinding);
+                }
+
+                //Delete old entrees if exist
+                XmlElement current = assemblyBinding.FirstChild as XmlElement;
+                while (current != null)
+                {
+                    XmlElement elmToRemove = null;
+                    if (current.FirstChild != null)
+                    {
+                        var asmIdn = (current.FirstChild as XmlElement);
+                        if (asmIdn.GetAttribute("name").ToLower().Equals("anglesharp"))
+                            elmToRemove = current;
+                    }
+                    current = current.NextSibling as XmlElement;
+
+                    if (elmToRemove != null)
+                        assemblyBinding.RemoveChild(elmToRemove);
+                }
+
+                XmlElement dependentAssembly = null;
+                if (dependentAssembly == null)//create it
+                {
+                    dependentAssembly = config.CreateElement("dependentAssembly");
+                    dependentAssembly.InnerXml = "<assemblyIdentity name = \"AngleSharp\" publicKeyToken = \"e83494dcdc6d31ea\" culture = \"neutral\" />" +
+                                                 "<bindingRedirect oldVersion = \"0.0.0.0-0.13.0.0\" newVersion = \"0.13.0.0\" />";
+                    assemblyBinding.AppendChild(dependentAssembly);
+                }
+
+
+                config.LoadXml(config.OuterXml.Replace("xmlns=\"\"", ""));
+                config.Save(cFileName);
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "UpdateConfigFile", ex.Message);
+            }
+
+
+        }
+
+
+
 
         void oWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {

@@ -59,16 +59,17 @@ namespace spToolbelt2019.Forms
                 //string template = "{{#each this}}{{Title}}{{/each}}";
                 //Func<object, string> compiledTemplate = Handlebars.Compile(template);
                 //string templateOutput = compiledTemplate(siteData);
+                string viewListXML = "<View><Query><OrderBy><FieldRef Name='spmiSiteUrl' Ascending='TRUE'/></OrderBy><Where><And><IsNotNull><FieldRef Name='spmiTargetAction' /></IsNotNull><Neq><FieldRef Name = 'spmiTargetAction' /><Value Type = 'Text'>none</Value></Neq></And></Where></Query><RowLimit>5000</RowLimit></View>";
 
 
                 List lstLists = ctx.Web.Lists.GetByTitle("spmiLists");
                 CamlQuery oListQuery = new CamlQuery();
-                oListQuery.ViewXml = viewXML;
-                ListItemCollection listitems = lstLists.GetItems(oListQuery);
-                ctx.Load(listitems, itms => itms.Include(i => i.FieldValuesAsText, i => i["spmiListType"], i => i["spmiRootFolderUrl"], i => i["Title"], i => i["TargetList"], i => i.Id, i => i["spmiSiteUrl"], i => i["spmiTargetAction"], i => i["spmiTargetLocation"], i => i["spmiSiteID"]));
+                oListQuery.ViewXml = viewListXML;
+                ListItemCollection workItems = lstLists.GetItems(oListQuery);
+                ctx.Load(workItems, itms => itms.Include(i => i.FieldValuesAsText, i => i["spmiListType"], i => i["spmiRootFolderUrl"], i => i["Title"], i => i["TargetList"], i => i.Id, i => i["spmiSiteUrl"], i => i["spmiTargetAction"], i => i["spmiTargetLocation"], i => i["spmiSiteID"]));
                 ctx.ExecuteQuery();
                 List<ListInfo> listData = new List<ListInfo>();
-                foreach (ListItem itm in listitems)
+                foreach (ListItem itm in workItems)
                 {
                     ListInfo li = new ListInfo();
                     li.Id = itm.Id;
@@ -96,9 +97,9 @@ namespace spToolbelt2019.Forms
 
                 foreach (ListInfo li in listData)
                 {
-                    ListViewItem lvitem = lvLists.Items.Add(li.SiteUrl);
+                    ListViewItem lvitem = lvLists.Items.Add(li.Title);
                     lvitem.Tag = li;
-                    lvitem.SubItems.Add(li.Title);
+                    lvitem.SubItems.Add(li.SiteUrl);
                     lvitem.SubItems.Add(li.TargetAction);
                     lvitem.SubItems.Add(li.TargetLocation);
 
@@ -318,5 +319,53 @@ namespace spToolbelt2019.Forms
 
 
         }
+
+        private void button2_Click_1(object sender, EventArgs e)
+        {
+
+            ClearCurrentList();
+        }
+
+
+
+        private void ClearCurrentList()
+        {
+
+            try
+            {
+                string viewXML = "<View><Query><OrderBy><FieldRef Name='spmiSiteUrl' Ascending='TRUE'/></OrderBy><Where><IsNotNull><FieldRef Name='spmiTargetAction' /></IsNotNull></Where></Query><RowLimit>5000</RowLimit></View>";
+
+                List lstSites = ctx.Web.Lists.GetByTitle("spmiLists");
+                CamlQuery oQuery = new CamlQuery();
+                oQuery.ViewXml = viewXML;
+                ListItemCollection items = lstSites.GetItems(oQuery);
+                ctx.Load(items);
+                ctx.ExecuteQuery();
+                foreach (ListItem itm in items)
+                {
+                    try
+                    {
+                        itm["spmiTargetAction"] = null;
+                        itm["spmiTargetLocation"] = null;
+                        itm["TargetList"] = null;
+                        itm.Update();
+                        ctx.ExecuteQuery();
+                    } 
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Trace.WriteLine(ex.Message);
+                    }
+                }
+                MessageBox.Show("Items Cleared!");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine(ex.Message);
+            }
+
+
+        }
+
+
     }
 }
