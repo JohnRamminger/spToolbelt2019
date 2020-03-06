@@ -330,7 +330,7 @@ namespace spToolbelt2019Lib
             return null;
         }
 
-        public static ListItem GetItemByFileNam(this List lst,  string cFileName)
+        public static ListItem GetItemByFileName(this List lst,  string cFileName)
         {
             try
             {

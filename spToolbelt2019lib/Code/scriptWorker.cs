@@ -3010,6 +3010,15 @@ namespace spToolbelt2019Lib
             ListTemplateType ltt = ListTemplateType.GenericList;
             switch (cTypeName)
             {
+                case "Calendar":
+                    ltt = ListTemplateType.Events;
+                    break;
+                case "Tasks":
+                    ltt = ListTemplateType.Tasks;
+                    break;
+                case "Issues":
+                    ltt = ListTemplateType.IssueTracking;
+                    break;
                 case "Picture":
                     ltt=ListTemplateType.PictureLibrary;
                     break;

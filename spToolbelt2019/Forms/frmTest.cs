@@ -1,4 +1,6 @@
 ﻿using System;
+using OfficeDevPnP.Core;
+using OfficeDevPnP.Core.Pages;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -8,10 +10,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.SharePoint.Client;
+using spToolbelt2019Lib;
+using OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers;
 using OfficeDevPnP.Core.Framework.Provisioning.Connectors;
 using OfficeDevPnP.Core.Framework.Provisioning.Model;
-using OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers;
-using spToolbelt2019Lib;
+using ClientSidePage = OfficeDevPnP.Core.Pages.ClientSidePage;
+using Newtonsoft.Json.Linq;
+using CanvasControl = OfficeDevPnP.Core.Pages.CanvasControl;
 
 namespace spToolbelt2019.Forms
 {
@@ -229,94 +234,94 @@ namespace spToolbelt2019.Forms
             WalkCustomActions();
         }
 
-        
+
 
         private void button5_Click(object sender, EventArgs e)
         {
-           // List<EventList> lists = new List<EventList>();
-           // KeywordQuery keywordQuery = new KeywordQuery(ctx);
-           // keywordQuery.QueryText = "ContentTypeId:0x0102*";
-           // keywordQuery.RowLimit = 500;
-           // keywordQuery.SelectProperties.Add("SPWebUrl");
-           // keywordQuery.SelectProperties.Add("ListID");
-           // SearchExecutor searchExecutor = new SearchExecutor(ctx);
-           // ClientResult<ResultTableCollection> results = searchExecutor.ExecuteQuery(keywordQuery);
-           // ctx.ExecuteQuery();
-            
-           // foreach(ResultTable rt in results.Value)
-           // {
-           //     foreach(IDictionary<string,object> result in rt.ResultRows)
-           //     {
-           //         string cListID = result["ListID"].ToString();
-           //         string cWebUrl = result["SPWebUrl"].ToString();
-           //         EventList el = new EventList();
-           //         el.ListId = cListID;
-           //         el.SiteUrl = cWebUrl;
-           //         if (!HasItem(lists,cListID))
-           //         {
-           //             lists.Add(el);
-           //         }
-           //         if (!lists.Contains(el))
-           //         {
-                        
-           //         }
-           //     }
-           // }
+            // List<EventList> lists = new List<EventList>();
+            // KeywordQuery keywordQuery = new KeywordQuery(ctx);
+            // keywordQuery.QueryText = "ContentTypeId:0x0102*";
+            // keywordQuery.RowLimit = 500;
+            // keywordQuery.SelectProperties.Add("SPWebUrl");
+            // keywordQuery.SelectProperties.Add("ListID");
+            // SearchExecutor searchExecutor = new SearchExecutor(ctx);
+            // ClientResult<ResultTableCollection> results = searchExecutor.ExecuteQuery(keywordQuery);
+            // ctx.ExecuteQuery();
 
-           // foreach (EventList eventList in lists)
-           // {
-           //     ClientContext workCTX = new ClientContext(eventList.SiteUrl);
-           //     workCTX.Credentials = ctx.Credentials;
-           //     List lst = workCTX.Web.Lists.GetById(new Guid(eventList.ListId));
-           //     ActivateEventFeature(workCTX, "bb635f49-78bb-406a-94c9-e28a5ac07375");
+            // foreach(ResultTable rt in results.Value)
+            // {
+            //     foreach(IDictionary<string,object> result in rt.ResultRows)
+            //     {
+            //         string cListID = result["ListID"].ToString();
+            //         string cWebUrl = result["SPWebUrl"].ToString();
+            //         EventList el = new EventList();
+            //         el.ListId = cListID;
+            //         el.SiteUrl = cWebUrl;
+            //         if (!HasItem(lists,cListID))
+            //         {
+            //             lists.Add(el);
+            //         }
+            //         if (!lists.Contains(el))
+            //         {
 
-           //     lst.EnsureListHasContenttype(workCTX.Site, "atiEvent");
-           //     Microsoft.SharePoint.Client.ContentType ct = lst.GetContentType("atiEvent");
-           //     workCTX.Load(ct, t => t.Name, t => t.Id);
-           //     workCTX.ExecuteQuery();
-           //     CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
-           //     ListItemCollection items = lst.GetItems(oQuery);
-           //     workCTX.Load(items, i => i.Include(itm => itm.ContentType.Name, itm => itm["RecurrenceData"],itm=>itm["atiEventRecurrence"]));
-           //     workCTX.ExecuteQuery();
-           //     foreach (ListItem itm in items)
-           //     {
-           //         try
-           //         {
-           //             bool bUpdate = false;
-           //             if (itm.ContentType.Name == "Event")
-           //             {
-           //                 itm["ContentTypeId"] = ct.Id;
-           //                 bUpdate = true;
-           //             }
-           //             if (itm["RecurrenceData"] != null)
-           //             {
-           //                 if (itm["RecurrenceData"] != itm["atiEventRecurrence"])
-           //                 {
-           //                     itm["atiEventRecurrence"] = itm["RecurrenceData"];
-           //                     bUpdate = true;
-           //                 }
-           //             }
+            //         }
+            //     }
+            // }
 
+            // foreach (EventList eventList in lists)
+            // {
+            //     ClientContext workCTX = new ClientContext(eventList.SiteUrl);
+            //     workCTX.Credentials = ctx.Credentials;
+            //     List lst = workCTX.Web.Lists.GetById(new Guid(eventList.ListId));
+            //     ActivateEventFeature(workCTX, "bb635f49-78bb-406a-94c9-e28a5ac07375");
 
-           //             if (bUpdate)
-           //             {
-           //                 itm.SystemUpdate();
-           //                 workCTX.ExecuteQuery();
-           //             }
+            //     lst.EnsureListHasContenttype(workCTX.Site, "atiEvent");
+            //     Microsoft.SharePoint.Client.ContentType ct = lst.GetContentType("atiEvent");
+            //     workCTX.Load(ct, t => t.Name, t => t.Id);
+            //     workCTX.ExecuteQuery();
+            //     CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
+            //     ListItemCollection items = lst.GetItems(oQuery);
+            //     workCTX.Load(items, i => i.Include(itm => itm.ContentType.Name, itm => itm["RecurrenceData"],itm=>itm["atiEventRecurrence"]));
+            //     workCTX.ExecuteQuery();
+            //     foreach (ListItem itm in items)
+            //     {
+            //         try
+            //         {
+            //             bool bUpdate = false;
+            //             if (itm.ContentType.Name == "Event")
+            //             {
+            //                 itm["ContentTypeId"] = ct.Id;
+            //                 bUpdate = true;
+            //             }
+            //             if (itm["RecurrenceData"] != null)
+            //             {
+            //                 if (itm["RecurrenceData"] != itm["atiEventRecurrence"])
+            //                 {
+            //                     itm["atiEventRecurrence"] = itm["RecurrenceData"];
+            //                     bUpdate = true;
+            //                 }
+            //             }
 
 
-           //         }
-           //         catch (Exception ex)
-           //         {
-           //             MessageBox.Show("Error: " + ex.Message);
-           //         }
-           //     }
-           //     lst.RemoveContentTypeByName("Event");
-           //     lst.DisableContentTypes();
-           //     workCTX.ExecuteQuery();
-           //}
+            //             if (bUpdate)
+            //             {
+            //                 itm.SystemUpdate();
+            //                 workCTX.ExecuteQuery();
+            //             }
 
-           // MessageBox.Show("done ");
+
+            //         }
+            //         catch (Exception ex)
+            //         {
+            //             MessageBox.Show("Error: " + ex.Message);
+            //         }
+            //     }
+            //     lst.RemoveContentTypeByName("Event");
+            //     lst.DisableContentTypes();
+            //     workCTX.ExecuteQuery();
+            //}
+
+            // MessageBox.Show("done ");
 
 
         }
@@ -325,7 +330,7 @@ namespace spToolbelt2019.Forms
         {
             foreach (EventList eventList in lists)
             {
-                if (eventList.ListId==cListID)
+                if (eventList.ListId == cListID)
                 {
                     return true;
                 }
@@ -333,7 +338,7 @@ namespace spToolbelt2019.Forms
             return false;
         }
 
-        private void ActivateEventFeature(ClientContext ctxWork,string cFeatureID)
+        private void ActivateEventFeature(ClientContext ctxWork, string cFeatureID)
         {
             try
             {
@@ -341,7 +346,7 @@ namespace spToolbelt2019.Forms
                 ctxWork.Load(features);
 
                 ctxWork.Load(features, fcol => fcol.Include(f => f.DisplayName, f => f.DefinitionId));
-                
+
 
 
                 ctxWork.ExecuteQuery();
@@ -351,11 +356,11 @@ namespace spToolbelt2019.Forms
                     System.Diagnostics.Trace.WriteLine(item.DisplayName);
                     if (item.DefinitionId == new Guid(cFeatureID))
                     {
-                         return;
+                        return;
                     }
                 }
 
-                features.Add(new Guid(cFeatureID.ToUpper()), true,FeatureDefinitionScope.Web);
+                features.Add(new Guid(cFeatureID.ToUpper()), true, FeatureDefinitionScope.Web);
                 ctxWork.ExecuteQuery();
             }
             catch (Exception ex)
@@ -367,7 +372,94 @@ namespace spToolbelt2019.Forms
 
 
         }
-    }
+
+        private void button3_Click_1(object sender, EventArgs e)
+        {
+            UpdateFile("Home.aspx");
+        }
+
+        private ClientSideComponent GetComponent(ClientSidePage page,string cAlias)
+        {
+            var comps = page.AvailableClientSideComponents();
+            foreach (ClientSideComponent csc in comps)
+            {
+                dynamic data = JObject.Parse(csc.Manifest);
+                string alias = data.alias;
+                if (alias == cAlias)
+                {
+                    return csc;
+                }
+            }
+
+
+
+                return null;
+        }
+
+        private void UpdateFile(string cFileName)
+        {
+            try
+            {
+                
+                ClientSidePage page = ClientSidePage.Load(ctx, "Home.aspx");
+                ClientSidePage newPage = new ClientSidePage(ctx, ClientSidePageLayoutType.Home);
+
+                foreach (CanvasControl ctrl in page.Controls)
+                {
+                    System.Diagnostics.Trace.WriteLine(ctrl.ToString());
+                    newPage.Controls.Add(ctrl);
+                }
+                
+                newPage.Save("NewHome.aspx");
+                ctx.ExecuteQuery();
+
+                
+
+                
+                ClientSideComponent c = GetComponent(page, "EtcContentDisplayWebPart");
+
+                if (c!=null)
+                {
+                    ClientSideWebPart csWebPart = new ClientSideWebPart(c);
+                    page.Controls.Add(csWebPart);
+                    page.Save();
+                    ctx.ExecuteQuery();
+                    
+                }
+
+
+                
+                
+                //foreach(ClientSideComponent csc in comps)
+                //{
+                //    dynamic data = JObject.Parse(csc.Manifest);
+                //    string alias = data.alias;
+                //    string componentType = data.componentType;
+                //    string isInternal = data.isInternal;
+
+
+                //    System.Diagnostics.Trace.WriteLine(componentType +" - "+isInternal+" - "+alias);
+                    
+                    
+
+
+                //    if (csc.Manifest.Contains("Content Display"))
+                //    {
+                        
+                //        System.Diagnostics.Trace.WriteLine(csc.Name+" -"+csc.Status+" - "+csc.ManifestType);
+                //    }
+                    
+                        
+                //}
+                System.Diagnostics.Trace.WriteLine("");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+        }
+    }    
+
     public class EventList
     {
         public string ListId { get; set; }
