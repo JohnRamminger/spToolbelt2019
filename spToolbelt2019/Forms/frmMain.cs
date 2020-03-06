@@ -168,5 +168,12 @@ namespace spToolbelt2019
             fb.MdiParent = this;
             fb.Show();
         }
+
+        private void scanConfigToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            frmUpdateConfig oFrm = new frmUpdateConfig();
+            oFrm.MdiParent = this;
+            oFrm.Show();
+        }
     }
 }

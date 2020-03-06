@@ -45,6 +45,7 @@
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader4 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.tpLists = new System.Windows.Forms.TabPage();
+            this.button2 = new System.Windows.Forms.Button();
             this.chkSelectAllLists = new System.Windows.Forms.CheckBox();
             this.button1 = new System.Windows.Forms.Button();
             this.label4 = new System.Windows.Forms.Label();
@@ -163,6 +164,7 @@
             this.txtSiteOutput.Name = "txtSiteOutput";
             this.txtSiteOutput.Size = new System.Drawing.Size(199, 20);
             this.txtSiteOutput.TabIndex = 12;
+            this.txtSiteOutput.Text = "SiteMigrate.ps1";
             // 
             // cmdProcessSites
             // 
@@ -223,6 +225,7 @@
             // 
             // tpLists
             // 
+            this.tpLists.Controls.Add(this.button2);
             this.tpLists.Controls.Add(this.chkSelectAllLists);
             this.tpLists.Controls.Add(this.button1);
             this.tpLists.Controls.Add(this.label4);
@@ -238,6 +241,17 @@
             this.tpLists.TabIndex = 1;
             this.tpLists.Text = "Lists";
             this.tpLists.UseVisualStyleBackColor = true;
+            // 
+            // button2
+            // 
+            this.button2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.button2.Location = new System.Drawing.Point(190, 118);
+            this.button2.Name = "button2";
+            this.button2.Size = new System.Drawing.Size(72, 45);
+            this.button2.TabIndex = 12;
+            this.button2.Text = "Clear Current";
+            this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.button2_Click_1);
             // 
             // chkSelectAllLists
             // 
@@ -289,7 +303,7 @@
             this.txtListOutput.Name = "txtListOutput";
             this.txtListOutput.Size = new System.Drawing.Size(199, 20);
             this.txtListOutput.TabIndex = 2;
-            this.txtListOutput.Text = "Output.ps1";
+            this.txtListOutput.Text = "ListMigrate.ps1";
             // 
             // txtListTemplate
             // 
@@ -306,8 +320,8 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lvLists.CheckBoxes = true;
             this.lvLists.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            this.chUrl,
             this.chTitle,
+            this.chUrl,
             this.chTargetAction,
             this.chTargetLocation});
             this.lvLists.Location = new System.Drawing.Point(9, 6);
@@ -319,11 +333,13 @@
             // 
             // chUrl
             // 
+            this.chUrl.DisplayIndex = 0;
             this.chUrl.Text = "Url";
             this.chUrl.Width = 500;
             // 
             // chTitle
             // 
+            this.chTitle.DisplayIndex = 1;
             this.chTitle.Text = "Title";
             this.chTitle.Width = 200;
             // 
@@ -397,5 +413,6 @@
         private System.Windows.Forms.Button cmdSelectSiteTemplate;
         private System.Windows.Forms.CheckBox chkSelectAllSites;
         private System.Windows.Forms.CheckBox chkSelectAllLists;
+        private System.Windows.Forms.Button button2;
     }
 }

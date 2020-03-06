@@ -69,6 +69,7 @@ namespace spToolbelt2019Lib
         {
             ListItemCollection items;
             try
+           
             {
                 CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
                 items = workList.GetItems(oQuery);
@@ -148,13 +149,20 @@ namespace spToolbelt2019Lib
                         string[] aFields = cSyncFields.Split('|');
                         foreach(string cField in aFields)
                         {
-                            if(cField.Contains("="))
+                            try
                             {
-                                string[] cFieldInfo = cField.Split('=');
-                                tgtItem[cFieldInfo[0]] = cFieldInfo[1];
-                            } else
+                                if (cField.Contains("`"))
+                                {
+                                    string[] cFieldInfo = cField.Split('`');
+                                    tgtItem[cFieldInfo[0]] = cFieldInfo[1];
+                                }
+                                else
+                                {
+                                    tgtItem[cField.Trim()] = item[cField.Trim()];
+                                }
+                            } catch  (Exception ex)
                             {
-                                tgtItem[cField.Trim()] = item[cField.Trim()];
+                                System.Diagnostics.Trace.WriteLine(ex.Message);
                             }
                             
                         }
