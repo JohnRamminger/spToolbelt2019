@@ -417,6 +417,51 @@ namespace spToolbelt2019Lib
                             bRetVal = false;
                             Status += "Ensure-SPSite requires the URL and Title Parameterss.";
                         }
+
+                        break;
+                    case "ensure-listlookup":
+                        if (parms.ContainsKey("url") && 
+                            parms.ContainsKey("internalname") &&
+                            parms.ContainsKey("displayname") &&
+                            parms.ContainsKey("group") &&
+                            parms.ContainsKey("lookuplist") &&
+                            parms.ContainsKey("showfield") &&
+                            parms.ContainsKey("ctname"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                            Status += "Ensure-ListAndContentType requires Url,internalName,displayName,lookupList,showField,ctName ";
+                            
+                        }
+                        break;
+                    case "remove-listandcontenttype":
+                        if (parms.ContainsKey("url") && parms.ContainsKey("ctname") && parms.ContainsKey("listname"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                            Status += "Ensure-ListAndContentType requires Url, ctName, listName";
+
+                        }
+
+                        break;
+                    case "ensure-listandcontenttype":
+                        if (parms.ContainsKey("url" ) && parms.ContainsKey("ctname") && parms.ContainsKey("ctparent") && parms.ContainsKey("listtype") && parms.ContainsKey("listname"))
+                        {
+                            bRetVal = true;
+                        } else
+                        {
+                            bRetVal = false;
+                            Status+="Ensure-ListAndContentType requires Url, ctName, ctParent, listType, Generic,listName";
+
+                        }
+
+
                         break;
                     case "ensure-contenttype":
                     case "ensure-spcontenttype":

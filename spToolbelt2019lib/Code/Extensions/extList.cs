@@ -146,7 +146,7 @@ namespace spToolbelt2019Lib
                             tgtItem.Update();
                         }
 
-                        string[] aFields = cSyncFields.Split('|');
+                        string[] aFields = cSyncFields.Split(';');
                         foreach(string cField in aFields)
                         {
                             try

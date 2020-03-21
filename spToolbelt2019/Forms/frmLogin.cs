@@ -30,8 +30,10 @@ namespace spToolbelt2019
         {
             try
             {
-                chkIsSharePointOnline.Enabled = bEnable;
-                chkIntegrated.Enabled = bEnable;
+                rbAuthPNP.Enabled = bEnable;
+                rbAuthSPO.Enabled = bEnable;
+                rbAuthIntegrated.Enabled = bEnable;
+                rbAuthBasic.Enabled = bEnable;
                 txtDomain.Enabled = bEnable;
                 txtPassword.Enabled = bEnable;
                 txtUserName.Enabled = bEnable;
@@ -56,19 +58,50 @@ namespace spToolbelt2019
             {
                 cboSites.Items.Add(item);
             }
-            chkIntegrated.Checked = Properties.Settings.Default.UserIntegratedSecurity;
-            chkIsSharePointOnline.Checked = Properties.Settings.Default.SharePointOnline;
+
+
+            rbAuthIntegrated.Checked = Properties.Settings.Default.AuthenticationIntegrated;
+            rbAuthSPO.Checked = Properties.Settings.Default.AuthenticationSPO;
+            rbAuthPNP.Checked = Properties.Settings.Default.AuthenticationPNP;
+            rbAuthBasic.Checked=Properties.Settings.Default.AuthenticationBasic;
+
+
+
             cboSites.Text = Properties.Settings.Default.LastUrl;
             txtUserName.Text = Properties.Settings.Default.LastUserName;
             txtDomain.Text = Properties.Settings.Default.LastDomain;
             txtPassword.Text = Properties.Settings.Default.LastPassword;
         }
 
+        private string GetAuthMode()
+        {
+            if (rbAuthPNP.Checked)
+            {
+                return "PNP";
+            }
+            if (rbAuthBasic.Checked)
+            {
+                return "Basic";
+            }
+            if (rbAuthIntegrated.Checked)
+            {
+                return "Integrated";
+            }
+            if (rbAuthSPO.Checked)
+            {
+                return "SPO";
+            }
+            return "Basic";
+        }
+
         private void SaveSettings()
         {
 
-            Properties.Settings.Default.UserIntegratedSecurity= chkIntegrated.Checked;
-            Properties.Settings.Default.SharePointOnline= chkIsSharePointOnline.Checked;
+            Properties.Settings.Default.AuthenticationIntegrated = rbAuthIntegrated.Checked;
+            Properties.Settings.Default.AuthenticationSPO = rbAuthSPO.Checked;
+            Properties.Settings.Default.AuthenticationPNP  = rbAuthPNP.Checked;
+            Properties.Settings.Default.AuthenticationBasic = rbAuthBasic.Checked;
+
 
             Properties.Settings.Default.SharePointSites = scSites;
             Properties.Settings.Default.LastUrl = cboSites.Text;
@@ -99,23 +132,14 @@ namespace spToolbelt2019
                 EnableUI(false);
                 if (!scSites.Contains(cboSites.Text)) scSites.Add(cboSites.Text);
                 LoginContext = new Microsoft.SharePoint.Client.ClientContext(cboSites.Text);
-                if (chkIntegrated.Checked)
+                SecureString password = GetSecureString(txtPassword.Text);
+
+
+
+                switch (GetAuthMode())
+                
                 {
-
-                }
-                else
-                {
-                    if (chkIsSharePointOnline.Checked)
-                    {
-                        SecureString password = new SecureString();
-
-                        foreach (char c in txtPassword.Text.ToCharArray()) password.AppendChar(c);
-
-
-                        LoginContext.Credentials = new spc.SharePointOnlineCredentials(txtUserName.Text, password);
-                    }
-                    else
-                    {
+                    case "Basic":
                         if (!string.IsNullOrEmpty(txtDomain.Text))
                         {
                             LoginContext.Credentials = new NetworkCredential(txtUserName.Text, txtPassword.Text, txtDomain.Text);
@@ -124,7 +148,19 @@ namespace spToolbelt2019
                         {
                             LoginContext.Credentials = new NetworkCredential(txtUserName.Text, txtPassword.Text);
                         }
-                    }
+                        break;
+                    case "SPO":
+                        
+                        LoginContext.Credentials = new spc.SharePointOnlineCredentials(txtUserName.Text, password);
+                        break;
+                    case "PNP":
+                        
+                        OfficeDevPnP.Core.AuthenticationManager authManager = new OfficeDevPnP.Core.AuthenticationManager();
+                        ClientContext context = authManager.GetSharePointOnlineAuthenticatedContextTenant(cboSites.Text, txtUserName.Text,password);
+                        break;
+                    default:
+
+                        break;
                 }
 
                 LoginContext.ExecutingWebRequest += delegate (object sender2, WebRequestEventArgs e2)
@@ -148,6 +184,13 @@ namespace spToolbelt2019
 
         }
 
+
+        private SecureString GetSecureString(string input)
+        {
+            SecureString password = new SecureString();
+            foreach (char c in input.ToCharArray()) password.AppendChar(c);
+            return password;
+        }
         private void TxtUserName_TextChanged(object sender, EventArgs e)
         {
 

@@ -12,7 +12,7 @@ namespace spToolbelt2019.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "16.3.0.0")]
     internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -25,25 +25,25 @@ namespace spToolbelt2019.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool UserIntegratedSecurity {
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool AuthenticationBasic {
             get {
-                return ((bool)(this["UserIntegratedSecurity"]));
+                return ((bool)(this["AuthenticationBasic"]));
             }
             set {
-                this["UserIntegratedSecurity"] = value;
+                this["AuthenticationBasic"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool SharePointOnline {
+        public bool AuthenticationSPO {
             get {
-                return ((bool)(this["SharePointOnline"]));
+                return ((bool)(this["AuthenticationSPO"]));
             }
             set {
-                this["SharePointOnline"] = value;
+                this["AuthenticationSPO"] = value;
             }
         }
         
@@ -103,6 +103,30 @@ namespace spToolbelt2019.Properties {
             }
             set {
                 this["LastDomain"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool AuthenticationPNP {
+            get {
+                return ((bool)(this["AuthenticationPNP"]));
+            }
+            set {
+                this["AuthenticationPNP"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool AuthenticationIntegrated {
+            get {
+                return ((bool)(this["AuthenticationIntegrated"]));
+            }
+            set {
+                this["AuthenticationIntegrated"] = value;
             }
         }
     }

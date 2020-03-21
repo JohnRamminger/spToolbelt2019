@@ -356,7 +356,12 @@ namespace spToolbelt2019Lib
                             SyncSiteFolder(cSourceSite, cSourceFolder,item);
 
                             break;
-                        case "remove-contenttypefromlist":
+                            case "remove-listandcontenttype":
+                               RemoveListAndContentType(workCTX, oWorkItem);
+                                
+                                break;
+
+                            case "remove-contenttypefromlist":
                             ShowProgress(string.Format("Remove Content Type From List: {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("ContentType")));
                             workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
                             List lstRemove = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("ListName"));
@@ -373,7 +378,12 @@ namespace spToolbelt2019Lib
                                 workCTX.ExecuteQuery();
                                 lst.DisableContentTypes();
                                 break;
-                        case "ensure-listhascontenttype":
+
+                            case "ensure-listlookup":
+                                EnsureListLookup(workCTX, oWorkItem);
+
+                                break;
+                            case "ensure-listhascontenttype":
                             ShowProgress(string.Format("Ensure Content Type In List: {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("ContentType")));
                             workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
                             List lst2 = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("ListName"));
@@ -437,6 +447,9 @@ namespace spToolbelt2019Lib
                                 ShowProgress("Removing Columns for Group: " + cGroupName);
                                 workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
                                 workCTX.Web.RemoveFieldsForGroup(cGroupName);
+                                break;
+                            case "ensure-listandcontenttype":
+                                EnsureListandContentType(workCTX, oWorkItem);
                                 break;
 
                             case "ensure-contenttype":
@@ -634,6 +647,40 @@ namespace spToolbelt2019Lib
 
         }
 
+        private void EnsureListLookup(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            try
+            {
+                ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("displayname"));
+                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                workCTX.Web.EnsureSiteColumnLookup(oWorkItem.GetParm("internalname"), oWorkItem.GetParm("displayname"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"), oWorkItem.GetParm("lookupList"), oWorkItem.GetParm("ShowField"));
+                workCTX.Web.EnsureContentTypeHasField(oWorkItem.GetParm("ctName"), oWorkItem.GetParm("internalname"));
+
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "EnsureListLookup", ex.Message);
+            }
+        }
+
+        private void RemoveListAndContentType(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            try
+            {
+                string cListName = oWorkItem.GetParm("listname");
+                ShowProgress("Removing List: " + cListName);
+                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                workCTX.Web.RemoveList(cListName);
+                string cContentTypeName = oWorkItem.GetParm("ctname");
+                ShowProgress("Removing Content Type: " + cContentTypeName);
+                workCTX.Web.RemoveContentType(cContentTypeName);
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "RemoveListAndContentType", ex.Message);
+            }
+        }
+
         private void SavePNPTemplate(ClientContext workCTX, scriptItem oWorkItem)
         {
             try
@@ -666,6 +713,31 @@ namespace spToolbelt2019Lib
                 ShowError(ex, "SavePNPTemplate", "");
             }
 
+        }
+        private void EnsureListandContentType(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            try
+            {
+                ShowProgress("Working Content Type: " + oWorkItem.GetParm("ctname"));
+                workCTX.Web.EnsureContentType(oWorkItem.GetParm("ctName"), oWorkItem.GetParm("ctParent"), oWorkItem.GetParm("Group"));
+                ShowProgress("Working List: " + oWorkItem.GetParm("ListName"));
+                ListTemplateType oListTemplateType = GetTemplateType(oWorkItem.GetParm("ListType"));
+                workCTX.Web.EnsureList(oWorkItem.GetParm("ListName"), oListTemplateType, oWorkItem.GetParm("Description"));
+                ShowProgress(string.Format("Ensure Content Type In List: {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("ctName")));
+                List lstWork = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("ListName"));
+                workCTX.Load(lstWork);
+                workCTX.ExecuteQuery();
+                lstWork.EnsureListHasContenttype(workCTX.Site, oWorkItem.GetParm("ctName"));
+                ShowProgress(string.Format("Remove Content Type From List: {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("ContentType")));
+                lstWork.RemoveContentTypeFromList(oWorkItem.GetParm("ctParent"));
+                ShowProgress(string.Format("Ensure Content Type In List: {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("ContentType")));
+                lstWork.DisableContentTypes();
+                
+            } catch(Exception ex)
+            {
+                ShowError(ex, "EnsureListandContentType", ex.Message);
+
+            }
         }
         private void SetDefaultValue(ClientContext workCTX, scriptItem oWorkItem)
         {
@@ -2543,6 +2615,8 @@ namespace spToolbelt2019Lib
 
                 ClientContext srcCTX = new ClientContext(cSourceSite);
                 ClientContext tgtCTX = new ClientContext(cTargetSite);
+                srcCTX.Credentials = ctx.Credentials;
+                tgtCTX.Credentials = ctx.Credentials;
                 List SourceList = srcCTX.Web.Lists.GetByTitle(cSourceList);
                 srcCTX.Load(SourceList);
                 srcCTX.ExecuteQuery();
@@ -2554,7 +2628,7 @@ namespace spToolbelt2019Lib
                 {
                     SourceList.SyncList(tgtCTX, cTargetList, cFieldSettings, new DateTime(1970, 1, 1));
 
-                //# CopyList(srcCTX, SourceList, tgtCTX, TargetList, cFieldSettings,cQuery,bLargeList);
+                // CopyList(srcCTX, SourceList, tgtCTX, TargetList, cFieldSettings,cQuery,bLargeList);
                 } else
                 {
                     ShowProgress("Field Settings Do Not Match for:"+SourceList.Title);
@@ -2771,16 +2845,19 @@ namespace spToolbelt2019Lib
                 string[] aFieldSettings = cFieldSettings.Split(';');
                 foreach (string aFieldSetting in aFieldSettings)
                 {
-                    string[] aFldSet = aFieldSetting.Split(':');
-                    if (!TargetList.Fields.HasField(aFldSet[0]))
+                    if (aFieldSetting.Contains(":"))
                     {
-                        sbFieldResults.AppendLine(string.Format("{0} is missing: {1}", TargetList.Title, aFldSet[0]));
-                    }
-                    if(!aFldSet[1].Contains("'"))
-                    {
-                        if (!SourceList.Fields.HasField(aFldSet[1]))
+                        string[] aFldSet = aFieldSetting.Split(':');
+                        if (!TargetList.Fields.HasField(aFldSet[0]))
                         {
-                            sbFieldResults.AppendLine(string.Format("{0} is missing: {1}", SourceList.Title, aFldSet[1]));
+                            sbFieldResults.AppendLine(string.Format("{0} is missing: {1}", TargetList.Title, aFldSet[0]));
+                        }
+                        if (!aFldSet[1].Contains("'"))
+                        {
+                            if (!SourceList.Fields.HasField(aFldSet[1]))
+                            {
+                                sbFieldResults.AppendLine(string.Format("{0} is missing: {1}", SourceList.Title, aFldSet[1]));
+                            }
                         }
                     }
                 }
