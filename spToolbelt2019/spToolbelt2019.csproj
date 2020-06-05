@@ -363,6 +363,12 @@
     <Compile Include="Forms\frmUpdateConfig.Designer.cs">
       <DependentUpon>frmUpdateConfig.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\frmUpdateSPSQL.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\frmUpdateSPSQL.Designer.cs">
+      <DependentUpon>frmUpdateSPSQL.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\frmViewShareGateSummary.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -394,6 +400,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\frmUpdateConfig.resx">
       <DependentUpon>frmUpdateConfig.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\frmUpdateSPSQL.resx">
+      <DependentUpon>frmUpdateSPSQL.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\frmViewShareGateSummary.resx">
       <DependentUpon>frmViewShareGateSummary.cs</DependentUpon>

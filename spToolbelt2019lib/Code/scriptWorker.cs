@@ -5512,13 +5512,19 @@ namespace spToolbelt2019Lib
                     try
                     {
                         ListInfo li = BuildListInfo(itm);
-                        ClientContext srcCTX = new ClientContext(li.SiteUrl);
-                        srcCTX.Credentials = ctx.Credentials;
+                        //ClientContext srcCTX = new ClientContext(li.SiteUrl);
+                        //srcCTX.Credentials = ctx.Credentials;
                         string cTargetUrl = li.TargetLocation.Substring(0, li.TargetLocation.LastIndexOf("/"));
                         string cTargetList = li.TargetLocation.Substring(li.TargetLocation.LastIndexOf("/") + 1);
 
-                        ClientContext tgtCTX = new ClientContext(li.SiteUrl);
+                        ClientContext tgtCTX = new ClientContext(li.TargetLocation);
                         tgtCTX.Credentials = ctx.Credentials;
+                        string cListName = itm["TargetList"].ToString();
+                        if (!tgtCTX.Web.HasList(cListName))
+                        {
+                            tgtCTX.Web.EnsureList(cListName, ListTemplateType.DocumentLibrary, "");
+                        }
+
 
                         List tgtList = tgtCTX.Web.Lists.GetByTitle(itm["TargetList"].ToString());
                         tgtCTX.Load(tgtList,tls=>tls.RootFolder);
@@ -5526,6 +5532,7 @@ namespace spToolbelt2019Lib
                         string cFolderTitle = itm["Title"].ToString();
                         cFolderTitle = cFolderTitle.Replace("/", "-");
                         tgtList.RootFolder.EnsureFolder(cFolderTitle);
+                        ShowProgress("Working Folder:" + cFolderTitle);
                     } catch (Exception ex)
                     {
                         ShowError(ex, "EnsureTargetFolders - inside", "");
