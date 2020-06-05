@@ -175,5 +175,12 @@ namespace spToolbelt2019
             oFrm.MdiParent = this;
             oFrm.Show();
         }
+
+        private void updateFromSQLToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            frmUpdateSPSQL oFrm = new frmUpdateSPSQL(ctx);
+            oFrm.MdiParent = this;
+            oFrm.Show();
+        }
     }
 }
