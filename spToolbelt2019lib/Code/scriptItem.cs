@@ -277,6 +277,21 @@ namespace spToolbelt2019Lib
                     case "update-url":
                         bRetVal = true;
                         break;
+                    case "import-list":
+                        if (parms.ContainsKey("url") &&
+                            parms.ContainsKey("filename") &&
+                            parms.ContainsKey("listname") &&
+                            parms.ContainsKey("listkey") &&
+                            parms.ContainsKey("filekey") &&
+                            parms.ContainsKey("fieldsettings"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
                     case "copy-list":
                         if (parms.ContainsKey("sourcesite") &&
                             parms.ContainsKey("sourcelist") &&
