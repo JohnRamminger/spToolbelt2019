@@ -2707,7 +2707,7 @@ namespace spToolbelt2019Lib
                 string cFieldSettings = oWorkItem.GetParm("fieldsettings");
 
                 List lst = workCTX.Web.Lists.GetByTitle(cListName);
-                workCTX.Load(lst);
+                workCTX.Load(lst,l=>l.BaseTemplate);
                 workCTX.ExecuteQuery();
 
                 Dictionary<string, string> fields = new Dictionary<string, string>();
@@ -2740,22 +2740,38 @@ namespace spToolbelt2019Lib
                                 string[] values = CSVParser.Split(line);
 
                                 string cKeyValue = GetRowValue(headerInfo, cFileKey, values);
-                                ListItem itm = lst.GetListItemByField(workCTX, cListKey, "Text", cKeyValue);
-                                if (itm == null)
+                                
+                                if (lst.BaseTemplate == 1 || lst.BaseTemplate == 101)
                                 {
-                                    ListItemCreationInformation lici = new ListItemCreationInformation();
-                                    itm = lst.AddItem(lici);
-                                    itm[cListKey] = cKeyValue;
-
+                                    ListItem itm = lst.GetListItemByField(workCTX, cListKey, "Text", cKeyValue);
+                                    if (itm != null)
+                                    {
+                                        foreach (KeyValuePair<string, string> fld in fields)
+                                        {
+                                            string cValue = GetRowValue(headerInfo, fld.Value, values);
+                                            itm[fld.Key] = cValue;
+                                        }
+                                        itm.Update();
+                                        workCTX.ExecuteQuery();
+                                    }
                                 }
-                                foreach (KeyValuePair<string, string> fld in fields)
+                                else
                                 {
-                                    string cValue = GetRowValue(headerInfo, fld.Value, values);
-                                    itm[fld.Key] = cValue;
+                                    ListItem itm = lst.GetListItemByField(workCTX, cListKey, "Text", cKeyValue);
+                                    if (itm == null)
+                                    {
+                                        ListItemCreationInformation lici = new ListItemCreationInformation();
+                                        itm = lst.AddItem(lici);
+                                        itm[cListKey] = cKeyValue;
+                                    }
+                                    foreach (KeyValuePair<string, string> fld in fields)
+                                    {
+                                        string cValue = GetRowValue(headerInfo, fld.Value, values);
+                                        itm[fld.Key] = cValue;
+                                    }
+                                    itm.Update();
+                                    workCTX.ExecuteQuery();
                                 }
-                                itm.Update();
-                                workCTX.ExecuteQuery();
-
                             }
                             catch (Exception ex)
                             {
