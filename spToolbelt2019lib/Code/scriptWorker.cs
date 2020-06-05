@@ -279,6 +279,7 @@ namespace spToolbelt2019Lib
 
         private void WorkSite(string item)
         {
+            string cLastUrl = "";
             try
             {
                 ClientContext workCTX = new ClientContext(item) { Credentials = ctx.Credentials };
@@ -289,6 +290,11 @@ namespace spToolbelt2019Lib
                 };
                 foreach (scriptItem oWorkItem in oWorkItems)
                 {
+                    if (oWorkItem.GetParm("url") != cLastUrl)
+                    {
+                        workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                        cLastUrl = oWorkItem.GetParm("url");
+                }
                     try
                     { 
                     Trace.WriteLine(oWorkItem.Command);
@@ -363,7 +369,7 @@ namespace spToolbelt2019Lib
 
                             case "remove-contenttypefromlist":
                             ShowProgress(string.Format("Remove Content Type From List: {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("ContentType")));
-                            workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                            
                             List lstRemove = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("ListName"));
                             workCTX.Load(lstRemove);
                             lstRemove.RemoveContentTypeFromList(oWorkItem.GetParm("ContentType"));
@@ -371,21 +377,24 @@ namespace spToolbelt2019Lib
                             break;
                        case "disable-contenttypes":
                                 ShowProgress(string.Format("Ensure Content Type In List: {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("ContentType")));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                                
                                 List lst = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("ListName"));
 
                                 workCTX.Load(lst);
                                 workCTX.ExecuteQuery();
                                 lst.DisableContentTypes();
                                 break;
+                            case "download-images":
 
+                                DownloadImages(workCTX, oWorkItem);
+                                break;
                             case "ensure-listlookup":
                                 EnsureListLookup(workCTX, oWorkItem);
 
                                 break;
                             case "ensure-listhascontenttype":
                             ShowProgress(string.Format("Ensure Content Type In List: {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("ContentType")));
-                            workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                            
                             List lst2 = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("ListName"));
                             
                             workCTX.Load(lst2);
@@ -395,14 +404,14 @@ namespace spToolbelt2019Lib
 
                         case "ensure-list":
                             ShowProgress("Working List: " + oWorkItem.GetParm("ListName"));
-                            workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                            
                             ListTemplateType oTemplateType = GetTemplateType(oWorkItem.GetParm("Type"));
                             workCTX.Web.EnsureList(oWorkItem.GetParm("ListName"),oTemplateType, oWorkItem.GetParm("Description"));
                             break;
 
                         case "attach-workflow":
                             ShowProgress("Working List: " + oWorkItem.GetParm("ListName"));
-                            workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                            
                             List lstAttach = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("ListName"));
                             workCTX.Load(lstAttach);
                             workCTX.ExecuteQuery();
@@ -411,7 +420,7 @@ namespace spToolbelt2019Lib
 
                         case "provision-list":
                             ShowProgress("Working List: " + oWorkItem.GetParm("ListName"));
-                            workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                            //
                             ListTemplateType oProvTemplateType = GetTemplateType(oWorkItem.GetParm("Type"));
                             workCTX.Web.EnsureList(oWorkItem.GetParm("ListName"), oProvTemplateType, oWorkItem.GetParm("Description"));
                             ShowProgress(string.Format("Ensure Content Type In List: {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("ContentType")));
@@ -425,27 +434,27 @@ namespace spToolbelt2019Lib
                             break;
                         case "ensure-contenttypefield":
                             ShowProgress(string.Format("Working Content Field Type: {0}-{1}", oWorkItem.GetParm("ContentType"), oWorkItem.GetParm("Fieldname")));
-                            workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                            //
                             workCTX.Web.EnsureContentTypeHasField(oWorkItem.GetParm("ContentType"), oWorkItem.GetParm("FieldName"));
                             break;
 
                             case "remove-list":
                                 string cListName = oWorkItem.GetParm("listname");
                                 ShowProgress("Removing List: " + cListName);
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                                //
                                 workCTX.Web.RemoveList(cListName);
                                 break;
                             case "remove-contenttype":
                                 string cContentTypeName = oWorkItem.GetParm("contenttype");
                                 ShowProgress("Removing Content Type: " + cContentTypeName);
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                                //
                                 workCTX.Web.RemoveContentType(cContentTypeName);
                                 break;
 
                             case "remove-sitecolumnsbygroup":
                                 string cGroupName = oWorkItem.GetParm("group");
                                 ShowProgress("Removing Columns for Group: " + cGroupName);
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                                
                                 workCTX.Web.RemoveFieldsForGroup(cGroupName);
                                 break;
                             case "ensure-listandcontenttype":
@@ -454,12 +463,12 @@ namespace spToolbelt2019Lib
 
                             case "ensure-contenttype":
                             ShowProgress("Working Content Type: " + oWorkItem.GetParm("Name"));
-                            workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                            
                             workCTX.Web.EnsureContentType(oWorkItem.GetParm("Name"), oWorkItem.GetParm("ParentName"), oWorkItem.GetParm("Group"));
                             break;
                             case "set-fielddefaultvalue":
                                 ShowProgress("Working Default Value: " + oWorkItem.GetParm("fieldname"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                                
 
                                 SetDefaultValue(workCTX, oWorkItem);
 
@@ -467,7 +476,7 @@ namespace spToolbelt2019Lib
 
                             case "save-template":
                                 ShowProgress("Working Required Filed: " + oWorkItem.GetParm("fieldname"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                                
 
                                 SavePNPTemplate(workCTX, oWorkItem);
 
@@ -477,7 +486,7 @@ namespace spToolbelt2019Lib
 
                             case "set-fieldrequired":
                                 ShowProgress("Working Required Filed: " + oWorkItem.GetParm("fieldname"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                                
 
                                 SetRequiredField(workCTX, oWorkItem);
                                 
@@ -486,7 +495,7 @@ namespace spToolbelt2019Lib
 
                             case "ensure-sitecolumnuser":
                                 ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                                
                                 bool bMultiUser = oWorkItem.GetParmBool("multiuser");
                                 bool bAllowGroups = oWorkItem.GetParmBool("alllowgroups");
 
@@ -494,51 +503,51 @@ namespace spToolbelt2019Lib
                                 break;
                             case "ensure-sitecolumn":
                             ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
-                            workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                            
                             workCTX.Web.EnsureSiteColumn(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"));
                             break;
 
                         case "ensure-sitecolumninteger":
                             ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
-                            workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                            
                             workCTX.Web.EnsureSiteColumnInteger(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"));
                             break;
                         
                         case "ensure-sitecolumndatetime":
                             ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
-                            workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                            
                             workCTX.Web.EnsureSiteColumnDateTime(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"));
                             break;
                         case "ensure-sitecolumncurrency":
                             ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
-                            workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                            
                             workCTX.Web.EnsureSiteColumnCurrency(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"));
                             break;
                         case "ensure-sitecolumnchoice":
                             ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
-                            workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                            
                             workCTX.Web.EnsureSiteColumnChoice(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Description"),oWorkItem.GetParm("choices"));
                             break;
                         case "ensure-sitecolumnboolean":
                             ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
-                            workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                            
                             workCTX.Web.EnsureSiteColumnBoolean(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"));
                             break;
                         
                         case "ensure-sitecolumnnote":
                             ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
-                            workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                            
                             workCTX.Web.EnsureSiteColumnNote(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"));
                             break;
                         case "ensure-sitecolumnnumber":
                             ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
-                            workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                            
                             workCTX.Web.EnsureSiteColumnNumber(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"));
                             break;
 
                         case "ensure-sitecolumnlookup":
                             ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("displayname"));
-                            workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                            
                             workCTX.Web.EnsureSiteColumnLookup(oWorkItem.GetParm("internalname"),oWorkItem.GetParm("displayname"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"),  oWorkItem.GetParm("ListName"), oWorkItem.GetParm("ShowField"));
                             break;
 
@@ -647,12 +656,60 @@ namespace spToolbelt2019Lib
 
         }
 
+        private void DownloadImages(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            List lstImages = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("libraryname"));
+            workCTX.Load(lstImages);
+            
+            ListItemCollection items = lstImages.GetAllItems();
+            workCTX.Load(items,i=>i.Include(itm=>itm.File.ServerRelativeUrl, itm => itm.File.Name));
+            workCTX.ExecuteQuery();
+
+            string cLocalFolder = oWorkItem.GetParm("localfolder"); 
+            if (!Directory.Exists(cLocalFolder))
+            {
+                Directory.CreateDirectory(cLocalFolder);
+            }
+
+            foreach (ListItem itm in items)
+            {
+                try
+                {
+                    // THIS IS THE LINE THAT CAUSES ISSUES!!!!!!!!
+                    using (FileInformation fileInfo = Microsoft.SharePoint.Client.File.OpenBinaryDirect(workCTX, itm.File.ServerRelativeUrl))
+                    {
+                        // Combine destination folder with filename -- don't concatenate
+                        // it's just wrong!
+                        var filePath = Path.Combine(cLocalFolder, itm.File.Name);
+                        // Erase existing files, cause that's how I roll
+                        if (System.IO.File.Exists(filePath))
+                        {
+                            System.IO.File.Delete(filePath);
+                        }
+                        // Create the file
+                        using (var fileStream = System.IO.File.Create(filePath))
+                        {
+                            fileInfo.Stream.CopyTo(fileStream);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+
+                }
+
+
+            }
+
+
+        }
+
         private void EnsureListLookup(ClientContext workCTX, scriptItem oWorkItem)
         {
             try
             {
                 ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("displayname"));
-                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                
                 workCTX.Web.EnsureSiteColumnLookup(oWorkItem.GetParm("internalname"), oWorkItem.GetParm("displayname"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"), oWorkItem.GetParm("lookupList"), oWorkItem.GetParm("ShowField"));
                 workCTX.Web.EnsureContentTypeHasField(oWorkItem.GetParm("ctName"), oWorkItem.GetParm("internalname"));
 
@@ -669,7 +726,7 @@ namespace spToolbelt2019Lib
             {
                 string cListName = oWorkItem.GetParm("listname");
                 ShowProgress("Removing List: " + cListName);
-                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                
                 workCTX.Web.RemoveList(cListName);
                 string cContentTypeName = oWorkItem.GetParm("ctname");
                 ShowProgress("Removing Content Type: " + cContentTypeName);
@@ -3322,15 +3379,27 @@ namespace spToolbelt2019Lib
 
         private static ClientContext GetClientContext(ClientContext ctx, string cUrl)
         {
+            ClientContext oNewContext;
             if (cUrl.ToLower()=="{currentsite}")
             {
                 cUrl = ctx.Url;
             }
-            ClientContext oNewContext = new ClientContext(cUrl) { Credentials = ctx.Credentials };
-            oNewContext.ExecutingWebRequest += delegate (object sender2, WebRequestEventArgs e2)
+            if (cUrl.ToLower().Contains("sharepoint.com"))
             {
-                e2.WebRequestExecutor.WebRequest.UserAgent = "NONISV|RammWare|spToolbelt2019/1.0";
-            };
+                //ClientContext oNewContext = new ClientContext(cUrl) { Credentials = ctx.Credentials };
+                OfficeDevPnP.Core.AuthenticationManager am = new OfficeDevPnP.Core.AuthenticationManager();
+                 oNewContext = am.GetWebLoginClientContext(cUrl, null);
+
+                oNewContext.ExecutingWebRequest += delegate (object sender2, WebRequestEventArgs e2)
+                {
+                    e2.WebRequestExecutor.WebRequest.UserAgent = "NONISV|RammWare|spToolbelt2019/1.0";
+                };
+            } else
+            {
+                oNewContext = new ClientContext(cUrl);
+                oNewContext.Credentials = ctx.Credentials;
+                
+            }
             return oNewContext;
         }
 

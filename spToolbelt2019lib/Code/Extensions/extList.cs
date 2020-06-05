@@ -154,7 +154,41 @@ namespace spToolbelt2019Lib
                                 if (cField.Contains("`"))
                                 {
                                     string[] cFieldInfo = cField.Split('`');
-                                    tgtItem[cFieldInfo[0]] = cFieldInfo[1];
+                                 
+                                    
+                                    if (item[cFieldInfo[1]]!=null)
+                                    {
+                                        string cText = item[cFieldInfo[1]].ToString();
+                                        if (cText.Contains("/Departments/Marketing/MarketingStore"))
+                                        {
+                                            if (cFieldInfo[0].ToLower().Contains("image"))
+                                            {
+                                                cText = cText.Replace("/Departments/Marketing/MarketingStore", "");
+                                                string cUrl = cText.Substring(cText.IndexOf("<img"));
+                                                 cUrl = cUrl.Substring(cUrl.IndexOf("src") + 5);
+                                                Int32 iEnd = cUrl.IndexOf("\"");
+                                                cUrl = cUrl.Substring(0, iEnd);
+                                                cUrl = cUrl.Replace("/Catalog%20Images/", "https://sandbox.rammware.net/sites/Sebia/BrochureImages/");
+                                                tgtItem[cFieldInfo[0]] = cUrl;
+                                            }
+                                            else
+                                            {
+                                                cText = cText.Replace("/Departments/Marketing/MarketingStore", "");
+                                                string cUrl = cText.Substring(cText.IndexOf("href") + 6);
+                                                Int32 iEnd = cUrl.IndexOf("\"");
+                                                cUrl = cUrl.Substring(0, iEnd);
+                                                tgtItem[cFieldInfo[0]] = cUrl;
+
+                                            }
+                                        } else
+                                        {
+                                            tgtItem[cFieldInfo[0]] = item[cFieldInfo[1]];
+                                        }
+                                    }
+
+
+
+                                    
                                 }
                                 else
                                 {
@@ -164,10 +198,10 @@ namespace spToolbelt2019Lib
                             {
                                 System.Diagnostics.Trace.WriteLine(ex.Message);
                             }
-                            
+                            tgtItem.Update();
+                            ctxTarget.ExecuteQuery();
+
                         }
-                        tgtItem.Update();
-                        ctxTarget.ExecuteQuery();
                         tgtItem.Update();
                     }
                     catch (Exception ex)

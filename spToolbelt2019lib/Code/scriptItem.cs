@@ -463,6 +463,17 @@ namespace spToolbelt2019Lib
 
 
                         break;
+                    case "download-images":
+                        if (parms.ContainsKey("libraryname") && parms.ContainsKey("localfolder"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                            Status += "Ensure-ContentType requires the LibraryName and LocalFolder Parameters.";
+                        }
+                        break;
                     case "ensure-contenttype":
                     case "ensure-spcontenttype":
                         if (parms.ContainsKey("name") && parms.ContainsKey("parentname") && parms.ContainsKey("group"))
