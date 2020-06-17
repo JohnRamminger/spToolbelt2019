@@ -104,7 +104,8 @@ namespace spToolbelt2019.Forms
                     lvitem.SubItems.Add(li.TargetLocation);
 
                 }
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 System.Diagnostics.Trace.WriteLine(ex.Message);
             }
@@ -116,11 +117,12 @@ namespace spToolbelt2019.Forms
         {
             try
             {
-                if (itm[cFieldName]!=null)
+                if (itm[cFieldName] != null)
                 {
                     return itm[cFieldName].ToString();
                 }
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + " - " + cFieldName);
             }
@@ -132,7 +134,7 @@ namespace spToolbelt2019.Forms
             GetData();
         }
 
-       
+
         private void button1_Click(object sender, EventArgs e)
         {
             GetData();
@@ -159,6 +161,14 @@ namespace spToolbelt2019.Forms
             string cTemplate = System.IO.File.ReadAllText(txtListTemplate.Text);
             List<ListInfo> items = GetSelectLists();
 
+            foreach (ListInfo lst in items)
+            {
+                if (string.IsNullOrEmpty(lst.SiteUrl))
+                {
+                    System.Diagnostics.Trace.WriteLine(lst.Title);
+                }
+            }
+
 
             foreach (ListInfo lst in items)
             {
@@ -174,7 +184,8 @@ namespace spToolbelt2019.Forms
                         workList.RootFolder.Folders.Add(lst.Title);
                         workList.Update();
                         workCTX.ExecuteQuery();
-                    } catch (Exception ex)
+                    }
+                    catch (Exception ex)
                     {
                         System.Diagnostics.Trace.WriteLine(ex.Message);
                     }
@@ -197,7 +208,7 @@ namespace spToolbelt2019.Forms
         private List<ListInfo> GetSelectLists()
         {
             List<ListInfo> items = new List<ListInfo>();
-            foreach(ListViewItem lvi in lvLists.Items)
+            foreach (ListViewItem lvi in lvLists.Items)
             {
                 if (lvi.Checked)
                 {
@@ -253,12 +264,13 @@ namespace spToolbelt2019.Forms
             CheckBox chkLists = (CheckBox)sender;
             if (chkLists.Checked)
             {
-                foreach(ListViewItem lvi in lvLists.Items)
+                foreach (ListViewItem lvi in lvLists.Items)
                 {
                     lvi.Selected = true;
                     lvi.Checked = true;
                 }
-            } else
+            }
+            else
             {
                 foreach (ListViewItem lvi in lvLists.Items)
                 {
@@ -350,7 +362,7 @@ namespace spToolbelt2019.Forms
                         itm["TargetList"] = null;
                         itm.Update();
                         ctx.ExecuteQuery();
-                    } 
+                    }
                     catch (Exception ex)
                     {
                         System.Diagnostics.Trace.WriteLine(ex.Message);

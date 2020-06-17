@@ -394,6 +394,11 @@ namespace spToolbelt2019Lib
 
                                 DownloadImages(workCTX, oWorkItem);
                                 break;
+                            case "import-inventory":
+
+                                ImportInventory(workCTX, oWorkItem);
+                                break;
+
                             case "ensure-listlookup":
                                 EnsureListLookup(workCTX, oWorkItem);
 
@@ -662,6 +667,48 @@ namespace spToolbelt2019Lib
             }
 
         }
+
+        private void ImportInventory(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            try
+            {
+                string importFolder = oWorkItem.GetParm("importfolder");
+                if (Directory.Exists(importFolder))
+                {
+                    DirectoryInfo di = new DirectoryInfo(importFolder);
+                    foreach(FileInfo fi in di.GetFiles("*.json"))
+                    {
+                        ImportInventoryFile(workCTX, fi.FullName);
+                    }
+                }
+
+            } catch (Exception ex)
+            {
+                ShowError(ex, "ImportInventory", "");
+            }
+        }
+
+        private void ImportInventoryFile(ClientContext workCTX,string cFilename)
+        {
+            try
+            {
+
+                infoSite si = JsonConvert.DeserializeObject<infoSite>(System.IO.File.ReadAllText(cFilename));
+                ShowProgress(si.SiteUrl);
+                EnsureSiteInInventory(workCTX, si);
+                foreach(infoList li in si.Lists)
+                {
+                    EnsureListInInventory(workCTX, si, li);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "ImportInventoryFile", cFilename);
+            }
+
+        }
+
 
         private void DownloadImages(ClientContext workCTX, scriptItem oWorkItem)
         {
@@ -2695,7 +2742,20 @@ namespace spToolbelt2019Lib
             }
             return hi;
         }
-
+        private int GetItemCount(string cFileName)
+        {
+            Int32 iCount = 0;
+            using (StreamReader reader = new StreamReader(cFileName))
+            {
+                string line;
+                reader.ReadLine();
+                while ((line = reader.ReadLine()) != null)
+                {
+                    iCount++;
+                }
+            }
+            return iCount;
+        }
         private void ImportList(ClientContext workCTX, scriptItem oWorkItem)
         {
             try
@@ -2709,6 +2769,8 @@ namespace spToolbelt2019Lib
                 List lst = workCTX.Web.Lists.GetByTitle(cListName);
                 workCTX.Load(lst,l=>l.BaseTemplate);
                 workCTX.ExecuteQuery();
+
+                TotalItems = GetItemCount(cFileName);
 
                 Dictionary<string, string> fields = new Dictionary<string, string>();
                 string[] afields = cFieldSettings.Split(';');
@@ -2726,13 +2788,16 @@ namespace spToolbelt2019Lib
 
                     using (StreamReader reader = new StreamReader(cFileName))
                     {
+                        RunCount = 0;
                         string line;
                         reader.ReadLine();
-
                         while ((line = reader.ReadLine()) != null)
                         {
+                            bool bDirty = false;
+                            ShowInfo(line);
                             try
                             {
+                                RunCount++;
                                 //Define pattern
                                 Regex CSVParser = new Regex(",(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))");
 
@@ -2749,10 +2814,24 @@ namespace spToolbelt2019Lib
                                         foreach (KeyValuePair<string, string> fld in fields)
                                         {
                                             string cValue = GetRowValue(headerInfo, fld.Value, values);
-                                            itm[fld.Key] = cValue;
+                                            if (itm[fld.Key] == null)
+                                            {
+                                                bDirty = true;
+                                            }
+                                            else
+                                            {
+                                                if (itm[fld.Key].ToString() != cValue)
+                                                {
+                                                    bDirty = true;
+                                                }
+                                            }
+                                            if (bDirty)
+                                            {
+                                                itm[fld.Key] = cValue;
+                                                itm.Update();
+                                                workCTX.ExecuteQuery();
+                                            }
                                         }
-                                        itm.Update();
-                                        workCTX.ExecuteQuery();
                                     }
                                 }
                                 else
@@ -5810,6 +5889,140 @@ namespace spToolbelt2019Lib
 
         }
 
+
+
+        private int EnsureSiteInInventory(ClientContext saveContext,infoSite siteInfo)
+        {
+            string viewXML = "<View><Query><Where><Eq><FieldRef Name = 'spmiSiteUrl' /><Value Type = 'Text'>" + siteInfo.SiteUrl + "</Value></Eq></Where></Query><RowLimit>10</RowLimit></View>";
+            try
+            {
+
+                List lst = saveContext.Web.Lists.GetByTitle("spmiSites");
+                saveContext.Load(lst);
+                saveContext.ExecuteQuery();
+                CamlQuery oQuery = new CamlQuery();
+                oQuery.ViewXml = viewXML;
+                ListItemCollection items = lst.GetItems(oQuery);
+                saveContext.Load(items, si => si.Include(i => i["spmiSiteUrl"], i => i.Id));
+                saveContext.ExecuteQuery();
+                int iFoundID = 0;
+                foreach (var listItem in items)
+                {
+                    string cWorkUrl = listItem["spmiSiteUrl"].ToString();
+                    if (listItem["spmiSiteUrl"].ToString().ToLower() == siteInfo.SiteUrl.ToLower())
+                    {
+                        iFoundID = listItem.Id;
+                    }
+                }
+                ListItem itmSite = null;
+                if (iFoundID == 0)
+                {
+                    ListItemCreationInformation lici = new ListItemCreationInformation();
+                    itmSite = lst.AddItem(lici);
+                    itmSite["Title"] = siteInfo.SiteTitle;
+                    itmSite["spmiSiteUrl"] = siteInfo.SiteUrl;
+                }
+                else
+                {
+                    itmSite = lst.GetItemById(iFoundID);
+                    saveContext.Load(itmSite);
+                    saveContext.ExecuteQuery();
+                }
+
+                ////itmSite["spmiUserCount"] = siteInfo.useriUserCount;
+                ////itmSite["spmiSiteID"] = siteID;
+                //itmSite["spmiSiteUrl"] = url;
+                //itmSite["spmiLastUserItemModified"] = dtLastUserDate;
+
+                //if (bHasChildren)
+                //{
+                //    itmSite["spmiHasSubSites"] = 1;
+                //}
+                //else
+                //{
+                //    itmSite["spmiHasSubSites"] = 0;
+                //}
+                itmSite["spmiLastScan"] = DateTime.Now;
+                //itmSite["spmiUniquePermissions"] = bHasUniquePerms;
+                //if (iParentID > 0)
+                //{
+                //    itmSite["spmiParentSite"] = iParentID;
+                //}
+                itmSite.Update();
+                saveContext.ExecuteQuery();
+                return itmSite.Id;
+            }
+            catch (Exception ex)
+            {
+                if (ex.InnerException != null)
+                {
+                    ShowError(ex.InnerException, "EnsureSiteInGallery " + siteInfo.SiteUrl, "");
+                }
+                else
+                {
+                    ShowError(ex, "EnsureSiteInGallery " + siteInfo.SiteUrl, "");
+                }
+            }
+            return -1;
+        }
+
+
+        private int EnsureListInInventory(ClientContext saveContext,infoSite siteInfo,infoList listInfo)
+        {
+            string viewXML = "<View><Query><Where><Eq><FieldRef Name = 'spmiListID' /><Value Type = 'Text'>" + listInfo.Id + "</Value></Eq></Where></Query><RowLimit>10</RowLimit></View>";
+            try
+            {
+
+                List lst = saveContext.Web.Lists.GetByTitle("spmiLists");
+                saveContext.Load(lst);
+                saveContext.ExecuteQuery();
+                CamlQuery oQuery = new CamlQuery();
+                oQuery.ViewXml = viewXML;
+                ListItemCollection items = lst.GetItems(oQuery);
+                saveContext.Load(items);
+                saveContext.ExecuteQuery();
+                int iListID = 0;
+
+                foreach (var lstItem in items)
+                {
+                    if (lstItem["Title"].ToString() == listInfo.ListTitle)
+                    {
+                        iListID = lstItem.Id;
+                    }
+                }
+                ListItem listItem = null;
+                if (iListID == 0)
+                {
+                    ListItemCreationInformation lici = new ListItemCreationInformation();
+                    listItem = lst.AddItem(lici);
+                    listItem["Title"] = listInfo.ListTitle;
+                    listItem["spmiSiteUrl"] = siteInfo.SiteUrl;
+                    listItem["spmiSiteID"] = siteInfo.Id;
+                    listItem["spmiListID"] = listInfo.Id;
+                    //listItem["spmiParentSite"] = iSiteID;
+                }
+                else
+                {
+                    listItem = lst.GetItemById(iListID);
+                    saveContext.Load(listItem);
+                    saveContext.ExecuteQuery();
+                }
+                listItem["spmiLastScan"] = DateTime.Now;
+                listItem["spmiUniquePermissions"] = listInfo.UniquePermissions;
+                listItem["spmiItemCount"] = listInfo.ListItemCount;
+                listItem.Update();
+                saveContext.ExecuteQuery();
+                return listItem.Id;
+            }
+            catch (Exception ex)
+            {
+
+                ShowError(ex, "EnsureListInInventory " + listInfo.ListTitle + " - " + listInfo.Id, "");
+            }
+            return -1;
+
+
+        }
 
     }
 }

@@ -259,6 +259,12 @@
     <Compile Include="Objects\spiListItem.cs" />
     <Compile Include="Objects\spItemValues.cs" />
     <Compile Include="Objects\spiVersion.cs" />
+    <Compile Include="Objects\spSiteInfo\infoEventReciever.cs" />
+    <Compile Include="Objects\spSiteInfo\infoField.cs" />
+    <Compile Include="Objects\spSiteInfo\infoList.cs" />
+    <Compile Include="Objects\spSiteInfo\infoPage.cs" />
+    <Compile Include="Objects\spSiteInfo\infoSite.cs" />
+    <Compile Include="Objects\spSiteInfo\infoWebPart.cs" />
     <Compile Include="Objects\SQLite\slItemInfo.cs" />
     <Compile Include="Objects\SQLite\slListInfo.cs" />
     <Compile Include="Objects\SQLite\slSiteInfo.cs" />

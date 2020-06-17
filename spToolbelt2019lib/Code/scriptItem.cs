@@ -55,6 +55,17 @@ namespace spToolbelt2019Lib
             {
                 switch (Command)
                 {
+                    case "import-inventory":
+                        if (parms.ContainsKey("url") && parms.ContainsKey("importfolder"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                            Status += "Ensure-ContentType requires the Url and ImportFolder Parameters.";
+                        }
+                        break;
                     case "save-template":
                         if (parms.ContainsKey("url") &&
                             parms.ContainsKey("templatefile"))
