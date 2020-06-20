@@ -1,4 +1,5 @@
-﻿using Microsoft.Online.SharePoint.TenantAdministration;
+﻿using LumenWorks.Framework.IO.Csv;
+using Microsoft.Online.SharePoint.TenantAdministration;
 using Microsoft.SharePoint.Client;
 using Microsoft.SharePoint.Client.Taxonomy;
 using Microsoft.SharePoint.Client.Utilities;
@@ -2770,8 +2771,6 @@ namespace spToolbelt2019Lib
                 workCTX.Load(lst,l=>l.BaseTemplate);
                 workCTX.ExecuteQuery();
 
-                TotalItems = GetItemCount(cFileName);
-
                 Dictionary<string, string> fields = new Dictionary<string, string>();
                 string[] afields = cFieldSettings.Split(';');
                 foreach (string item in afields)
@@ -2781,112 +2780,130 @@ namespace spToolbelt2019Lib
                 }
 
 
-                if (System.IO.File.Exists(cFileName))
+
+                TotalItems = GetItemCount(cFileName);
+
+
+
+
+                using (CsvReader csv = new CsvReader(new StreamReader(cFileName), true))
                 {
-                    Dictionary<string, int> headerInfo = GetHeaders(cFileName);
+                    int fieldCount = csv.FieldCount;
+                    string[] headers = csv.GetFieldHeaders();
 
-
-                    using (StreamReader reader = new StreamReader(cFileName))
+                    while (csv.ReadNextRecord())
                     {
-                        RunCount = 0;
-                        string line;
-                        reader.ReadLine();
-                        while ((line = reader.ReadLine()) != null)
+                        string Key = csv[0];
+
+                        bool bDirty = false;
+                        ShowInfo(Key);
+                        try
                         {
-                            bool bDirty = false;
-                            ShowInfo(line);
-                            try
+                            RunCount++;
+                            if (lst.BaseTemplate == 1 || lst.BaseTemplate == 101)
                             {
-                                RunCount++;
-                                //Define pattern
-                                Regex CSVParser = new Regex(",(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))");
-
-                                //Separating columns to array
-                                string[] values = CSVParser.Split(line);
-
-                                string cKeyValue = GetRowValue(headerInfo, cFileKey, values);
-                                
-                                if (lst.BaseTemplate == 1 || lst.BaseTemplate == 101)
-                                {
-                                    ListItem itm = lst.GetListItemByField(workCTX, cListKey, "Text", cKeyValue);
-                                    if (itm != null)
-                                    {
-                                        foreach (KeyValuePair<string, string> fld in fields)
-                                        {
-                                            string cValue = GetRowValue(headerInfo, fld.Value, values);
-                                            if (itm[fld.Key] == null)
-                                            {
-                                                bDirty = true;
-                                            }
-                                            else
-                                            {
-                                                if (itm[fld.Key].ToString() != cValue)
-                                                {
-                                                    bDirty = true;
-                                                }
-                                            }
-                                            if (bDirty)
-                                            {
-                                                itm[fld.Key] = cValue;
-                                                itm.Update();
-                                                workCTX.ExecuteQuery();
-                                            }
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    ListItem itm = lst.GetListItemByField(workCTX, cListKey, "Text", cKeyValue);
-                                    if (itm == null)
-                                    {
-                                        ListItemCreationInformation lici = new ListItemCreationInformation();
-                                        itm = lst.AddItem(lici);
-                                        itm[cListKey] = cKeyValue;
-                                    }
-                                    foreach (KeyValuePair<string, string> fld in fields)
-                                    {
-                                        string cValue = GetRowValue(headerInfo, fld.Value, values);
-                                        itm[fld.Key] = cValue;
-                                    }
-                                    itm.Update();
-                                    workCTX.ExecuteQuery();
-                                }
+                                //ListItem itm = lst.GetListItemByField(workCTX, cListKey, "Text", Key);
+                                //if (itm != null)
+                                //{
+                                //    foreach (KeyValuePair<string, string> fld in fields)
+                                //    {
+                                //        string cValue = GetRowValue(headerInfo, fld.Value, values);
+                                //        if (itm[fld.Key] == null)
+                                //        {
+                                //            bDirty = true;
+                                //        }
+                                //        else
+                                //        {
+                                //            if (itm[fld.Key].ToString() != cValue)
+                                //            {
+                                //                bDirty = true;
+                                //            }
+                                //        }
+                                //        if (bDirty)
+                                //        {
+                                //            itm[fld.Key] = cValue;
+                                //            itm.Update();
+                                //            workCTX.ExecuteQuery();
+                                //        }
+                                //    }
+                                //}
                             }
-                            catch (Exception ex)
+                            else
                             {
+                                ListItem itm = lst.GetListItemByField(workCTX, cListKey, "Text", Key);
+                                if (itm == null)
+                                {
+                                    ListItemCreationInformation lici = new ListItemCreationInformation();
+                                    itm = lst.AddItem(lici);
+                                    itm[cListKey] = Key;
+                                }
+                                foreach (KeyValuePair<string, string> fld in fields)
+                                {
+                                    try
+                                    {
+                                        string cValue = GetValue(csv, headers, fld.Value);
+                                        //string cValue = GetRowValue(headerInfo, fld.Value, values);
+                                        itm[fld.Key] = cValue;
+                                        itm.Update();
+                                        workCTX.ExecuteQuery();
+                                    }
+                                    catch (Exception ex)
+                                    {
 
+                                    }
+                                }
                             }
                         }
+                        catch (Exception ex)
+                        {
+
+                        }
+
+
+
+
                     }
-
-
-
 
                 }
 
-                //List SourceList = srcCTX.Web.Lists.GetByTitle(cSourceList);
-                //srcCTX.Load(SourceList);
-                //srcCTX.ExecuteQuery();
-                //List TargetList = tgtCTX.Web.Lists.GetByTitle(cTargetList);
-                //tgtCTX.Load(TargetList);
-                //tgtCTX.ExecuteQuery();
 
-                //if (FieldSettingsValid(SourceList, TargetList, cFieldSettings))
-                //{
-                //    SourceList.SyncList(tgtCTX, cTargetList, cFieldSettings, new DateTime(1970, 1, 1));
 
-                //    // CopyList(srcCTX, SourceList, tgtCTX, TargetList, cFieldSettings,cQuery,bLargeList);
-                //}
-                //else
-                //{
-                //    ShowProgress("Field Settings Do Not Match for:" + SourceList.Title);
-                //}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
             }
             catch (Exception ex)
             {
                 ShowError(ex, "scriptWorker.CopyList", "");
             }
+        }
+
+        private string GetValue(CsvReader csv, string[] fields, string cFieldinCSV)
+        {
+            int iCol = 0;
+            foreach(string itm in fields)
+            {
+                if (itm==cFieldinCSV)
+                {
+                    string cRetVal = csv[iCol];
+                    cRetVal = cRetVal.Replace('|', ',');
+                    return cRetVal;
+                }
+
+                iCol++;
+            }
+            return "";
         }
 
         private string GetRowValue(Dictionary<string, int> headerInfo, string cFileKey, string[] values)
