@@ -77,9 +77,6 @@ namespace spToolbelt2019Lib
                             bRetVal = false;
                         }
                         break;
-
-
-                        break;
                     case "ensure-targetfolders":
                         bRetVal = true;
                         break;
@@ -287,6 +284,20 @@ namespace spToolbelt2019Lib
                         break;
                     case "update-url":
                         bRetVal = true;
+                        break;
+                    case "export-list":
+                        if (parms.ContainsKey("url") &&
+                            parms.ContainsKey("filename") &&
+                            parms.ContainsKey("listname") &&
+                            parms.ContainsKey("viewname"))
+                            
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
                         break;
                     case "import-list":
                         if (parms.ContainsKey("url") &&

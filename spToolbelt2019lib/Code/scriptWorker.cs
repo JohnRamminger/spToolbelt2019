@@ -355,6 +355,9 @@ namespace spToolbelt2019Lib
                             case "import-list":
                                 ImportList(workCTX, oWorkItem);
                                 break;
+                            case "export-list":
+                                ExportList(workCTX, oWorkItem);
+                                break;
                             case "copy-list":
                                 CopyList(oWorkItem);
                                 break;
@@ -750,7 +753,7 @@ namespace spToolbelt2019Lib
                 }
                 catch (Exception ex)
                 {
-
+                    ShowError(ex, "", "");
                 }
 
 
@@ -2757,6 +2760,88 @@ namespace spToolbelt2019Lib
             }
             return iCount;
         }
+        private void ExportList(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            try
+            {
+                string cFileName = oWorkItem.GetParm("filename");
+                string cListName = oWorkItem.GetParm("listname");
+                string cViewName = oWorkItem.GetParm("viewname");
+                List lst = workCTX.Web.Lists.GetByTitle(cListName);
+                workCTX.Load(lst, l => l.BaseTemplate);
+                workCTX.ExecuteQuery();
+                View view = lst.GetView(cViewName);
+ 
+                CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
+                ListItemCollection items = lst.GetItems(oQuery);
+                workCTX.Load(items);
+                workCTX.ExecuteQuery();
+                View oView = lst.GetView(cViewName);
+                
+                string cOutFile = @"c:\temp\" + cListName + "-export.csv";
+                using (StreamWriter outfile = new StreamWriter(cOutFile))
+                {
+                    string cLine = "";
+                    foreach(string itm in view.ViewFields)
+                    {
+                        cLine += itm + ", ";
+
+                    }
+                    outfile.WriteLine(cLine);
+
+                    foreach (ListItem lstItem in items)
+                    {
+                        try
+                        {
+
+                            ListItem workItem = lst.GetItemById(lstItem.Id);
+                            workCTX.Load(workItem);
+                            workCTX.ExecuteQuery();
+                            string cItemLine = "";
+                            foreach (string itm in view.ViewFields)
+                            {
+                                try
+                                {
+                                    string cFieldValue = "";
+                                    if (workItem[itm] != null)
+                                    {
+                                        cFieldValue = workItem[itm].ToString();
+                                        if (cFieldValue.Contains(','))
+                                        {
+                                            cFieldValue = cFieldValue.Replace(',', '|');
+                                        }
+                                        cItemLine += cFieldValue + ", ";
+                                    }
+                                } catch (Exception ex)
+                                {
+                                    ShowError(ex, "", "");
+                                    cItemLine += ",";
+                                }
+
+                            }
+                            outfile.WriteLine(cItemLine);
+                        }
+
+                        catch (Exception ex)
+                        {
+                            ShowError(ex, "", "");
+                        }
+                    }
+                    
+
+                
+
+
+
+                    outfile.Flush();
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "scriptWorker.ExportList", "");
+            }
+        }
+
         private void ImportList(ClientContext workCTX, scriptItem oWorkItem)
         {
             try
@@ -2795,7 +2880,7 @@ namespace spToolbelt2019Lib
                     {
                         string Key = csv[0];
 
-                        bool bDirty = false;
+                        
                         ShowInfo(Key);
                         try
                         {
@@ -2849,14 +2934,14 @@ namespace spToolbelt2019Lib
                                     }
                                     catch (Exception ex)
                                     {
-
+                                        ShowError(ex, "", "");
                                     }
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
-
+                            ShowError(ex, "", "");
                         }
 
 

@@ -484,7 +484,7 @@ namespace spToolbelt2019.Forms
                 }
                 } catch (Exception ex)
                 {
-
+                    System.Diagnostics.Trace.WriteLine(ex.Message);
                 }
             }
         }

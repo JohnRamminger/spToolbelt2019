@@ -577,20 +577,35 @@ namespace spToolbelt2019Lib
             return (lst.GetContentType(cContentTypeName) != null);
         }
 
+        public static View GetDefaultView(this List lst)
+        {
+            ViewCollection views = lst.Views;
+            lst.Context.Load(views,v=>v.Include(vw=>vw.DefaultView,vw=>vw.ViewFields));
+            lst.Context.ExecuteQuery();
+            foreach(View vw in views)
+            {
+                if (vw.DefaultView)
+                {
+                    return vw; 
+                }
+            }
+            return null;
+        }
+
         public static View GetView(this List lst, string cViewName)
         {
             try
             {
                 View tgtView = lst.Views.GetByTitle(cViewName);
-                lst.Context.Load(tgtView);
+                lst.Context.Load(tgtView,vw=>vw.ViewFields);
                 lst.Context.ExecuteQuery();
                 return tgtView;
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Trace.WriteLine(ex.Message);
+                return lst.GetDefaultView();
             }
-            return null;
         }
 
 
