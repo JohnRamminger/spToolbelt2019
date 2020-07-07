@@ -25,11 +25,13 @@ namespace spToolbelt2019
             Application.Exit();
         }
 
+        
         private void frmMain_Load(object sender, EventArgs e)
         {
             EnableUI(false);
            
             AddVersionNumber();
+            CheckForUpdates();
         }
 
         private void AddVersionNumber()
