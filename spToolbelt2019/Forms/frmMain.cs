@@ -31,7 +31,7 @@ namespace spToolbelt2019
             EnableUI(false);
            
             AddVersionNumber();
-            CheckForUpdates();
+            
         }
 
         private void AddVersionNumber()
@@ -41,12 +41,11 @@ namespace spToolbelt2019
             this.Text += $"v.{versionInfo.ProductVersion}";// "SharePoint Toolbelt: Version ("+versionInfo.ProductVersion+")";
         }
 
-        private void  CheckForUpdates()
+        private async Task  CheckForUpdates()
         {
-            using (var manager = new UpdateManager("https://rammware.s3.us-east-2.amazonaws.com/spToolBelt2019","spToolBelt2019"))
+            using (var manager = new UpdateManager("https://johnramminger.com/portals/0/deploy/spToolBelt2019", "spToolBelt2019"))
             {
-                 manager.UpdateApp();
-                MessageBox.Show("Update Check Complete!");
+                 await manager.UpdateApp();
             }
         }
 
@@ -143,13 +142,11 @@ namespace spToolbelt2019
 
         private void checkForUpdatesToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using (var manager = new UpdateManager("https://rammware.s3.us-east-2.amazonaws.com/spToolBelt2019", "spToolBelt2019"))
-            {
-                
-                manager.UpdateApp();
-                MessageBox.Show("Update Check Complete!");
-            }
+            frmUpdateApp oUpdate = new frmUpdateApp();
+            oUpdate.MdiParent = this;
+            oUpdate.Show();
 
+            
 
         }
 
@@ -183,6 +180,14 @@ namespace spToolbelt2019
             frmUpdateSPSQL oFrm = new frmUpdateSPSQL(ctx);
             oFrm.MdiParent = this;
             oFrm.Show();
+        }
+
+        private void syncNavToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            frmSyncNav sn = new frmSyncNav(ctx);
+            sn.MdiParent = this;
+            sn.Show();
+
         }
     }
 }

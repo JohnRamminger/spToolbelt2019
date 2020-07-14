@@ -680,19 +680,20 @@ namespace spToolbelt2019Lib
                 if (Directory.Exists(importFolder))
                 {
                     DirectoryInfo di = new DirectoryInfo(importFolder);
-                    foreach(FileInfo fi in di.GetFiles("*.json"))
+                    foreach (FileInfo fi in di.GetFiles("*.json"))
                     {
                         ImportInventoryFile(workCTX, fi.FullName);
                     }
                 }
 
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 ShowError(ex, "ImportInventory", "");
             }
         }
 
-        private void ImportInventoryFile(ClientContext workCTX,string cFilename)
+        private void ImportInventoryFile(ClientContext workCTX, string cFilename)
         {
             try
             {
@@ -700,9 +701,13 @@ namespace spToolbelt2019Lib
                 infoSite si = JsonConvert.DeserializeObject<infoSite>(System.IO.File.ReadAllText(cFilename));
                 ShowProgress(si.SiteUrl);
                 EnsureSiteInInventory(workCTX, si);
-                foreach(infoList li in si.Lists)
+                foreach (infoList li in si.Lists)
                 {
                     EnsureListInInventory(workCTX, si, li);
+                    if (li.items.Count > 0)
+                    {
+                        EnsureItemPermissions(workCTX, si, li);
+                    }
                 }
 
             }
@@ -713,6 +718,73 @@ namespace spToolbelt2019Lib
 
         }
 
+        private void EnsureItemPermissions(ClientContext workCTX, infoSite si, infoList li)
+        {
+            try
+            {
+                foreach (infoItem ii in li.items)
+                {
+                    EnsureItemPermission(workCTX, si, li, ii);
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "EnsureItemPermisions", "");
+            }
+        }
+
+
+
+
+
+        private void EnsureItemPermission(ClientContext workCTX, infoSite si, infoList li, infoItem ii)
+        {
+            try
+            {
+
+                string viewXML = "<View><Query><Where><Eq><FieldRef Name = 'spmiItemGuid' /><Value Type = 'Text'>" + ii.ID + "</Value></Eq></Where></Query><RowLimit>10</RowLimit></View>";
+                List lst = workCTX.Web.Lists.GetByTitle("spmiItems");
+                workCTX.Load(lst);
+                workCTX.ExecuteQuery();
+                CamlQuery oQuery = new CamlQuery();
+                oQuery.ViewXml = viewXML;
+                ListItemCollection items = lst.GetItems(oQuery);
+                workCTX.Load(items);
+                workCTX.ExecuteQuery();
+                int iListID = 0;
+
+                foreach (var lstItem in items)
+                {
+                    if (lstItem["spmiItemGuid"].ToString() == ii.ID)
+                    {
+                        iListID = lstItem.Id;
+                    }
+                }
+                ListItem listItem = null;
+                if (iListID == 0)
+                {
+                    ListItemCreationInformation lici = new ListItemCreationInformation();
+                    listItem = lst.AddItem(lici);
+                    listItem["spmiItemGuid"] = ii.ID;
+                }
+                else
+                {
+                    listItem = lst.GetItemById(iListID);
+                    workCTX.Load(listItem);
+                    workCTX.ExecuteQuery();
+                }
+                string cPerm = BuildPermissions(ii.permissions);
+                listItem["spmiPermissions"] = cPerm;
+                listItem["spmiListID"] = li.Id;
+                listItem["spmiListTitle"] = li.ListTitle;
+                listItem.Update();
+                workCTX.ExecuteQuery();
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "EnsureItemPermission", ii.Title);
+            }
+        }
 
         private void DownloadImages(ClientContext workCTX, scriptItem oWorkItem)
         {
@@ -2771,18 +2843,18 @@ namespace spToolbelt2019Lib
                 workCTX.Load(lst, l => l.BaseTemplate);
                 workCTX.ExecuteQuery();
                 View view = lst.GetView(cViewName);
- 
+
                 CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
                 ListItemCollection items = lst.GetItems(oQuery);
                 workCTX.Load(items);
                 workCTX.ExecuteQuery();
                 View oView = lst.GetView(cViewName);
-                
+
                 string cOutFile = @"c:\temp\" + cListName + "-export.csv";
                 using (StreamWriter outfile = new StreamWriter(cOutFile))
                 {
                     string cLine = "";
-                    foreach(string itm in view.ViewFields)
+                    foreach (string itm in view.ViewFields)
                     {
                         cLine += itm + ", ";
 
@@ -2812,7 +2884,8 @@ namespace spToolbelt2019Lib
                                         }
                                         cItemLine += cFieldValue + ", ";
                                     }
-                                } catch (Exception ex)
+                                }
+                                catch (Exception ex)
                                 {
                                     ShowError(ex, "", "");
                                     cItemLine += ",";
@@ -2827,9 +2900,9 @@ namespace spToolbelt2019Lib
                             ShowError(ex, "", "");
                         }
                     }
-                    
 
-                
+
+
 
 
 
@@ -2853,7 +2926,7 @@ namespace spToolbelt2019Lib
                 string cFieldSettings = oWorkItem.GetParm("fieldsettings");
 
                 List lst = workCTX.Web.Lists.GetByTitle(cListName);
-                workCTX.Load(lst,l=>l.BaseTemplate);
+                workCTX.Load(lst, l => l.BaseTemplate);
                 workCTX.ExecuteQuery();
 
                 Dictionary<string, string> fields = new Dictionary<string, string>();
@@ -2880,7 +2953,7 @@ namespace spToolbelt2019Lib
                     {
                         string Key = csv[0];
 
-                        
+
                         ShowInfo(Key);
                         try
                         {
@@ -2977,9 +3050,9 @@ namespace spToolbelt2019Lib
         private string GetValue(CsvReader csv, string[] fields, string cFieldinCSV)
         {
             int iCol = 0;
-            foreach(string itm in fields)
+            foreach (string itm in fields)
             {
-                if (itm==cFieldinCSV)
+                if (itm == cFieldinCSV)
                 {
                     string cRetVal = csv[iCol];
                     cRetVal = cRetVal.Replace('|', ',');
@@ -3030,6 +3103,16 @@ namespace spToolbelt2019Lib
 
                 ClientContext srcCTX = new ClientContext(cSourceSite);
                 ClientContext tgtCTX = new ClientContext(cTargetSite);
+                srcCTX.ExecutingWebRequest += delegate (object sender2, WebRequestEventArgs e2)
+                {
+                    e2.WebRequestExecutor.WebRequest.UserAgent = "NONISV|RammWare|spToolbelt2019/1.0";
+                };
+
+                tgtCTX.ExecutingWebRequest += delegate (object sender2, WebRequestEventArgs e2)
+                {
+                    e2.WebRequestExecutor.WebRequest.UserAgent = "NONISV|RammWare|spToolbelt2019/1.0";
+                };
+
                 srcCTX.Credentials = ctx.Credentials;
                 tgtCTX.Credentials = ctx.Credentials;
                 List SourceList = srcCTX.Web.Lists.GetByTitle(cSourceList);
@@ -5471,6 +5554,7 @@ namespace spToolbelt2019Lib
                         workItem["Title"] = itm.DisplayName;
                     }
                     workItem["spmiListID"] = cListId;
+                    
                     workItem["spmiItemData"] = JsonConvert.SerializeObject(itm.FieldValuesAsText.FieldValues);
                     //workItem["spmiParentFolderUrl"] = itm.File.foldeworkFolder.ServerRelativeUrl
                     workItem.Update();
@@ -5993,7 +6077,7 @@ namespace spToolbelt2019Lib
 
 
 
-        private int EnsureSiteInInventory(ClientContext saveContext,infoSite siteInfo)
+        private int EnsureSiteInInventory(ClientContext saveContext, infoSite siteInfo)
         {
             string viewXML = "<View><Query><Where><Eq><FieldRef Name = 'spmiSiteUrl' /><Value Type = 'Text'>" + siteInfo.SiteUrl + "</Value></Eq></Where></Query><RowLimit>10</RowLimit></View>";
             try
@@ -6030,22 +6114,14 @@ namespace spToolbelt2019Lib
                     saveContext.Load(itmSite);
                     saveContext.ExecuteQuery();
                 }
+                itmSite["spmiDepth"] = GetDepth(siteInfo.SiteUrl);
+                //itmSite["spmiParentSite"] = siteInfo.ParentWeb;
+                itmSite["spmiSiteID"] = siteInfo.Id;
+                string cPerm = BuildPermissions(siteInfo.Permissions);
+                itmSite["spmiPermissions"] = cPerm;
 
-                ////itmSite["spmiUserCount"] = siteInfo.useriUserCount;
-                ////itmSite["spmiSiteID"] = siteID;
-                //itmSite["spmiSiteUrl"] = url;
-                //itmSite["spmiLastUserItemModified"] = dtLastUserDate;
-
-                //if (bHasChildren)
-                //{
-                //    itmSite["spmiHasSubSites"] = 1;
-                //}
-                //else
-                //{
-                //    itmSite["spmiHasSubSites"] = 0;
-                //}
                 itmSite["spmiLastScan"] = DateTime.Now;
-                //itmSite["spmiUniquePermissions"] = bHasUniquePerms;
+                itmSite["spmiUniquePermissions"] = siteInfo.HasUniquePermissions;
                 //if (iParentID > 0)
                 //{
                 //    itmSite["spmiParentSite"] = iParentID;
@@ -6068,8 +6144,43 @@ namespace spToolbelt2019Lib
             return -1;
         }
 
+        private string BuildPermissions(List<infoPermItem> permissions)
+        {
+            string cRetVal = "";
+            try
+            {
+                if (permissions == null) { return "";  }
+                foreach(infoPermItem ipi in permissions)
+                {
+                    cRetVal += ipi.DisplayName + " - " + ipi.LoginName + " - " + ipi.PermissionLevel + Environment.NewLine;
+                }
+            } catch (Exception ex)
+            {
+                ShowError(ex, "BuildPermissions", "");
+            }
+            return cRetVal;
+        }
 
-        private int EnsureListInInventory(ClientContext saveContext,infoSite siteInfo,infoList listInfo)
+        private Int32 GetDepth(string siteUrl)
+        {
+            string tmpStr = siteUrl.Substring(siteUrl.IndexOf("//") + 2);
+            return CountStringOccurrences(tmpStr, "/") + 1;
+        }
+
+        public static int CountStringOccurrences(string text, string pattern)
+        {
+            // Loop through all instances of the string 'text'.
+            int count = 0;
+            int i = 0;
+            while ((i = text.IndexOf(pattern, i)) != -1)
+            {
+                i += pattern.Length;
+                count++;
+            }
+            return count;
+        }
+
+        private int EnsureListInInventory(ClientContext saveContext, infoSite siteInfo, infoList listInfo)
         {
             string viewXML = "<View><Query><Where><Eq><FieldRef Name = 'spmiListID' /><Value Type = 'Text'>" + listInfo.Id + "</Value></Eq></Where></Query><RowLimit>10</RowLimit></View>";
             try
@@ -6111,6 +6222,8 @@ namespace spToolbelt2019Lib
                 }
                 listItem["spmiLastScan"] = DateTime.Now;
                 listItem["spmiUniquePermissions"] = listInfo.UniquePermissions;
+                string cPerm = BuildPermissions(listInfo.Permissions);
+                listItem["spmiPermissions"] = cPerm;
                 listItem["spmiItemCount"] = listInfo.ListItemCount;
                 listItem.Update();
                 saveContext.ExecuteQuery();

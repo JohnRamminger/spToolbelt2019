@@ -29,5 +29,11 @@
     <Setting Name="AuthenticationIntegrated" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
+    <Setting Name="UpdatePathFolder" Type="System.String" Scope="User">
+      <Value Profile="(Default)">https://deploy.rammware.net/sptoolbelt2019</Value>
+    </Setting>
+    <Setting Name="PackageID" Type="System.String" Scope="User">
+      <Value Profile="(Default)">spToolBelt2019</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

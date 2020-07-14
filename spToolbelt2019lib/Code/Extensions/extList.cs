@@ -19,7 +19,7 @@ namespace spToolbelt2019Lib
 
             } catch (Exception ex)
             {
-                throw new Exception("An error occured in SetListExperience for: " + lst.Title + " " + ex.Message);
+                throw new Exception("An error occurred in SetListExperience for: " + lst.Title + " " + ex.Message);
             }
         }
 
@@ -118,7 +118,7 @@ namespace spToolbelt2019Lib
                 List tgtList = ctxTarget.Web.Lists.GetByTitle(cListName);
                 ctxTarget.Load(tgtList, l => l.ItemCount);
                 ctxTarget.ExecuteQuery();
-                srcList.Context.Load(srcList, s => s.ItemCount);
+                srcList.Context.Load(srcList, s => s.ItemCount,s=>s.HasUniqueRoleAssignments);
                 srcList.Context.ExecuteQuery();
 
                 ListItemCollection workItems = null;
@@ -185,10 +185,6 @@ namespace spToolbelt2019Lib
                                             tgtItem[cFieldInfo[0]] = item[cFieldInfo[1]];
                                         }
                                     }
-
-
-
-                                    
                                 }
                                 else
                                 {
@@ -203,6 +199,15 @@ namespace spToolbelt2019Lib
 
                         }
                         tgtItem.Update();
+                        srcList.Context.Load(item, i => i.HasUniqueRoleAssignments, i => i.RoleAssignments);
+                        srcList.Context.ExecuteQuery();
+                        if (item.HasUniqueRoleAssignments)
+                        {
+                            tgtItem.BreakRoleInheritance(false, true);
+                            tgtItem.Update();
+                            ctxTarget.ExecuteQuery();
+                            SyncPemrissions(ctxTarget, tgtItem, item);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -215,7 +220,58 @@ namespace spToolbelt2019Lib
             }
             
         }
-  
+
+        private static void SyncPemrissions(ClientContext ctxTarget, ListItem tgtItem, ListItem item)
+        {
+            try
+            {
+                item.Context.Load(item, i => i.RoleAssignments);
+                item.Context.ExecuteQuery();
+                foreach(RoleAssignment ra in item.RoleAssignments)
+                {
+                    try
+                    {
+                        item.Context.Load(ra.Member);
+                        item.Context.ExecuteQuery();
+                        if (!HasRole(tgtItem, ra.Member))
+                        {
+                            tgtItem.RoleAssignments.Add(ra.Member, ra.RoleDefinitionBindings);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception("Unable to Add User: " + ra.Member.LoginName+" - "+ex.Message);
+                    }
+
+                }
+            } catch(Exception ex)
+            {
+                throw new Exception("An error occured in SyncPemrissions for: " + item.Id + " " + ex.Message);
+            }
+        }
+
+        private static bool HasRole(ListItem tgtItem, Principal member)
+        {
+            try
+            {
+                tgtItem.Context.Load(tgtItem.RoleAssignments);
+                tgtItem.Context.ExecuteQuery();
+                foreach(RoleAssignment ra in tgtItem.RoleAssignments)
+                {
+                    tgtItem.Context.Load(ra.Member);
+                    tgtItem.Context.ExecuteQuery();
+                    if (ra.Member.LoginName==member.LoginName)
+                    {
+                        return true;
+                    }
+                }
+            } catch (Exception)
+            {
+                throw new Exception("Error with Roles");
+
+            }
+            return false;
+        }
 
         public static bool HasItemByTitle(this List lst,string cTitle)
         {
