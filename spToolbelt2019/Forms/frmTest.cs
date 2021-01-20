@@ -11,12 +11,17 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.SharePoint.Client;
 using spToolbelt2019Lib;
+using Microsoft.SharePoint.Client.Workflow;
 using OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers;
 using OfficeDevPnP.Core.Framework.Provisioning.Connectors;
 using OfficeDevPnP.Core.Framework.Provisioning.Model;
 using ClientSidePage = OfficeDevPnP.Core.Pages.ClientSidePage;
 using Newtonsoft.Json.Linq;
 using CanvasControl = OfficeDevPnP.Core.Pages.CanvasControl;
+using System.IO;
+using spToolbelt2019lib;
+using Newtonsoft.Json;
+using LinqToExcel.Extensions;
 
 namespace spToolbelt2019.Forms
 {
@@ -37,7 +42,7 @@ namespace spToolbelt2019.Forms
         private void AddSampleData()
         {
             List lst = ctx.Web.Lists.GetByTitle("ReportingPeriods");
-
+            
             InsertSampleData(lst, "2011 Period 01", "Pd_1FY11");
             InsertSampleData(lst, "2018 Period 11", "Pd_11FY18");
             InsertSampleData(lst, "2019 Period 03", "Pd_3FY19");
@@ -136,28 +141,6 @@ namespace spToolbelt2019.Forms
             lst.Context.ExecuteQuery();
         }
 
-        private void Button1_Click(object sender, EventArgs e)
-        {
-
-            ProvisioningTemplateCreationInformation ptci = new ProvisioningTemplateCreationInformation(ctx.Web);
-
-            // Create FileSystemConnector, so that we can store composed files somewhere temporarily 
-            ptci.FileConnector = new FileSystemConnector(@"c:\temp\pnpprovisioningdemo", "");
-            ptci.PersistBrandingFiles = true;
-            ptci.ProgressDelegate = delegate (String message, Int32 progress, Int32 total)
-            {
-
-                // Use this to simply output progress to the console application UI
-                Console.WriteLine("{0:00}/{1:00} - {2}", progress, total, message);
-            };
-
-
-            ProvisioningTemplate template = ctx.Web.GetProvisioningTemplate(ptci);
-
-
-
-
-        }
 
         private void WalkCustomActions()
         {
@@ -487,6 +470,297 @@ namespace spToolbelt2019.Forms
                     System.Diagnostics.Trace.WriteLine(ex.Message);
                 }
             }
+        }
+
+        private void button5_Click_1(object sender, EventArgs e)
+        {
+            string cLoc = @"C:\temp\desc\SiteInfo07242020";
+            StreamWriter oWriter = new StreamWriter(@"c:\temp\DeSCWorkflows.csv");
+            oWriter.WriteLine("Site,List,Last Updated,Workflow Name");
+            if (System.IO.Directory.Exists(cLoc))
+            {
+                DirectoryInfo di = new DirectoryInfo(cLoc);
+                foreach (FileInfo fi in di.GetFiles("*.json"))
+                {
+                    infoSite si = JsonConvert.DeserializeObject<infoSite>(System.IO.File.ReadAllText(fi.FullName));
+                    foreach (infoList li in si.Lists)
+                    {
+                        if (li.workflows!=null)
+                        {
+                            if (li.workflows.Count > 0)
+                            {
+                                foreach (infoWorkflow wf in li.workflows)
+                                {
+                                    if (!wf.Name.ToLower().Contains("previous"))
+                                    {
+                                        oWriter.WriteLine(si.SiteUrl + "," + DeComma(li.ListTitle) + "," + li.LastItemModified.ToShortDateString() + "," + DeComma(wf.Name));
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                }
+            }
+            MessageBox.Show("Done");
+            oWriter.Flush();
+            oWriter.Close();
+
+        }
+
+        private string DeComma(string inputStr)
+        {
+            while (inputStr.Contains(","))
+            {
+                inputStr=inputStr.Replace(",", "-");
+            }
+            return inputStr;
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            string cLoc = @"C:\temp\DeWorkflow\SiteInfo07152020";
+            StreamWriter oWriter = new StreamWriter(@"c:\temp\DominionLists.csv");
+            oWriter.WriteLine("Site,List,Last Updated,ItemCount");
+            if (System.IO.Directory.Exists(cLoc))
+            {
+
+                DirectoryInfo di = new DirectoryInfo(cLoc);
+                foreach (FileInfo fi in di.GetFiles("*.json"))
+                {
+                    infoSite si = JsonConvert.DeserializeObject<infoSite>(System.IO.File.ReadAllText(fi.FullName));
+                    foreach (infoList li in si.Lists)
+                    {
+                        if (li.ListItemCount > 0)
+                        {
+                            oWriter.WriteLine(DeComma(si.SiteUrl) + "," + DeComma(li.ListTitle) + "," + li.LastItemModified.ToShortDateString() + "," + li.ListItemCount);
+                        }
+                    }
+
+                }
+            }
+            MessageBox.Show("Done");
+            oWriter.Flush();
+            oWriter.Close();
+
+
+        }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            txtResults.Text = "";
+            button7.Enabled = false;
+            string cLoc = @"C:\temp\DeWorkflow\SiteInfo07152020";
+            if (System.IO.Directory.Exists(cLoc))
+            {
+                DirectoryInfo di = new DirectoryInfo(cLoc);
+                foreach (FileInfo fi in di.GetFiles("*.json"))
+                {
+                    infoSite si = JsonConvert.DeserializeObject<infoSite>(System.IO.File.ReadAllText(fi.FullName));
+                    foreach(string cFeature in si.Features)
+                    {
+                        if (cFeature.ToLower().Contains(txtFeatureId.Text.ToLower()))
+                        {
+                            txtResults.Text += si.SiteUrl + Environment.NewLine;
+                        }
+                    }
+                }
+            }
+            button7.Enabled = true;
+
+
+
+
+
+
+        }
+
+        private void button8_Click(object sender, EventArgs e)
+        {
+            txtResults.Text = "";
+            button8.Enabled = false;
+            string cLoc = @"C:\temp\DeWorkflow\SiteInfo07152020";
+            if (System.IO.Directory.Exists(cLoc))
+            {
+                DirectoryInfo di = new DirectoryInfo(cLoc);
+                foreach (FileInfo fi in di.GetFiles("*.json"))
+                {
+                    infoSite si = JsonConvert.DeserializeObject<infoSite>(System.IO.File.ReadAllText(fi.FullName));
+                    foreach(infoList li in si.Lists)
+                    {
+                        foreach(infoField fld in li.fields)
+                        {
+                            if (fld.FieldTitle.ToLower().Contains(txtFeatureId.Text.ToLower()) || fld.FieldName.ToLower().Contains(txtFeatureId.Text.ToLower()))
+                            {
+                                txtResults.Text += si.SiteUrl + " - " + li.ListTitle + " - " + li.LastItemModified.ToShortDateString()+Environment.NewLine;
+                            }
+                        }
+                    }
+                }
+            }
+            button8.Enabled = true;
+
+
+        }
+
+        private void button9_Click(object sender, EventArgs e)
+        {
+            txtResults.Text = "";
+            button9.Enabled = false;
+            string cLoc = @"C:\temp\DeWorkflow\SiteInfo07152020";
+            if (System.IO.Directory.Exists(cLoc))
+            {
+                DirectoryInfo di = new DirectoryInfo(cLoc);
+                foreach (FileInfo fi in di.GetFiles("*.json"))
+                {
+
+                    infoSite si = JsonConvert.DeserializeObject<infoSite>(System.IO.File.ReadAllText(fi.FullName));
+                    foreach(infoPage pg in si.PageFiles)
+                    {
+                        foreach(infoWebPart wp in pg.WebParts)
+                        {
+                            if (wp.Title.Contains(txtFeatureId.Text))
+                            {
+                                txtResults.Text += si.SiteUrl + " - " + pg.Url + " - " + wp.Title + Environment.NewLine;
+                            }
+                        }
+                        
+                    }
+                }
+            }
+            button9.Enabled = true;
+
+
+        }
+
+        private void cmdWorkflowFind_Click(object sender, EventArgs e)
+        {
+            txtResults.Text = "";
+        cmdWorkflowFind.Enabled = false;
+            string cLoc = @"C:\temp\DeWorkflow\SiteInfo07152020";
+            if (System.IO.Directory.Exists(cLoc))
+            {
+                DirectoryInfo di = new DirectoryInfo(cLoc);
+                foreach (FileInfo fi in di.GetFiles("*.json"))
+                {
+
+                    infoSite si = JsonConvert.DeserializeObject<infoSite>(System.IO.File.ReadAllText(fi.FullName));
+                    foreach(infoList lst in si.Lists)
+                    {
+                        if (lst.workflows != null)
+                        {
+                            foreach (infoWorkflow wf in lst.workflows)
+                            {
+                                if (wf.Name.Contains(txtFeatureId.Text.ToLower()))
+                                {
+                                    txtResults.Text += si.SiteUrl + " - " + lst.ListTitle + " - " + wf + Environment.NewLine;
+                                }
+                            }
+                        }
+                    }
+                    
+                    
+                    
+                    foreach (infoPage pg in si.PageFiles)
+                    {
+                        foreach (infoWebPart wp in pg.WebParts)
+                        {
+                            if (wp.Title.Contains(txtFeatureId.Text))
+                            {
+                                txtResults.Text += si.SiteUrl + " - " + pg.Url + " - " + wp.Title + Environment.NewLine;
+                            }
+                        }
+
+                    }
+                }
+            }
+            cmdWorkflowFind.Enabled = true;
+
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            WorkflowAssociationCollection wfs = ctx.Web.WorkflowAssociations;
+            ctx.Load(wfs);
+            ctx.ExecuteQuery();
+            foreach(WorkflowAssociation wf in wfs)
+            {
+                System.Diagnostics.Trace.WriteLine(wf.Name);
+            }
+
+            ListCollection lsts = ctx.Web.Lists;
+            ctx.Load(lsts, l => l.Include(lst => lst.Title, lst => lst.WorkflowAssociations));
+            ctx.ExecuteQuery();
+            foreach (List lst in lsts)
+            {
+                 wfs = lst.WorkflowAssociations;
+                ctx.Load(wfs);
+                ctx.ExecuteQuery();
+                if (lst.WorkflowAssociations.Count > 0)
+                {
+                    foreach(WorkflowAssociation wf in lst.WorkflowAssociations)
+                    {
+                        System.Diagnostics.Trace.WriteLine(wf.Name);
+                    }
+                }
+            }
+        }
+
+
+
+        private void fieldtest()
+        {
+            List lstDocs = ctx.Web.Lists.GetByTitle("Documents");
+            Microsoft.SharePoint.Client.Field fld = lstDocs.Fields.GetByInternalNameOrTitle("Title");
+            ctx.Load(lstDocs);
+            ctx.Load(fld);
+            ctx.ExecuteQuery();
+            fld.SetProperty("securedTo", "John");
+            ctx.ExecuteQuery();
+
+
+            
+        }
+
+
+
+        
+        private static Random random = new Random();
+        public static string RandomString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            return new string(Enumerable.Repeat(chars, length)
+              .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+        private void button2_Click_1(object sender, EventArgs e)
+        {
+            Microsoft.SharePoint.Client.ContentType ctDoc = ctx.Web.ContentTypes.GetById("0x0101");
+            ctx.Load(ctDoc);
+            ctx.ExecuteQuery();
+
+            ContentTypeCreationInformation ctci = new ContentTypeCreationInformation();
+            ctci.Description = "test";
+            ctci.Group = "Test";
+            ctci.ParentContentType = ctDoc;
+            ctci.Name = RandomString(10);
+
+            ctx.Web.ContentTypes.Add(ctci);
+            ctx.ExecuteQuery();
+        }
+
+        private void button10_Click(object sender, EventArgs e)
+        {
+            fieldtest();
+        }
+
+        private void button11_Click(object sender, EventArgs e)
+        {
+            List lstTracks = ctx.Web.Lists.GetByTitle("misTracks");
+            lstTracks.DefaultDisplayFormUrl = "https://rammworks.sharepoint.com/sites/MIS/SitePages/test.aspx";
+            lstTracks.DefaultEditFormUrl = "https://rammworks.sharepoint.com/sites/MIS/SitePages/test.aspx";
+            lstTracks.DefaultNewFormUrl = "https://rammworks.sharepoint.com/sites/MIS/SitePages/test.aspx";
+            lstTracks.Update();
+            ctx.ExecuteQuery();
         }
     }
 

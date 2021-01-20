@@ -311,6 +311,7 @@
     <Compile Include="Objects\spSiteInfo\infoPermItem.cs" />
     <Compile Include="Objects\spSiteInfo\infoSite.cs" />
     <Compile Include="Objects\spSiteInfo\infoWebPart.cs" />
+    <Compile Include="Objects\spSiteInfo\infoWorkflow.cs" />
     <Compile Include="Objects\SQLite\slItemInfo.cs" />
     <Compile Include="Objects\SQLite\slListInfo.cs" />
     <Compile Include="Objects\SQLite\slSiteInfo.cs" />
