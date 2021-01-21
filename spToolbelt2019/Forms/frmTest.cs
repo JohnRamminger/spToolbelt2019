@@ -17,6 +17,8 @@ using OfficeDevPnP.Core.Framework.Provisioning.Model;
 using ClientSidePage = OfficeDevPnP.Core.Pages.ClientSidePage;
 using Newtonsoft.Json.Linq;
 using CanvasControl = OfficeDevPnP.Core.Pages.CanvasControl;
+using Microsoft.SharePoint;
+using OfficeDevPnP.Core.Enums;
 
 namespace spToolbelt2019.Forms
 {
@@ -31,7 +33,7 @@ namespace spToolbelt2019.Forms
 
         private void FrmTest_Load(object sender, EventArgs e)
         {
-
+            System.Diagnostics.Trace.WriteLine(BuiltInFieldId.ID);
         }
 
         private void AddSampleData()

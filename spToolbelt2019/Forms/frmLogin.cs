@@ -156,7 +156,8 @@ namespace spToolbelt2019
                     case "PNP":
                         
                         OfficeDevPnP.Core.AuthenticationManager authManager = new OfficeDevPnP.Core.AuthenticationManager();
-                        ClientContext context = authManager.GetSharePointOnlineAuthenticatedContextTenant(cboSites.Text, txtUserName.Text,password);
+                        ClientContext ctx = authManager.GetWebLoginClientContext(cboSites.Text);
+                        //ClientContext context = authManager.GetSharePointOnlineAuthenticatedContextTenant(cboSites.Text, txtUserName.Text,password);
                         break;
                     default:
 

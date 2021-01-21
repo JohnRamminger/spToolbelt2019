@@ -25,6 +25,10 @@ namespace spToolbelt2019Lib
                 {
                     LoadItem(cRawLine);
                     Verified = ItemValid();
+                    if (Verified==false)
+                    {
+                        System.Diagnostics.Trace.WriteLine("");
+                    }
                 }
                 else
                 {
@@ -159,6 +163,31 @@ namespace spToolbelt2019Lib
                     case "remove-sitecolumnsbygroup":
                         if (parms.ContainsKey("url") &&
                             parms.ContainsKey("group"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
+                    case "hide-fieldfromforms":
+                        if (parms.ContainsKey("url") &&
+                            parms.ContainsKey("listname") &&
+                            parms.ContainsKey("fieldname"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
+                    case "set-fieldallowgroups":
+                        if (parms.ContainsKey("url") &&
+                            parms.ContainsKey("listname") &&
+                            parms.ContainsKey("fieldname") &&
+                            parms.ContainsKey("defaultvalue"))
                         {
                             bRetVal = true;
                         }
@@ -326,9 +355,16 @@ namespace spToolbelt2019Lib
                             bRetVal = false;
                         }
                         break;
-
-                        
-
+                   case "ensure-listandcontenttype":
+                        if (parms.ContainsKey("url") && parms.ContainsKey("listname") && parms.ContainsKey("contenttype") && parms.ContainsKey("type") && parms.ContainsKey("parentcontenttype"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
                     case "ensure-listhascontenttype":
                         if (parms.ContainsKey("url") && parms.ContainsKey("listname") && parms.ContainsKey("contenttype"))
                         {
@@ -450,16 +486,16 @@ namespace spToolbelt2019Lib
                         }
 
                         break;
-                    case "ensure-listandcontenttype":
-                        if (parms.ContainsKey("url" ) && parms.ContainsKey("ctname") && parms.ContainsKey("ctparent") && parms.ContainsKey("listtype") && parms.ContainsKey("listname"))
-                        {
-                            bRetVal = true;
-                        } else
-                        {
-                            bRetVal = false;
-                            Status+="Ensure-ListAndContentType requires Url, ctName, ctParent, listType, Generic,listName";
+                    //case "ensure-listandcontenttype":
+                    //    if (parms.ContainsKey("url" ) && parms.ContainsKey("ctname") && parms.ContainsKey("ctparent") && parms.ContainsKey("listtype") && parms.ContainsKey("listname"))
+                    //    {
+                    //        bRetVal = true;
+                    //    } else
+                    //    {
+                    //        bRetVal = false;
+                    //        Status+="Ensure-ListAndContentType requires Url, ctName, ctParent, listType, Generic,listName";
 
-                        }
+                    //    }
 
 
                         break;
@@ -615,7 +651,7 @@ namespace spToolbelt2019Lib
                         if (aParm.Contains('='))
                         {
                             string[] cWorkSplit = aParm.Split('=');
-                            parms.Add(cWorkSplit[0].ToLower(), cWorkSplit[1]);
+                            parms.Add(cWorkSplit[0].ToLower().Trim(), cWorkSplit[1]);
                             if (cWorkSplit[0].ToLower() == "testmode" && (cWorkSplit[1].ToLower() == "true" || (cWorkSplit[1] == "1")))
                             {
                                 TestMode = true;

@@ -9,13 +9,54 @@ namespace spToolbelt2019Lib
 {
     public static class ExtList
     {
+
+        public static void EnsureViewFields(this List lst,string cViewFields)
+        {
+            try
+            {
+                string[] vwFields = cViewFields.Split(';');
+                View vw = lst.DefaultView;
+                lst.Context.Load(vw, v => v.ViewFields);
+                lst.Context.ExecuteQuery();
+                vw.ViewFields.Remove("Editor");
+                vw.ViewFields.Remove("Modified");
+                foreach (string vwField in vwFields)
+                {
+                    try
+                    {
+                        if (!vw.ViewFields.Contains(vwField))
+                        {
+                            vw.ViewFields.Add(vwField);
+                            vw.Update();
+                            lst.Context.ExecuteQuery();
+                        }
+
+                    } catch (Exception ex)
+                    {
+                        System.Diagnostics.Trace.WriteLine(ex.Message);
+                    }
+                }
+                vw.ViewFields.Add("Editor");
+                vw.ViewFields.Add("Modified");
+                vw.Update();
+                lst.Context.ExecuteQuery();
+            } catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine(ex.Message);
+            }
+            
+        }
+
+
+
         public static void SetListExperience(this List lst, ListExperience exp)
         {
             try
             {
                 
                 lst.ListExperienceOptions = exp;
-
+                lst.Update();
+                lst.Context.ExecuteQuery();
 
             } catch (Exception ex)
             {
@@ -486,8 +527,6 @@ namespace spToolbelt2019Lib
                     ct.DeleteObject();
                     lst.Update();
                     lst.Context.ExecuteQuery();
-
-
                 }
             }
             catch (Exception ex)
