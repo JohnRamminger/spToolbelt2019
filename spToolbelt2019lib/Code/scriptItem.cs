@@ -59,6 +59,17 @@ namespace spToolbelt2019Lib
             {
                 switch (Command)
                 {
+                    case "import-inventory":
+                        if (parms.ContainsKey("url") && parms.ContainsKey("importfolder"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                            Status += "Ensure-ContentType requires the Url and ImportFolder Parameters.";
+                        }
+                        break;
                     case "save-template":
                         if (parms.ContainsKey("url") &&
                             parms.ContainsKey("templatefile"))
@@ -69,9 +80,6 @@ namespace spToolbelt2019Lib
                         {
                             bRetVal = false;
                         }
-                        break;
-
-
                         break;
                     case "ensure-targetfolders":
                         bRetVal = true;
@@ -306,6 +314,35 @@ namespace spToolbelt2019Lib
                     case "update-url":
                         bRetVal = true;
                         break;
+                    case "export-list":
+                        if (parms.ContainsKey("url") &&
+                            parms.ContainsKey("filename") &&
+                            parms.ContainsKey("listname") &&
+                            parms.ContainsKey("viewname"))
+                            
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
+                    case "import-list":
+                        if (parms.ContainsKey("url") &&
+                            parms.ContainsKey("filename") &&
+                            parms.ContainsKey("listname") &&
+                            parms.ContainsKey("listkey") &&
+                            parms.ContainsKey("filekey") &&
+                            parms.ContainsKey("fieldsettings"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
                     case "copy-list":
                         if (parms.ContainsKey("sourcesite") &&
                             parms.ContainsKey("sourcelist") &&
@@ -498,6 +535,17 @@ namespace spToolbelt2019Lib
                     //    }
 
 
+                        break;
+                    case "download-images":
+                        if (parms.ContainsKey("libraryname") && parms.ContainsKey("localfolder"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                            Status += "Ensure-ContentType requires the LibraryName and LocalFolder Parameters.";
+                        }
                         break;
                     case "ensure-contenttype":
                     case "ensure-spcontenttype":

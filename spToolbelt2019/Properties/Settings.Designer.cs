@@ -12,7 +12,7 @@ namespace spToolbelt2019.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "16.3.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "16.6.0.0")]
     internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -127,6 +127,30 @@ namespace spToolbelt2019.Properties {
             }
             set {
                 this["AuthenticationIntegrated"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://deploy.rammware.net/sptoolbelt2019")]
+        public string UpdatePathFolder {
+            get {
+                return ((string)(this["UpdatePathFolder"]));
+            }
+            set {
+                this["UpdatePathFolder"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("spToolBelt2019")]
+        public string PackageID {
+            get {
+                return ((string)(this["PackageID"]));
+            }
+            set {
+                this["PackageID"] = value;
             }
         }
     }

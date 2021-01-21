@@ -1,4 +1,5 @@
-﻿using Microsoft.Online.SharePoint.TenantAdministration;
+﻿using LumenWorks.Framework.IO.Csv;
+using Microsoft.Online.SharePoint.TenantAdministration;
 using Microsoft.SharePoint.Client;
 using Microsoft.SharePoint.Client.Taxonomy;
 using Microsoft.SharePoint.Client.Utilities;
@@ -19,7 +20,10 @@ using System.Linq;
 using System.Net;
 using System.Security;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Group = Microsoft.SharePoint.Client.Group;
+using GroupCollection = Microsoft.SharePoint.Client.GroupCollection;
 
 namespace spToolbelt2019Lib
 {
@@ -279,6 +283,7 @@ namespace spToolbelt2019Lib
 
         private void WorkSite(string item)
         {
+            string cLastUrl = "";
             try
             {
                 ClientContext workCTX = new ClientContext(item) { Credentials = ctx.Credentials };
@@ -289,6 +294,11 @@ namespace spToolbelt2019Lib
                 };
                 foreach (scriptItem oWorkItem in oWorkItems)
                 {
+                    if (oWorkItem.GetParm("url") != cLastUrl)
+                    {
+                        workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                        cLastUrl = oWorkItem.GetParm("url");
+                    }
                     try
                     {
                         Trace.WriteLine(oWorkItem.Command);
@@ -342,6 +352,12 @@ namespace spToolbelt2019Lib
                                 ClearList(oWorkItem);
 
                                 break;
+                            case "import-list":
+                                ImportList(workCTX, oWorkItem);
+                                break;
+                            case "export-list":
+                                ExportList(workCTX, oWorkItem);
+                                break;
                             case "copy-list":
                                 CopyList(oWorkItem);
                                 break;
@@ -363,7 +379,7 @@ namespace spToolbelt2019Lib
 
                             case "remove-contenttypefromlist":
                                 ShowProgress(string.Format("Remove Content Type From List: {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("ContentType")));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
                                 List lstRemove = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("ListName"));
                                 workCTX.Load(lstRemove);
                                 lstRemove.RemoveContentTypeFromList(oWorkItem.GetParm("ContentType"));
@@ -371,54 +387,29 @@ namespace spToolbelt2019Lib
                                 break;
                             case "disable-contenttypes":
                                 ShowProgress(string.Format("Ensure Content Type In List: {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("ContentType")));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
                                 List lst = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("ListName"));
 
                                 workCTX.Load(lst);
                                 workCTX.ExecuteQuery();
                                 lst.DisableContentTypes();
                                 break;
+                            case "download-images":
+
+                                DownloadImages(workCTX, oWorkItem);
+                                break;
+                            case "import-inventory":
+
+                                ImportInventory(workCTX, oWorkItem);
+                                break;
 
                             case "ensure-listlookup":
                                 EnsureListLookup(workCTX, oWorkItem);
 
                                 break;
-                            case "ensure-listandcontenttype":
-                                ShowProgress(string.Format("Ensure List and Content Type {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("ContentType")));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
-
-                                workCTX.Web.EnsureContentType(oWorkItem.GetParm("ContentType"), oWorkItem.GetParm("ParentContentType"), oWorkItem.GetParm("Group"));
-
-
-                                ListTemplateType oTemplateType = GetTemplateType(oWorkItem.GetParm("Type"));
-                                workCTX.Web.EnsureList(oWorkItem.GetParm("ListName"), oTemplateType, oWorkItem.GetParm("Description"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
-                                List lst3 = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("ListName"));
-                                workCTX.Load(lst3);
-                                workCTX.ExecuteQuery();
-                                lst3.EnsureListHasContenttype(workCTX.Site, oWorkItem.GetParm("ContentType"));
-                                lst3.RemoveContentTypeFromList(oWorkItem.GetParm("ParentContentType"));
-                                lst3.DisableContentTypes();
-                                lst3.SetListExperience(ListExperience.NewExperience);
-                                if (oWorkItem.GetParm("ContentType").ToLower()=="rrdocument")
-                                {
-                                    System.Diagnostics.Trace.WriteLine("hello");
-                                }
-
-                                string cViewFields = oWorkItem.GetParm("ViewFields");
-                                if (!string.IsNullOrEmpty(cViewFields))
-                                {
-                                    lst3.EnsureViewFields(cViewFields);
-                                }
-
-
-
-
-                                break;
-
                             case "ensure-listhascontenttype":
                                 ShowProgress(string.Format("Ensure Content Type In List: {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("ContentType")));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
                                 List lst2 = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("ListName"));
 
                                 workCTX.Load(lst2);
@@ -428,14 +419,14 @@ namespace spToolbelt2019Lib
 
                             case "ensure-list":
                                 ShowProgress("Working List: " + oWorkItem.GetParm("ListName"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
-                                ListTemplateType oTemplateType2 = GetTemplateType(oWorkItem.GetParm("Type"));
-                                workCTX.Web.EnsureList(oWorkItem.GetParm("ListName"), oTemplateType2, oWorkItem.GetParm("Description"));
+
+                                ListTemplateType oTemplateType = GetTemplateType(oWorkItem.GetParm("Type"));
+                                workCTX.Web.EnsureList(oWorkItem.GetParm("ListName"), oTemplateType, oWorkItem.GetParm("Description"));
                                 break;
 
                             case "attach-workflow":
                                 ShowProgress("Working List: " + oWorkItem.GetParm("ListName"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
                                 List lstAttach = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("ListName"));
                                 workCTX.Load(lstAttach);
                                 workCTX.ExecuteQuery();
@@ -444,7 +435,7 @@ namespace spToolbelt2019Lib
 
                             case "provision-list":
                                 ShowProgress("Working List: " + oWorkItem.GetParm("ListName"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                                //
                                 ListTemplateType oProvTemplateType = GetTemplateType(oWorkItem.GetParm("Type"));
                                 workCTX.Web.EnsureList(oWorkItem.GetParm("ListName"), oProvTemplateType, oWorkItem.GetParm("Description"));
                                 ShowProgress(string.Format("Ensure Content Type In List: {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("ContentType")));
@@ -456,62 +447,43 @@ namespace spToolbelt2019Lib
                                 ShowProgress(string.Format("Remove Content Type From List: {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("DefaultContentType")));
                                 lstProvision.RemoveContentTypeFromList(oWorkItem.GetParm("DefaultContentType"));
                                 break;
-                            
-
                             case "ensure-contenttypefield":
-                            case "ensure contenttypefield":
                                 ShowProgress(string.Format("Working Content Field Type: {0}-{1}", oWorkItem.GetParm("ContentType"), oWorkItem.GetParm("Fieldname")));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                                //
                                 workCTX.Web.EnsureContentTypeHasField(oWorkItem.GetParm("ContentType"), oWorkItem.GetParm("FieldName"));
                                 break;
 
                             case "remove-list":
                                 string cListName = oWorkItem.GetParm("listname");
                                 ShowProgress("Removing List: " + cListName);
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+                                //
                                 workCTX.Web.RemoveList(cListName);
                                 break;
                             case "remove-contenttype":
                                 string cContentTypeName = oWorkItem.GetParm("contenttype");
                                 ShowProgress("Removing Content Type: " + cContentTypeName);
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
-                                if (cContentTypeName.Contains("*"))
-                                {
-                                    workCTX.Web.RemoveContentTypes(cContentTypeName);
-                                }
-                                else
-                                {
-                                    workCTX.Web.RemoveContentType(cContentTypeName);
-                                }
+                                //
+                                workCTX.Web.RemoveContentType(cContentTypeName);
                                 break;
 
                             case "remove-sitecolumnsbygroup":
                                 string cGroupName = oWorkItem.GetParm("group");
                                 ShowProgress("Removing Columns for Group: " + cGroupName);
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
                                 workCTX.Web.RemoveFieldsForGroup(cGroupName);
                                 break;
-                            //case "ensure-listandcontenttype":
-                            //    EnsureListandContentType(workCTX, oWorkItem);
-                            //    break;
+                            case "ensure-listandcontenttype":
+                                EnsureListandContentType(workCTX, oWorkItem);
+                                break;
 
                             case "ensure-contenttype":
                                 ShowProgress("Working Content Type: " + oWorkItem.GetParm("Name"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
                                 workCTX.Web.EnsureContentType(oWorkItem.GetParm("Name"), oWorkItem.GetParm("ParentName"), oWorkItem.GetParm("Group"));
                                 break;
-                            case "hide-fieldfromforms":
-                                ShowProgress("Hiding field from forms: " + oWorkItem.GetParm("fieldname"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
-
-                                HideFieldFromForms(workCTX, oWorkItem);
-
-                                break;
-
-
                             case "set-fielddefaultvalue":
                                 ShowProgress("Working Default Value: " + oWorkItem.GetParm("fieldname"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
 
                                 SetDefaultValue(workCTX, oWorkItem);
 
@@ -519,7 +491,7 @@ namespace spToolbelt2019Lib
 
                             case "save-template":
                                 ShowProgress("Working Required Filed: " + oWorkItem.GetParm("fieldname"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
 
                                 SavePNPTemplate(workCTX, oWorkItem);
 
@@ -529,15 +501,16 @@ namespace spToolbelt2019Lib
 
                             case "set-fieldrequired":
                                 ShowProgress("Working Required Filed: " + oWorkItem.GetParm("fieldname"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
 
                                 SetRequiredField(workCTX, oWorkItem);
 
                                 break;
 
+
                             case "ensure-sitecolumnuser":
                                 ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
                                 bool bMultiUser = oWorkItem.GetParmBool("multiuser");
                                 bool bAllowGroups = oWorkItem.GetParmBool("alllowgroups");
 
@@ -545,51 +518,51 @@ namespace spToolbelt2019Lib
                                 break;
                             case "ensure-sitecolumn":
                                 ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
                                 workCTX.Web.EnsureSiteColumn(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"));
                                 break;
 
                             case "ensure-sitecolumninteger":
                                 ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
                                 workCTX.Web.EnsureSiteColumnInteger(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"));
                                 break;
 
                             case "ensure-sitecolumndatetime":
                                 ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
                                 workCTX.Web.EnsureSiteColumnDateTime(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"));
                                 break;
                             case "ensure-sitecolumncurrency":
                                 ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
                                 workCTX.Web.EnsureSiteColumnCurrency(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"));
                                 break;
                             case "ensure-sitecolumnchoice":
                                 ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
-                                workCTX.Web.EnsureSiteColumnChoice(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"), oWorkItem.GetParm("choices"));
+
+                                workCTX.Web.EnsureSiteColumnChoice(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("choices"));
                                 break;
                             case "ensure-sitecolumnboolean":
                                 ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
                                 workCTX.Web.EnsureSiteColumnBoolean(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"));
                                 break;
 
                             case "ensure-sitecolumnnote":
                                 ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
                                 workCTX.Web.EnsureSiteColumnNote(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"));
                                 break;
                             case "ensure-sitecolumnnumber":
                                 ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("Title"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
                                 workCTX.Web.EnsureSiteColumnNumber(oWorkItem.GetParm("InternalName"), oWorkItem.GetParm("Title"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"));
                                 break;
 
                             case "ensure-sitecolumnlookup":
                                 ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("displayname"));
-                                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
                                 workCTX.Web.EnsureSiteColumnLookup(oWorkItem.GetParm("internalname"), oWorkItem.GetParm("displayname"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"), oWorkItem.GetParm("ListName"), oWorkItem.GetParm("ShowField"));
                                 break;
 
@@ -683,7 +656,6 @@ namespace spToolbelt2019Lib
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Trace.WriteLine(oWorkItem.Command);
                         ShowError(ex, "ProcessSites.WorkSite - " + item, "");
                     }
 
@@ -700,12 +672,174 @@ namespace spToolbelt2019Lib
 
         }
 
+        private void ImportInventory(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            try
+            {
+                string importFolder = oWorkItem.GetParm("importfolder");
+                if (Directory.Exists(importFolder))
+                {
+                    DirectoryInfo di = new DirectoryInfo(importFolder);
+                    foreach (FileInfo fi in di.GetFiles("*.json"))
+                    {
+                        ImportInventoryFile(workCTX, fi.FullName);
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "ImportInventory", "");
+            }
+        }
+
+        private void ImportInventoryFile(ClientContext workCTX, string cFilename)
+        {
+            try
+            {
+
+                infoSite si = JsonConvert.DeserializeObject<infoSite>(System.IO.File.ReadAllText(cFilename));
+                ShowProgress(si.SiteUrl);
+                EnsureSiteInInventory(workCTX, si);
+                foreach (infoList li in si.Lists)
+                {
+                    EnsureListInInventory(workCTX, si, li);
+                    if (li.items.Count > 0)
+                    {
+                        EnsureItemPermissions(workCTX, si, li);
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "ImportInventoryFile", cFilename);
+            }
+
+        }
+
+        private void EnsureItemPermissions(ClientContext workCTX, infoSite si, infoList li)
+        {
+            try
+            {
+                foreach (infoItem ii in li.items)
+                {
+                    EnsureItemPermission(workCTX, si, li, ii);
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "EnsureItemPermisions", "");
+            }
+        }
+
+
+
+
+
+        private void EnsureItemPermission(ClientContext workCTX, infoSite si, infoList li, infoItem ii)
+        {
+            try
+            {
+
+                string viewXML = "<View><Query><Where><Eq><FieldRef Name = 'spmiItemGuid' /><Value Type = 'Text'>" + ii.ID + "</Value></Eq></Where></Query><RowLimit>10</RowLimit></View>";
+                List lst = workCTX.Web.Lists.GetByTitle("spmiItems");
+                workCTX.Load(lst);
+                workCTX.ExecuteQuery();
+                CamlQuery oQuery = new CamlQuery();
+                oQuery.ViewXml = viewXML;
+                ListItemCollection items = lst.GetItems(oQuery);
+                workCTX.Load(items);
+                workCTX.ExecuteQuery();
+                int iListID = 0;
+
+                foreach (var lstItem in items)
+                {
+                    if (lstItem["spmiItemGuid"].ToString() == ii.ID)
+                    {
+                        iListID = lstItem.Id;
+                    }
+                }
+                ListItem listItem = null;
+                if (iListID == 0)
+                {
+                    ListItemCreationInformation lici = new ListItemCreationInformation();
+                    listItem = lst.AddItem(lici);
+                    listItem["spmiItemGuid"] = ii.ID;
+                }
+                else
+                {
+                    listItem = lst.GetItemById(iListID);
+                    workCTX.Load(listItem);
+                    workCTX.ExecuteQuery();
+                }
+                string cPerm = BuildPermissions(ii.permissions);
+                listItem["spmiPermissions"] = cPerm;
+                listItem["spmiListID"] = li.Id;
+                listItem["spmiListTitle"] = li.ListTitle;
+                listItem.Update();
+                workCTX.ExecuteQuery();
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "EnsureItemPermission", ii.Title);
+            }
+        }
+
+        private void DownloadImages(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            List lstImages = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("libraryname"));
+            workCTX.Load(lstImages);
+
+            ListItemCollection items = lstImages.GetAllItems();
+            workCTX.Load(items, i => i.Include(itm => itm.File.ServerRelativeUrl, itm => itm.File.Name));
+            workCTX.ExecuteQuery();
+
+            string cLocalFolder = oWorkItem.GetParm("localfolder");
+            if (!Directory.Exists(cLocalFolder))
+            {
+                Directory.CreateDirectory(cLocalFolder);
+            }
+
+            foreach (ListItem itm in items)
+            {
+                try
+                {
+                    // THIS IS THE LINE THAT CAUSES ISSUES!!!!!!!!
+                    using (FileInformation fileInfo = Microsoft.SharePoint.Client.File.OpenBinaryDirect(workCTX, itm.File.ServerRelativeUrl))
+                    {
+                        // Combine destination folder with filename -- don't concatenate
+                        // it's just wrong!
+                        var filePath = Path.Combine(cLocalFolder, itm.File.Name);
+                        // Erase existing files, cause that's how I roll
+                        if (System.IO.File.Exists(filePath))
+                        {
+                            System.IO.File.Delete(filePath);
+                        }
+                        // Create the file
+                        using (var fileStream = System.IO.File.Create(filePath))
+                        {
+                            fileInfo.Stream.CopyTo(fileStream);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ShowError(ex, "", "");
+                }
+
+
+            }
+
+
+        }
+
         private void EnsureListLookup(ClientContext workCTX, scriptItem oWorkItem)
         {
             try
             {
                 ShowProgress("Working Site Coloumn: " + oWorkItem.GetParm("displayname"));
-                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
                 workCTX.Web.EnsureSiteColumnLookup(oWorkItem.GetParm("internalname"), oWorkItem.GetParm("displayname"), oWorkItem.GetParm("Description"), oWorkItem.GetParm("Group"), oWorkItem.GetParm("lookupList"), oWorkItem.GetParm("ShowField"));
                 workCTX.Web.EnsureContentTypeHasField(oWorkItem.GetParm("ctName"), oWorkItem.GetParm("internalname"));
 
@@ -722,7 +856,7 @@ namespace spToolbelt2019Lib
             {
                 string cListName = oWorkItem.GetParm("listname");
                 ShowProgress("Removing List: " + cListName);
-                workCTX = GetClientContext(ctx, oWorkItem.GetParm("url"));
+
                 workCTX.Web.RemoveList(cListName);
                 string cContentTypeName = oWorkItem.GetParm("ctname");
                 ShowProgress("Removing Content Type: " + cContentTypeName);
@@ -802,6 +936,7 @@ namespace spToolbelt2019Lib
                 workCTX.Load(fld, f => f.Required);
                 workCTX.ExecuteQuery();
                 string cDefault = oWorkItem.GetParm("defaultvalue");
+
                 fld.DefaultValue = cDefault;
                 fld.Update();
                 workCTX.ExecuteQuery();
@@ -810,58 +945,6 @@ namespace spToolbelt2019Lib
             catch (Exception ex)
             {
                 ShowError(ex, "SetDefaultValue", "");
-            }
-
-        }
-
-        private void HideFieldFromForms(ClientContext workCTX, scriptItem oWorkItem)
-        {
-            try
-            {
-                List lstWork = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("listname"));
-                ContentType ct = lstWork.GetContentType("rrDocument");
-                Field fld = ct.Fields.GetByInternalNameOrTitle(oWorkItem.GetParm("fieldname"));
-                workCTX.Load(fld, f => f.Required);
-                workCTX.ExecuteQuery();
-
-                try
-                {
-                    fld.SetShowInDisplayForm(false);
-                    fld.Update();
-                    workCTX.ExecuteQuery();
-                }
-                catch (Exception ex)
-                {
-                    ShowError(ex, "HideFieldFromForms-Display", "");
-                }
-                try
-                {
-
-                    fld.SetShowInEditForm(false);
-                    fld.Update();
-                    workCTX.ExecuteQuery();
-
-                }
-                catch (Exception ex)
-                {
-                    ShowError(ex, "HideFieldFromForms-Edit", "");
-                }
-                try
-                {
-
-                    fld.SetShowInNewForm(false);
-                    fld.Update();
-                    workCTX.ExecuteQuery();
-                }
-                catch (Exception ex)
-                {
-                    ShowError(ex, "HideFieldFromForms-New", "");
-                }
-
-            }
-            catch (Exception ex)
-            {
-                ShowError(ex, "HideFieldFromForms", "");
             }
 
         }
@@ -2709,6 +2792,305 @@ namespace spToolbelt2019Lib
             }
         }
 
+
+        private Dictionary<string, int> GetHeaders(string cFileName)
+        {
+            Dictionary<string, int> hi = new Dictionary<string, int>();
+            StreamReader oFile = new StreamReader(cFileName);
+            string cHeader = oFile.ReadLine();
+            string[] aHeader = cHeader.Split(',');
+            int i = 0;
+            foreach (string item in aHeader)
+            {
+                try
+                {
+                    if (!string.IsNullOrEmpty(item))
+                    {
+                        hi.Add(aHeader[i], i);
+                    }
+                    i++;
+                }
+                catch (Exception ex)
+                {
+                    ShowError(ex, "", "");
+                }
+
+            }
+            return hi;
+        }
+        private int GetItemCount(string cFileName)
+        {
+            Int32 iCount = 0;
+            using (StreamReader reader = new StreamReader(cFileName))
+            {
+                string line;
+                reader.ReadLine();
+                while ((line = reader.ReadLine()) != null)
+                {
+                    iCount++;
+                }
+            }
+            return iCount;
+        }
+        private void ExportList(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            try
+            {
+                string cFileName = oWorkItem.GetParm("filename");
+                string cListName = oWorkItem.GetParm("listname");
+                string cViewName = oWorkItem.GetParm("viewname");
+                List lst = workCTX.Web.Lists.GetByTitle(cListName);
+                workCTX.Load(lst, l => l.BaseTemplate);
+                workCTX.ExecuteQuery();
+                View view = lst.GetView(cViewName);
+
+                CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
+                ListItemCollection items = lst.GetItems(oQuery);
+                workCTX.Load(items);
+                workCTX.ExecuteQuery();
+                View oView = lst.GetView(cViewName);
+
+                string cOutFile = @"c:\temp\" + cListName + "-export.csv";
+                using (StreamWriter outfile = new StreamWriter(cOutFile))
+                {
+                    string cLine = "";
+                    foreach (string itm in view.ViewFields)
+                    {
+                        cLine += itm + ", ";
+
+                    }
+                    outfile.WriteLine(cLine);
+
+                    foreach (ListItem lstItem in items)
+                    {
+                        try
+                        {
+
+                            ListItem workItem = lst.GetItemById(lstItem.Id);
+                            workCTX.Load(workItem);
+                            workCTX.ExecuteQuery();
+                            string cItemLine = "";
+                            foreach (string itm in view.ViewFields)
+                            {
+                                try
+                                {
+                                    string cFieldValue = "";
+                                    if (workItem[itm] != null)
+                                    {
+                                        cFieldValue = workItem[itm].ToString();
+                                        if (cFieldValue.Contains(','))
+                                        {
+                                            cFieldValue = cFieldValue.Replace(',', '|');
+                                        }
+                                        cItemLine += cFieldValue + ", ";
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    ShowError(ex, "", "");
+                                    cItemLine += ",";
+                                }
+
+                            }
+                            outfile.WriteLine(cItemLine);
+                        }
+
+                        catch (Exception ex)
+                        {
+                            ShowError(ex, "", "");
+                        }
+                    }
+
+
+
+
+
+
+                    outfile.Flush();
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "scriptWorker.ExportList", "");
+            }
+        }
+
+        private void ImportList(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            try
+            {
+                string cFileName = oWorkItem.GetParm("filename");
+                string cListName = oWorkItem.GetParm("listname");
+                string cListKey = oWorkItem.GetParm("listkey");
+                string cFileKey = oWorkItem.GetParm("filekey");
+                string cFieldSettings = oWorkItem.GetParm("fieldsettings");
+
+                List lst = workCTX.Web.Lists.GetByTitle(cListName);
+                workCTX.Load(lst, l => l.BaseTemplate);
+                workCTX.ExecuteQuery();
+
+                Dictionary<string, string> fields = new Dictionary<string, string>();
+                string[] afields = cFieldSettings.Split(';');
+                foreach (string item in afields)
+                {
+                    string[] info = item.Split('`');
+                    fields.Add(info[0], info[1]);
+                }
+
+
+
+                TotalItems = GetItemCount(cFileName);
+
+
+
+
+                using (CsvReader csv = new CsvReader(new StreamReader(cFileName), true))
+                {
+                    int fieldCount = csv.FieldCount;
+                    string[] headers = csv.GetFieldHeaders();
+
+                    while (csv.ReadNextRecord())
+                    {
+                        string Key = csv[0];
+
+
+                        ShowInfo(Key);
+                        try
+                        {
+                            RunCount++;
+                            if (lst.BaseTemplate == 1 || lst.BaseTemplate == 101)
+                            {
+                                //ListItem itm = lst.GetListItemByField(workCTX, cListKey, "Text", Key);
+                                //if (itm != null)
+                                //{
+                                //    foreach (KeyValuePair<string, string> fld in fields)
+                                //    {
+                                //        string cValue = GetRowValue(headerInfo, fld.Value, values);
+                                //        if (itm[fld.Key] == null)
+                                //        {
+                                //            bDirty = true;
+                                //        }
+                                //        else
+                                //        {
+                                //            if (itm[fld.Key].ToString() != cValue)
+                                //            {
+                                //                bDirty = true;
+                                //            }
+                                //        }
+                                //        if (bDirty)
+                                //        {
+                                //            itm[fld.Key] = cValue;
+                                //            itm.Update();
+                                //            workCTX.ExecuteQuery();
+                                //        }
+                                //    }
+                                //}
+                            }
+                            else
+                            {
+                                ListItem itm = lst.GetListItemByField(workCTX, cListKey, "Text", Key);
+                                if (itm == null)
+                                {
+                                    ListItemCreationInformation lici = new ListItemCreationInformation();
+                                    itm = lst.AddItem(lici);
+                                    itm[cListKey] = Key;
+                                }
+                                foreach (KeyValuePair<string, string> fld in fields)
+                                {
+                                    try
+                                    {
+                                        string cValue = GetValue(csv, headers, fld.Value);
+                                        //string cValue = GetRowValue(headerInfo, fld.Value, values);
+                                        itm[fld.Key] = cValue;
+                                        itm.Update();
+                                        workCTX.ExecuteQuery();
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        ShowError(ex, "", "");
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            ShowError(ex, "", "");
+                        }
+
+
+
+
+                    }
+
+                }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "scriptWorker.CopyList", "");
+            }
+        }
+
+        private string GetValue(CsvReader csv, string[] fields, string cFieldinCSV)
+        {
+            int iCol = 0;
+            foreach (string itm in fields)
+            {
+                if (itm == cFieldinCSV)
+                {
+                    string cRetVal = csv[iCol];
+                    cRetVal = cRetVal.Replace('|', ',');
+                    return cRetVal;
+                }
+
+                iCol++;
+            }
+            return "";
+        }
+
+        private string GetRowValue(Dictionary<string, int> headerInfo, string cFileKey, string[] values)
+        {
+            try
+            {
+                int iFieldIndex = GetFieldIndex(headerInfo, cFileKey);
+                return values[iFieldIndex];
+
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "scriptWorker.GetRowValue", "");
+            }
+            return "";
+        }
+
+        private int GetFieldIndex(Dictionary<string, int> headerInfo, string cFileKey)
+        {
+            foreach (KeyValuePair<string, int> item in headerInfo)
+            {
+                if (item.Key == cFileKey)
+                {
+                    return item.Value;
+                }
+            }
+            return -1;
+        }
+
         private void CopyList(scriptItem oWorkItem)
         {
             try
@@ -2721,6 +3103,16 @@ namespace spToolbelt2019Lib
 
                 ClientContext srcCTX = new ClientContext(cSourceSite);
                 ClientContext tgtCTX = new ClientContext(cTargetSite);
+                srcCTX.ExecutingWebRequest += delegate (object sender2, WebRequestEventArgs e2)
+                {
+                    e2.WebRequestExecutor.WebRequest.UserAgent = "NONISV|RammWare|spToolbelt2019/1.0";
+                };
+
+                tgtCTX.ExecutingWebRequest += delegate (object sender2, WebRequestEventArgs e2)
+                {
+                    e2.WebRequestExecutor.WebRequest.UserAgent = "NONISV|RammWare|spToolbelt2019/1.0";
+                };
+
                 srcCTX.Credentials = ctx.Credentials;
                 tgtCTX.Credentials = ctx.Credentials;
                 List SourceList = srcCTX.Web.Lists.GetByTitle(cSourceList);
@@ -3431,15 +3823,28 @@ namespace spToolbelt2019Lib
 
         private static ClientContext GetClientContext(ClientContext ctx, string cUrl)
         {
+            ClientContext oNewContext;
             if (cUrl.ToLower() == "{currentsite}")
             {
                 cUrl = ctx.Url;
             }
-            ClientContext oNewContext = new ClientContext(cUrl) { Credentials = ctx.Credentials };
-            oNewContext.ExecutingWebRequest += delegate (object sender2, WebRequestEventArgs e2)
+            if (cUrl.ToLower().Contains("sharepoint.com"))
             {
-                e2.WebRequestExecutor.WebRequest.UserAgent = "NONISV|RammWare|spToolbelt2019/1.0";
-            };
+                //ClientContext oNewContext = new ClientContext(cUrl) { Credentials = ctx.Credentials };
+                OfficeDevPnP.Core.AuthenticationManager am = new OfficeDevPnP.Core.AuthenticationManager();
+                oNewContext = am.GetWebLoginClientContext(cUrl, null);
+
+                oNewContext.ExecutingWebRequest += delegate (object sender2, WebRequestEventArgs e2)
+                {
+                    e2.WebRequestExecutor.WebRequest.UserAgent = "NONISV|RammWare|spToolbelt2019/1.0";
+                };
+            }
+            else
+            {
+                oNewContext = new ClientContext(cUrl);
+                oNewContext.Credentials = ctx.Credentials;
+
+            }
             return oNewContext;
         }
 
@@ -4691,7 +5096,6 @@ namespace spToolbelt2019Lib
         {
             try
             {
-
                 RoleAssignmentCollection roleAssignments = web.RoleAssignments;
                 workCTX.Load(roleAssignments, ra => ra.Include(rd => rd.Member.LoginName, rd => rd.Member.Title, rd => rd.Member.PrincipalType, rd => rd.RoleDefinitionBindings));
                 workCTX.ExecuteQuery();
@@ -5150,6 +5554,7 @@ namespace spToolbelt2019Lib
                         workItem["Title"] = itm.DisplayName;
                     }
                     workItem["spmiListID"] = cListId;
+                    
                     workItem["spmiItemData"] = JsonConvert.SerializeObject(itm.FieldValuesAsText.FieldValues);
                     //workItem["spmiParentFolderUrl"] = itm.File.foldeworkFolder.ServerRelativeUrl
                     workItem.Update();
@@ -5630,13 +6035,19 @@ namespace spToolbelt2019Lib
                     try
                     {
                         ListInfo li = BuildListInfo(itm);
-                        ClientContext srcCTX = new ClientContext(li.SiteUrl);
-                        srcCTX.Credentials = ctx.Credentials;
+                        //ClientContext srcCTX = new ClientContext(li.SiteUrl);
+                        //srcCTX.Credentials = ctx.Credentials;
                         string cTargetUrl = li.TargetLocation.Substring(0, li.TargetLocation.LastIndexOf("/"));
                         string cTargetList = li.TargetLocation.Substring(li.TargetLocation.LastIndexOf("/") + 1);
 
-                        ClientContext tgtCTX = new ClientContext(li.SiteUrl);
+                        ClientContext tgtCTX = new ClientContext(li.TargetLocation);
                         tgtCTX.Credentials = ctx.Credentials;
+                        string cListName = itm["TargetList"].ToString();
+                        if (!tgtCTX.Web.HasList(cListName))
+                        {
+                            tgtCTX.Web.EnsureList(cListName, ListTemplateType.DocumentLibrary, "");
+                        }
+
 
                         List tgtList = tgtCTX.Web.Lists.GetByTitle(itm["TargetList"].ToString());
                         tgtCTX.Load(tgtList, tls => tls.RootFolder);
@@ -5644,6 +6055,7 @@ namespace spToolbelt2019Lib
                         string cFolderTitle = itm["Title"].ToString();
                         cFolderTitle = cFolderTitle.Replace("/", "-");
                         tgtList.RootFolder.EnsureFolder(cFolderTitle);
+                        ShowProgress("Working Folder:" + cFolderTitle);
                     }
                     catch (Exception ex)
                     {
@@ -5663,6 +6075,169 @@ namespace spToolbelt2019Lib
 
         }
 
+
+
+        private int EnsureSiteInInventory(ClientContext saveContext, infoSite siteInfo)
+        {
+            string viewXML = "<View><Query><Where><Eq><FieldRef Name = 'spmiSiteUrl' /><Value Type = 'Text'>" + siteInfo.SiteUrl + "</Value></Eq></Where></Query><RowLimit>10</RowLimit></View>";
+            try
+            {
+
+                List lst = saveContext.Web.Lists.GetByTitle("spmiSites");
+                saveContext.Load(lst);
+                saveContext.ExecuteQuery();
+                CamlQuery oQuery = new CamlQuery();
+                oQuery.ViewXml = viewXML;
+                ListItemCollection items = lst.GetItems(oQuery);
+                saveContext.Load(items, si => si.Include(i => i["spmiSiteUrl"], i => i.Id));
+                saveContext.ExecuteQuery();
+                int iFoundID = 0;
+                foreach (var listItem in items)
+                {
+                    string cWorkUrl = listItem["spmiSiteUrl"].ToString();
+                    if (listItem["spmiSiteUrl"].ToString().ToLower() == siteInfo.SiteUrl.ToLower())
+                    {
+                        iFoundID = listItem.Id;
+                    }
+                }
+                ListItem itmSite = null;
+                if (iFoundID == 0)
+                {
+                    ListItemCreationInformation lici = new ListItemCreationInformation();
+                    itmSite = lst.AddItem(lici);
+                    itmSite["Title"] = siteInfo.SiteTitle;
+                    itmSite["spmiSiteUrl"] = siteInfo.SiteUrl;
+                }
+                else
+                {
+                    itmSite = lst.GetItemById(iFoundID);
+                    saveContext.Load(itmSite);
+                    saveContext.ExecuteQuery();
+                }
+                itmSite["spmiDepth"] = GetDepth(siteInfo.SiteUrl);
+                //itmSite["spmiParentSite"] = siteInfo.ParentWeb;
+                itmSite["spmiSiteID"] = siteInfo.Id;
+                string cPerm = BuildPermissions(siteInfo.Permissions);
+                itmSite["spmiPermissions"] = cPerm;
+
+                itmSite["spmiLastScan"] = DateTime.Now;
+                itmSite["spmiUniquePermissions"] = siteInfo.HasUniquePermissions;
+                //if (iParentID > 0)
+                //{
+                //    itmSite["spmiParentSite"] = iParentID;
+                //}
+                itmSite.Update();
+                saveContext.ExecuteQuery();
+                return itmSite.Id;
+            }
+            catch (Exception ex)
+            {
+                if (ex.InnerException != null)
+                {
+                    ShowError(ex.InnerException, "EnsureSiteInGallery " + siteInfo.SiteUrl, "");
+                }
+                else
+                {
+                    ShowError(ex, "EnsureSiteInGallery " + siteInfo.SiteUrl, "");
+                }
+            }
+            return -1;
+        }
+
+        private string BuildPermissions(List<infoPermItem> permissions)
+        {
+            string cRetVal = "";
+            try
+            {
+                if (permissions == null) { return "";  }
+                foreach(infoPermItem ipi in permissions)
+                {
+                    cRetVal += ipi.DisplayName + " - " + ipi.LoginName + " - " + ipi.PermissionLevel + Environment.NewLine;
+                }
+            } catch (Exception ex)
+            {
+                ShowError(ex, "BuildPermissions", "");
+            }
+            return cRetVal;
+        }
+
+        private Int32 GetDepth(string siteUrl)
+        {
+            string tmpStr = siteUrl.Substring(siteUrl.IndexOf("//") + 2);
+            return CountStringOccurrences(tmpStr, "/") + 1;
+        }
+
+        public static int CountStringOccurrences(string text, string pattern)
+        {
+            // Loop through all instances of the string 'text'.
+            int count = 0;
+            int i = 0;
+            while ((i = text.IndexOf(pattern, i)) != -1)
+            {
+                i += pattern.Length;
+                count++;
+            }
+            return count;
+        }
+
+        private int EnsureListInInventory(ClientContext saveContext, infoSite siteInfo, infoList listInfo)
+        {
+            string viewXML = "<View><Query><Where><Eq><FieldRef Name = 'spmiListID' /><Value Type = 'Text'>" + listInfo.Id + "</Value></Eq></Where></Query><RowLimit>10</RowLimit></View>";
+            try
+            {
+
+                List lst = saveContext.Web.Lists.GetByTitle("spmiLists");
+                saveContext.Load(lst);
+                saveContext.ExecuteQuery();
+                CamlQuery oQuery = new CamlQuery();
+                oQuery.ViewXml = viewXML;
+                ListItemCollection items = lst.GetItems(oQuery);
+                saveContext.Load(items);
+                saveContext.ExecuteQuery();
+                int iListID = 0;
+
+                foreach (var lstItem in items)
+                {
+                    if (lstItem["Title"].ToString() == listInfo.ListTitle)
+                    {
+                        iListID = lstItem.Id;
+                    }
+                }
+                ListItem listItem = null;
+                if (iListID == 0)
+                {
+                    ListItemCreationInformation lici = new ListItemCreationInformation();
+                    listItem = lst.AddItem(lici);
+                    listItem["Title"] = listInfo.ListTitle;
+                    listItem["spmiSiteUrl"] = siteInfo.SiteUrl;
+                    listItem["spmiSiteID"] = siteInfo.Id;
+                    listItem["spmiListID"] = listInfo.Id;
+                    //listItem["spmiParentSite"] = iSiteID;
+                }
+                else
+                {
+                    listItem = lst.GetItemById(iListID);
+                    saveContext.Load(listItem);
+                    saveContext.ExecuteQuery();
+                }
+                listItem["spmiLastScan"] = DateTime.Now;
+                listItem["spmiUniquePermissions"] = listInfo.UniquePermissions;
+                string cPerm = BuildPermissions(listInfo.Permissions);
+                listItem["spmiPermissions"] = cPerm;
+                listItem["spmiItemCount"] = listInfo.ListItemCount;
+                listItem.Update();
+                saveContext.ExecuteQuery();
+                return listItem.Id;
+            }
+            catch (Exception ex)
+            {
+
+                ShowError(ex, "EnsureListInInventory " + listInfo.ListTitle + " - " + listInfo.Id, "");
+            }
+            return -1;
+
+
+        }
 
     }
 }

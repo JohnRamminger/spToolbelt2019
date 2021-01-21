@@ -460,7 +460,37 @@ namespace spToolbelt2019.Forms
                 Console.WriteLine("Error: " + ex.Message);
             }
         }
-    }    
+
+        private void button4_Click_1(object sender, EventArgs e)
+        {
+            List lstDocs = ctx.Web.Lists.GetByTitle("CandidateDocuments");
+            List lstCandidates = ctx.Web.Lists.GetByTitle("Candidates");
+            CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
+            ListItemCollection items = lstDocs.GetItems(oQuery);
+            ctx.Load(items, i => i.Include(itm => itm["ItemParentID"],itm=>itm["Candidate"],itm=>itm["FileLeafRef"]));
+            ctx.ExecuteQuery();
+            foreach(ListItem itm in items)
+            {
+                try
+                { 
+                if (itm["ItemParentID"]==null || itm["Candidate"]==null)
+                {
+                    string Key = itm["FileLeafRef"].ToString().Substring(0, 6);
+                    ListItem itmCandidate = lstCandidates.GetListItemByTitle(Key);
+                    itm["ItemParentID"] = itmCandidate.Id;
+                    itm["Candidate"] = itmCandidate.Id;
+                    itm.Update();
+                    ctx.ExecuteQuery();
+
+
+                }
+                } catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.WriteLine(ex.Message);
+                }
+            }
+        }
+    }
 
     public class EventList
     {

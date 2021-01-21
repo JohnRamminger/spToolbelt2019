@@ -46,12 +46,14 @@
             this.shareGateScriptBuilderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.updateFromSQLToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.scanConfigToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
             this.toolStripButton2 = new System.Windows.Forms.ToolStripButton();
             this.tbSiteScript = new System.Windows.Forms.ToolStripButton();
-            this.scanConfigToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.syncNavToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -67,7 +69,7 @@
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Padding = new System.Windows.Forms.Padding(2, 1, 0, 1);
-            this.menuStrip1.Size = new System.Drawing.Size(726, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(722, 24);
             this.menuStrip1.TabIndex = 1;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -132,12 +134,14 @@
             this.viewLogFilesToolStripMenuItem,
             this.testToolStripMenuItem,
             this.mnuSiteScript,
+            this.syncNavToolStripMenuItem,
             this.checkForUpdatesToolStripMenuItem,
             this.shareGateScriptBuilderToolStripMenuItem,
             this.toolStripMenuItem3,
-            this.aboutToolStripMenuItem});
+            this.aboutToolStripMenuItem,
+            this.updateFromSQLToolStripMenuItem});
             this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
-            this.toolsToolStripMenuItem.Size = new System.Drawing.Size(47, 22);
+            this.toolsToolStripMenuItem.Size = new System.Drawing.Size(46, 22);
             this.toolsToolStripMenuItem.Text = "Tools";
             // 
             // viewLogFilesToolStripMenuItem
@@ -187,13 +191,27 @@
             this.aboutToolStripMenuItem.Text = "About";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
+            // updateFromSQLToolStripMenuItem
+            // 
+            this.updateFromSQLToolStripMenuItem.Name = "updateFromSQLToolStripMenuItem";
+            this.updateFromSQLToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
+            this.updateFromSQLToolStripMenuItem.Text = "UpdateFromSQL";
+            this.updateFromSQLToolStripMenuItem.Click += new System.EventHandler(this.updateFromSQLToolStripMenuItem_Click);
+            // 
+            // scanConfigToolStripMenuItem
+            // 
+            this.scanConfigToolStripMenuItem.Name = "scanConfigToolStripMenuItem";
+            this.scanConfigToolStripMenuItem.Size = new System.Drawing.Size(83, 22);
+            this.scanConfigToolStripMenuItem.Text = "Scan Config";
+            this.scanConfigToolStripMenuItem.Click += new System.EventHandler(this.scanConfigToolStripMenuItem_Click);
+            // 
             // statusStrip1
             // 
             this.statusStrip1.ImageScalingSize = new System.Drawing.Size(32, 32);
             this.statusStrip1.Location = new System.Drawing.Point(0, 417);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Padding = new System.Windows.Forms.Padding(2, 0, 6, 0);
-            this.statusStrip1.Size = new System.Drawing.Size(726, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(722, 22);
             this.statusStrip1.TabIndex = 2;
             this.statusStrip1.Text = "statusStrip1";
             // 
@@ -207,7 +225,7 @@
             this.toolStrip1.Location = new System.Drawing.Point(0, 24);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Padding = new System.Windows.Forms.Padding(0, 0, 2, 0);
-            this.toolStrip1.Size = new System.Drawing.Size(726, 31);
+            this.toolStrip1.Size = new System.Drawing.Size(722, 31);
             this.toolStrip1.TabIndex = 4;
             this.toolStrip1.Text = "toolStrip1";
             // 
@@ -241,18 +259,18 @@
             this.tbSiteScript.Text = "toolStripButton2";
             this.tbSiteScript.Click += new System.EventHandler(this.tbSiteScript_Click);
             // 
-            // scanConfigToolStripMenuItem
+            // syncNavToolStripMenuItem
             // 
-            this.scanConfigToolStripMenuItem.Name = "scanConfigToolStripMenuItem";
-            this.scanConfigToolStripMenuItem.Size = new System.Drawing.Size(83, 22);
-            this.scanConfigToolStripMenuItem.Text = "Scan Config";
-            this.scanConfigToolStripMenuItem.Click += new System.EventHandler(this.scanConfigToolStripMenuItem_Click);
+            this.syncNavToolStripMenuItem.Name = "syncNavToolStripMenuItem";
+            this.syncNavToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
+            this.syncNavToolStripMenuItem.Text = "SyncNav";
+            this.syncNavToolStripMenuItem.Click += new System.EventHandler(this.syncNavToolStripMenuItem_Click);
             // 
             // frmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(726, 439);
+            this.ClientSize = new System.Drawing.Size(722, 439);
             this.Controls.Add(this.toolStrip1);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.menuStrip1);
@@ -299,6 +317,8 @@
         private System.Windows.Forms.ToolStripMenuItem viewLogFilesToolStripMenuItem;
         private System.Windows.Forms.ToolStripButton toolStripButton2;
         private System.Windows.Forms.ToolStripMenuItem scanConfigToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem updateFromSQLToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem syncNavToolStripMenuItem;
     }
 }
 
