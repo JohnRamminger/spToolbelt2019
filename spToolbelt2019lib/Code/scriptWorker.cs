@@ -1890,6 +1890,7 @@ namespace spToolbelt2019Lib
                         workCTX.ExecuteQuery();
 
                         UpdateListPermissions(workCTX, cSiteURL, lstItem.Id);
+                        
                         UpdateListItemPermissions(workCTX, cSiteURL, lstItem.Id);
 
                     }
@@ -1897,7 +1898,7 @@ namespace spToolbelt2019Lib
                     {
                         ShowError(ex, "Update Site Permissions", "");
                     }
-
+                    
 
                 }
                 sw.Stop();
@@ -2052,6 +2053,66 @@ namespace spToolbelt2019Lib
                             lstItem.Update();
                             workCTX.ExecuteQuery();
                         }
+                        
+                        WorkFolderPermissions(workCTX, webCTX, lstItem["Title"].ToString(), lstItem.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        ShowError(ex, "Update List Permissions", "");
+                    }
+
+
+                }
+
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "Update Site Permissions", "");
+            }
+
+        }
+
+        private void WorkFolderPermissions(ClientContext workCTX, ClientContext webCTX, string v, int id)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void UpdateListFolderPermissions(ClientContext workCTX, string cSiteUrl, int iParentID)
+        {
+            try
+            {
+
+                ClientContext webCTX = new ClientContext(cSiteUrl);
+                webCTX.Credentials = ctx.Credentials;
+                webCTX.ExecutingWebRequest += delegate (object sender2, WebRequestEventArgs e2)
+                {
+                    e2.WebRequestExecutor.WebRequest.UserAgent = "NONISV|RammWare|spToolbelt2019/1.0";
+                };
+                string viewXML = "<View><Query><Where><And><Eq><FieldRef Name = 'spmiUniquePermissions' /><Value Type = 'Boolean'>1</Value></Eq><Eq><FieldRef Name = 'spmiSiteID' /><Value Type = 'Number'>" + iParentID + "</Value></Eq></And></Where></Query><RowLimit>5000</RowLimit></View>";
+                viewXML = "<View><Query><Where><Eq><FieldRef Name = 'spmiSiteID' /><Value Type = 'Text'>" + iParentID + "</Value></Eq></Where></Query><RowLimit>5000</RowLimit></View>";
+                List lst = workCTX.Web.Lists.GetByTitle("spmiLists");
+                workCTX.Load(lst);
+                workCTX.ExecuteQuery();
+                CamlQuery oQuery = new CamlQuery();
+                oQuery.ViewXml = viewXML;
+                ListItemCollection items = lst.GetItems(oQuery);
+                workCTX.Load(items, itms => itms.Include(itm => itm["spmiPermissions"], itm => itm["Title"]));
+
+
+                workCTX.ExecuteQuery();
+                foreach (var lstItem in items)
+                {
+                    try
+                    {
+                        ShowProgress("Processing Permissions for:" + lstItem["Title"].ToString());
+                        if (lstItem["spmiPermissions"] == null)
+                        {
+                            string cPermissions = GetListPermissions(webCTX, lstItem["Title"].ToString());
+                            lstItem["spmiPermissions"] = cPermissions;
+                            lstItem["spmiPermissionsLastScan"] = DateTime.Now;
+                            lstItem.Update();
+                            workCTX.ExecuteQuery();
+                        }
 
                     }
                     catch (Exception ex)
@@ -2069,6 +2130,7 @@ namespace spToolbelt2019Lib
             }
 
         }
+
 
         private string GetBasePermissions(ClientContext workCTX, RoleAssignmentCollection roles)
         {
@@ -2510,7 +2572,7 @@ namespace spToolbelt2019Lib
                     }
                     ListCollection lists = oWorkWeb.Lists;
 
-                    workCTX.Load(lists, lsts => lsts.Include(l => l.HasUniqueRoleAssignments, l => l.Hidden, l => l.Id, l => l.Title, l => l.ItemCount, l => l.LastItemModifiedDate, l => l.LastItemUserModifiedDate));
+                    workCTX.Load(lists, lsts => lsts.Include(l => l.HasUniqueRoleAssignments, l => l.BaseTemplate, l => l.Hidden, l => l.Id, l => l.Title, l => l.ItemCount, l => l.LastItemModifiedDate, l => l.LastItemUserModifiedDate));
                     workCTX.ExecuteQuery();
 
 
@@ -2601,6 +2663,11 @@ namespace spToolbelt2019Lib
                     saveContext.Load(listItem);
                     saveContext.ExecuteQuery();
                 }
+                listItem["spmiListBaseTemplate"] = list.BaseTemplate.ToString();
+                if (list.BaseTemplate==101)
+                {
+                    EnsureFoldersInGallery(saveContext, list,lst.RootFolder, listItem.Id);
+                }
                 listItem["spmiLastScan"] = DateTime.Now;
                 listItem["spmiUniquePermissions"] = list.HasUniqueRoleAssignments;
                 listItem["spmiLastItemModified"] = list.LastItemModifiedDate;
@@ -2617,6 +2684,15 @@ namespace spToolbelt2019Lib
             return -1;
 
 
+        }
+
+        private void EnsureFoldersInGallery(ClientContext saveContext, List lst, Folder fldr, int ParentId)
+        {
+            FolderCollection fldrs = fldr.Folders;
+            lst.Context.Load(fldrs);
+            lst.Context.ExecuteQuery();
+
+            
         }
 
         private int EnsureSiteInGallery(ClientContext saveContext, string title, string url, string siteID, int iParentID, bool bHasChildren, bool bHasUniquePerms, DateTime dtLastUserDate, int iUserCount)
@@ -5468,6 +5544,7 @@ namespace spToolbelt2019Lib
                 if (oWorkItem.GetParmBool("CurrentCredentials") == true)
                 {
                     ShowProgress("Using Current Credentials");
+                    scanContext.Credentials = ctx.Credentials;
                 }
                 else
                 {
