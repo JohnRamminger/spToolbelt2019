@@ -9,36 +9,37 @@ namespace spToolbelt2019Lib
 {
     public static class ExtList
     {
+        public static void EnsureDefaultViewFields(this List lst,  string cViewFields)
+        {
+            EnsureViewFields(lst, lst.DefaultView, cViewFields);
+        }
 
-        public static void EnsureViewFields(this List lst,string cViewFields)
+        public static void EnsureViewFields(this List lst,View workView,string cViewFields)
         {
             try
             {
                 string[] vwFields = cViewFields.Split(';');
-                View vw = lst.DefaultView;
-                lst.Context.Load(vw, v => v.ViewFields);
+                lst.Context.Load(workView, v => v.ViewFields);
                 lst.Context.ExecuteQuery();
-                vw.ViewFields.Remove("Editor");
-                vw.ViewFields.Remove("Modified");
+                workView.ViewFields.RemoveAll();
                 foreach (string vwField in vwFields)
                 {
                     try
                     {
-                        if (!vw.ViewFields.Contains(vwField))
+                        if (!workView.ViewFields.Contains(vwField))
                         {
-                            vw.ViewFields.Add(vwField);
-                            vw.Update();
+                            workView.ViewFields.Add(vwField);
+                            workView.Update();
                             lst.Context.ExecuteQuery();
                         }
-
                     } catch (Exception ex)
                     {
                         System.Diagnostics.Trace.WriteLine(ex.Message);
                     }
                 }
-                vw.ViewFields.Add("Editor");
-                vw.ViewFields.Add("Modified");
-                vw.Update();
+                //workView.ViewFields.Add("Editor");
+                //workView.ViewFields.Add("Modified");
+                workView.Update();
                 lst.Context.ExecuteQuery();
             } catch (Exception ex)
             {

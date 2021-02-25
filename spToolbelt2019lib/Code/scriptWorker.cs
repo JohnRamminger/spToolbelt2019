@@ -304,6 +304,12 @@ namespace spToolbelt2019Lib
                         Trace.WriteLine(oWorkItem.Command);
                         switch (oWorkItem.Command.ToLower())
                         {
+                            case "hide-sitecolumnfromforms":
+                                HideSiteColumnFromForms(workCTX, item, oWorkItem);
+                                break;
+                            case "hide-list":
+                                HideList(workCTX, item, oWorkItem);
+                                break;
                             case "ensure-targetfolders":
                                 EnsureTargetFolders(workCTX, item, oWorkItem);
                                 break;
@@ -340,6 +346,10 @@ namespace spToolbelt2019Lib
                                 break;
                             case "ensure-versioningenabled":
                                 EnsureVersioningEnabled(workCTX, oWorkItem);
+                                break;
+                            case "ensure-defaultviewfields":
+                                EnsureDefaultViewFields(workCTX, oWorkItem);
+
                                 break;
 
                             case "ensure-childsite":
@@ -447,6 +457,7 @@ namespace spToolbelt2019Lib
                                 ShowProgress(string.Format("Remove Content Type From List: {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("DefaultContentType")));
                                 lstProvision.RemoveContentTypeFromList(oWorkItem.GetParm("DefaultContentType"));
                                 break;
+                            case "ensure contenttypefield":
                             case "ensure-contenttypefield":
                                 ShowProgress(string.Format("Working Content Field Type: {0}-{1}", oWorkItem.GetParm("ContentType"), oWorkItem.GetParm("Fieldname")));
                                 //
@@ -497,13 +508,20 @@ namespace spToolbelt2019Lib
 
                                 break;
 
+                            case "set-multiuserfield":
+                                ShowProgress("Working Required Filed: " + oWorkItem.GetParm("fieldname"));
+                                SetMultiUserField(workCTX, oWorkItem);
+                                break;
 
 
                             case "set-fieldrequired":
                                 ShowProgress("Working Required Filed: " + oWorkItem.GetParm("fieldname"));
-
-
                                 SetRequiredField(workCTX, oWorkItem);
+                                break;
+
+                            case "ensure-contenttypehasfields":
+                                ShowProgress("Adding fields to content type: " + oWorkItem.GetParm("ContentType"));
+                                ensureContentTypeHasFields(workCTX, oWorkItem);
 
                                 break;
 
@@ -668,6 +686,89 @@ namespace spToolbelt2019Lib
             catch (Exception ex)
             {
                 ShowError(ex, "ProcessSites.WorkSite - " + item, "");
+            }
+
+        }
+
+        private void ensureContentTypeHasFields(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            try
+            {
+                string cContentType = oWorkItem.GetParm("contenttype");
+                string cFields = oWorkItem.GetParm("fields");
+                Web oWeb = workCTX.Web;
+                workCTX.Load(oWeb);
+                workCTX.ExecuteQuery();
+                string[] afields = cFields.Split(';');
+                foreach (string fn in afields)
+                {
+                    oWeb.EnsureContentTypeHasField(cContentType, fn);
+                }
+            } catch (Exception ex)
+            {
+
+            }
+        }
+
+        private void HideSiteColumnFromForms(ClientContext workCTX, string item, scriptItem oWorkItem)
+        {
+            try
+            {
+                string strField = oWorkItem.GetParm("fieldname");
+                Field fld = workCTX.Web.Fields.GetByInternalNameOrTitle(strField);
+                workCTX.Load(fld);
+                workCTX.ExecuteQuery();
+                fld.SetShowInEditForm(false);
+                fld.SetShowInNewForm(false);
+                fld.Update();
+                ctx.ExecuteQuery();
+            } catch (Exception ex)
+            {
+
+            }
+        }
+
+        private void EnsureDefaultViewFields(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            string listName = oWorkItem.GetParm("listname");
+            string viewFields = oWorkItem.GetParm("viewfields");
+            List workList = workCTX.Web.Lists.GetByTitle(listName);
+            workCTX.Load(workList);
+            workCTX.ExecuteQuery();
+            workList.EnsureDefaultViewFields(viewFields);
+        }
+
+        private void HideList(ClientContext workCTX, string item, scriptItem oWorkItem)
+        {
+            string cListTitle = oWorkItem.GetParm("ListName");
+            if (cListTitle.Contains("*"))
+            {
+                ListCollection lists=workCTX.Web.Lists;
+                workCTX.Load(lists);
+                workCTX.ExecuteQuery();
+                string key = cListTitle.Replace("*", "");
+                foreach (List lst in lists)
+                {
+                    if (lst.Title.ToLower().Contains(key.ToLower()))
+                    {
+                        lst.Hidden = true;
+                        lst.Update();
+                    }
+                }
+
+                workCTX.ExecuteQuery();
+
+
+
+            }
+            else
+            {
+                List workList = workCTX.Web.Lists.GetByTitle(cListTitle);
+                workCTX.Load(workList);
+                workCTX.ExecuteQuery();
+                workList.Hidden = true;
+                workList.Update();
+                workCTX.ExecuteQuery();
             }
 
         }
@@ -906,7 +1007,18 @@ namespace spToolbelt2019Lib
             try
             {
                 ShowProgress("Working Content Type: " + oWorkItem.GetParm("ctname"));
-                workCTX.Web.EnsureContentType(oWorkItem.GetParm("ctName"), oWorkItem.GetParm("ctParent"), oWorkItem.GetParm("Group"));
+                string ctParent = oWorkItem.GetParm("ctParent");
+                if (string.IsNullOrEmpty(ctParent)) 
+                {
+                    ctParent = oWorkItem.GetParm("ParentContentType");
+                }
+                string ctName = oWorkItem.GetParm("ctName");
+                if (string.IsNullOrEmpty(ctName))
+                {
+                    ctName = oWorkItem.GetParm("ContentType");
+                }
+
+                workCTX.Web.EnsureContentType(ctName,ctParent, oWorkItem.GetParm("Group"));
                 ShowProgress("Working List: " + oWorkItem.GetParm("ListName"));
                 ListTemplateType oListTemplateType = GetTemplateType(oWorkItem.GetParm("ListType"));
                 workCTX.Web.EnsureList(oWorkItem.GetParm("ListName"), oListTemplateType, oWorkItem.GetParm("Description"));
@@ -914,9 +1026,9 @@ namespace spToolbelt2019Lib
                 List lstWork = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("ListName"));
                 workCTX.Load(lstWork);
                 workCTX.ExecuteQuery();
-                lstWork.EnsureListHasContenttype(workCTX.Site, oWorkItem.GetParm("ctName"));
+                lstWork.EnsureListHasContenttype(workCTX.Site,ctName);
                 ShowProgress(string.Format("Remove Content Type From List: {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("ContentType")));
-                lstWork.RemoveContentTypeFromList(oWorkItem.GetParm("ctParent"));
+                lstWork.RemoveContentTypeFromList(ctParent);
                 ShowProgress(string.Format("Ensure Content Type In List: {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("ContentType")));
                 lstWork.DisableContentTypes();
 
@@ -948,6 +1060,30 @@ namespace spToolbelt2019Lib
             }
 
         }
+
+        private void SetMultiUserField(ClientContext workCTX, scriptItem oWorkItem)
+        {
+            try
+            {
+                List lstWork = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("listname"));
+                FieldUser fld = (FieldUser)lstWork.Fields.GetByInternalNameOrTitle(oWorkItem.GetParm("fieldname"));
+                workCTX.Load(fld, f => f.Required);
+                workCTX.ExecuteQuery();
+                bool bMultiUser = oWorkItem.GetParmBool("allowmultiuser");
+                if (fld.AllowMultipleValues!=bMultiUser)
+                {
+                    fld.AllowMultipleValues = bMultiUser;
+                    fld.Update();
+                    workCTX.ExecuteQuery();
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex, "SetRequiredField", "");
+            }
+        }
+
+
 
         private void SetRequiredField(ClientContext workCTX, scriptItem oWorkItem)
         {
@@ -2593,6 +2729,7 @@ namespace spToolbelt2019Lib
                         {
                             list.EnableVersioning = true;
                             list.EnableMinorVersions = false;
+                            list.MajorVersionLimit = 100;
                             list.Update();
                             workCTX.ExecuteQuery();
                             ShowInfo("Updated Versions for: " + list.Title);
@@ -3607,7 +3744,6 @@ namespace spToolbelt2019Lib
                     ltt = ListTemplateType.PictureLibrary;
                     break;
                 case "Document":
-
                 case "DocumentLibrary":
                     ltt = ListTemplateType.DocumentLibrary;
                     break;
@@ -3828,23 +3964,23 @@ namespace spToolbelt2019Lib
             {
                 cUrl = ctx.Url;
             }
-            if (cUrl.ToLower().Contains("sharepoint.com"))
-            {
-                //ClientContext oNewContext = new ClientContext(cUrl) { Credentials = ctx.Credentials };
-                OfficeDevPnP.Core.AuthenticationManager am = new OfficeDevPnP.Core.AuthenticationManager();
-                oNewContext = am.GetWebLoginClientContext(cUrl, null);
+            //if (cUrl.ToLower().Contains("sharepoint.com"))
+            //{
+            //    //ClientContext oNewContext = new ClientContext(cUrl) { Credentials = ctx.Credentials };
+            //    OfficeDevPnP.Core.AuthenticationManager am = new OfficeDevPnP.Core.AuthenticationManager();
+            //    oNewContext = am.GetWebLoginClientContext(cUrl, null);
 
-                oNewContext.ExecutingWebRequest += delegate (object sender2, WebRequestEventArgs e2)
-                {
-                    e2.WebRequestExecutor.WebRequest.UserAgent = "NONISV|RammWare|spToolbelt2019/1.0";
-                };
-            }
-            else
-            {
-                oNewContext = new ClientContext(cUrl);
-                oNewContext.Credentials = ctx.Credentials;
+            //    oNewContext.ExecutingWebRequest += delegate (object sender2, WebRequestEventArgs e2)
+            //    {
+            //        e2.WebRequestExecutor.WebRequest.UserAgent = "NONISV|RammWare|spToolbelt2019/1.0";
+            //    };
+            //}
+            //else
+            //{
+            oNewContext = new ClientContext(cUrl);
+            oNewContext.Credentials = ctx.Credentials;
 
-            }
+            //}
             return oNewContext;
         }
 

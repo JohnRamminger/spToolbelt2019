@@ -179,6 +179,30 @@ namespace spToolbelt2019Lib
                             bRetVal = false;
                         }
                         break;
+                    case "hide-list":
+                        if (parms.ContainsKey("url") &&
+                            parms.ContainsKey("listname"))
+                            
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
+                    case "hide-sitecolumnfromforms":
+                        if (parms.ContainsKey("url") &&
+                            
+                            parms.ContainsKey("fieldname"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
                     case "hide-fieldfromforms":
                         if (parms.ContainsKey("url") &&
                             parms.ContainsKey("listname") &&
@@ -217,6 +241,22 @@ namespace spToolbelt2019Lib
                             bRetVal = false;
                         }
                         break;
+
+                    case "set-multiuserfield":
+                        if (parms.ContainsKey("url") &&
+                            parms.ContainsKey("listname") &&
+                            parms.ContainsKey("fieldname") &&
+                            parms.ContainsKey("allowmultiuser"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
+
+
 
 
                     case "set-fieldrequired":
@@ -571,6 +611,17 @@ namespace spToolbelt2019Lib
                         }
                         break;
 
+
+
+                    case "ensure-contenttypehasfields":
+                        if (parms.ContainsKey("url") && parms.ContainsKey("contenttype") && parms.ContainsKey("fields"))
+                        {
+                            bRetVal = true;
+                        } else
+                        {
+                            bRetVal = false;
+                        }
+                            break;
                     case "ensure-sitecolumn":
                     case "ensure-sitecolumnuser":
                     case "ensure-sitecolumnboolean":
@@ -661,6 +712,18 @@ namespace spToolbelt2019Lib
 
                         break;
 
+                    case "ensure-defaultviewfields":
+                        if (parms.ContainsKey("url") &&
+                            parms.ContainsKey("listname") &&
+                            parms.ContainsKey("viewfields"))
+                        {
+                            bRetVal = true;
+                        }
+                        else
+                        {
+                            bRetVal = false;
+                        }
+                        break;
 
 
 
