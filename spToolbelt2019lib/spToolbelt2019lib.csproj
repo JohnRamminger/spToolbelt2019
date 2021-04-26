@@ -279,6 +279,7 @@
     <Compile Include="Code\ContentTypeTracker.cs" />
     <Compile Include="Code\Extensions\extFieldCollection.cs" />
     <Compile Include="Code\Extensions\extFolder.cs" />
+    <Compile Include="Code\Extensions\extGroup.cs" />
     <Compile Include="Code\Extensions\extList.cs" />
     <Compile Include="Code\Extensions\extListItem.cs" />
     <Compile Include="Code\Extensions\extWeb.cs" />
