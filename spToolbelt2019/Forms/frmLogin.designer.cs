@@ -39,10 +39,10 @@
             this.cmdLogin = new System.Windows.Forms.Button();
             this.cmdCancel = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.rbAuthBasic = new System.Windows.Forms.RadioButton();
-            this.rbAuthIntegrated = new System.Windows.Forms.RadioButton();
-            this.rbAuthSPO = new System.Windows.Forms.RadioButton();
             this.rbAuthPNP = new System.Windows.Forms.RadioButton();
+            this.rbAuthSPO = new System.Windows.Forms.RadioButton();
+            this.rbAuthIntegrated = new System.Windows.Forms.RadioButton();
+            this.rbAuthBasic = new System.Windows.Forms.RadioButton();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -89,25 +89,27 @@
             // txtUserName
             // 
             this.txtUserName.Location = new System.Drawing.Point(86, 44);
-            this.txtUserName.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.txtUserName.Margin = new System.Windows.Forms.Padding(2);
             this.txtUserName.Name = "txtUserName";
             this.txtUserName.Size = new System.Drawing.Size(383, 20);
             this.txtUserName.TabIndex = 6;
+            this.txtUserName.Text = "v-enabling-jramm@youthvillages.org";
             this.txtUserName.TextChanged += new System.EventHandler(this.TxtUserName_TextChanged);
             // 
             // txtPassword
             // 
             this.txtPassword.Location = new System.Drawing.Point(86, 68);
-            this.txtPassword.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.txtPassword.Margin = new System.Windows.Forms.Padding(2);
             this.txtPassword.Name = "txtPassword";
             this.txtPassword.PasswordChar = '*';
             this.txtPassword.Size = new System.Drawing.Size(383, 20);
             this.txtPassword.TabIndex = 7;
+            this.txtPassword.Text = "01PW4yv2use21!";
             // 
             // txtDomain
             // 
             this.txtDomain.Location = new System.Drawing.Point(86, 98);
-            this.txtDomain.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.txtDomain.Margin = new System.Windows.Forms.Padding(2);
             this.txtDomain.Name = "txtDomain";
             this.txtDomain.Size = new System.Drawing.Size(254, 20);
             this.txtDomain.TabIndex = 8;
@@ -116,17 +118,17 @@
             // 
             this.cboSites.FormattingEnabled = true;
             this.cboSites.Location = new System.Drawing.Point(86, 18);
-            this.cboSites.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.cboSites.Margin = new System.Windows.Forms.Padding(2);
             this.cboSites.Name = "cboSites";
             this.cboSites.Size = new System.Drawing.Size(383, 21);
             this.cboSites.TabIndex = 9;
-            this.cboSites.Text = "https://clients.rammware.net/sites/sg";
+            this.cboSites.Text = "https://youthvillages.sharepoint.com/sites/Configuration";
             // 
             // cmdLogin
             // 
             this.cmdLogin.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.cmdLogin.Location = new System.Drawing.Point(272, 119);
-            this.cmdLogin.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.cmdLogin.Margin = new System.Windows.Forms.Padding(2);
             this.cmdLogin.Name = "cmdLogin";
             this.cmdLogin.Size = new System.Drawing.Size(98, 29);
             this.cmdLogin.TabIndex = 10;
@@ -138,7 +140,7 @@
             // 
             this.cmdCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.cmdCancel.Location = new System.Drawing.Point(374, 119);
-            this.cmdCancel.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.cmdCancel.Margin = new System.Windows.Forms.Padding(2);
             this.cmdCancel.Name = "cmdCancel";
             this.cmdCancel.Size = new System.Drawing.Size(98, 29);
             this.cmdCancel.TabIndex = 11;
@@ -159,27 +161,16 @@
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Authentication Mode";
             // 
-            // rbAuthBasic
+            // rbAuthPNP
             // 
-            this.rbAuthBasic.AutoSize = true;
-            this.rbAuthBasic.Location = new System.Drawing.Point(15, 20);
-            this.rbAuthBasic.Name = "rbAuthBasic";
-            this.rbAuthBasic.Size = new System.Drawing.Size(51, 17);
-            this.rbAuthBasic.TabIndex = 0;
-            this.rbAuthBasic.TabStop = true;
-            this.rbAuthBasic.Text = "Basic";
-            this.rbAuthBasic.UseVisualStyleBackColor = true;
-            // 
-            // rbAuthIntegrated
-            // 
-            this.rbAuthIntegrated.AutoSize = true;
-            this.rbAuthIntegrated.Location = new System.Drawing.Point(15, 37);
-            this.rbAuthIntegrated.Name = "rbAuthIntegrated";
-            this.rbAuthIntegrated.Size = new System.Drawing.Size(73, 17);
-            this.rbAuthIntegrated.TabIndex = 1;
-            this.rbAuthIntegrated.TabStop = true;
-            this.rbAuthIntegrated.Text = "Integrated";
-            this.rbAuthIntegrated.UseVisualStyleBackColor = true;
+            this.rbAuthPNP.AutoSize = true;
+            this.rbAuthPNP.Location = new System.Drawing.Point(121, 36);
+            this.rbAuthPNP.Name = "rbAuthPNP";
+            this.rbAuthPNP.Size = new System.Drawing.Size(47, 17);
+            this.rbAuthPNP.TabIndex = 3;
+            this.rbAuthPNP.TabStop = true;
+            this.rbAuthPNP.Text = "PNP";
+            this.rbAuthPNP.UseVisualStyleBackColor = true;
             // 
             // rbAuthSPO
             // 
@@ -192,16 +183,27 @@
             this.rbAuthSPO.Text = "SharePoint Online";
             this.rbAuthSPO.UseVisualStyleBackColor = true;
             // 
-            // rbAuthPNP
+            // rbAuthIntegrated
             // 
-            this.rbAuthPNP.AutoSize = true;
-            this.rbAuthPNP.Location = new System.Drawing.Point(121, 36);
-            this.rbAuthPNP.Name = "rbAuthPNP";
-            this.rbAuthPNP.Size = new System.Drawing.Size(47, 17);
-            this.rbAuthPNP.TabIndex = 3;
-            this.rbAuthPNP.TabStop = true;
-            this.rbAuthPNP.Text = "PNP";
-            this.rbAuthPNP.UseVisualStyleBackColor = true;
+            this.rbAuthIntegrated.AutoSize = true;
+            this.rbAuthIntegrated.Location = new System.Drawing.Point(15, 37);
+            this.rbAuthIntegrated.Name = "rbAuthIntegrated";
+            this.rbAuthIntegrated.Size = new System.Drawing.Size(73, 17);
+            this.rbAuthIntegrated.TabIndex = 1;
+            this.rbAuthIntegrated.TabStop = true;
+            this.rbAuthIntegrated.Text = "Integrated";
+            this.rbAuthIntegrated.UseVisualStyleBackColor = true;
+            // 
+            // rbAuthBasic
+            // 
+            this.rbAuthBasic.AutoSize = true;
+            this.rbAuthBasic.Location = new System.Drawing.Point(15, 20);
+            this.rbAuthBasic.Name = "rbAuthBasic";
+            this.rbAuthBasic.Size = new System.Drawing.Size(51, 17);
+            this.rbAuthBasic.TabIndex = 0;
+            this.rbAuthBasic.TabStop = true;
+            this.rbAuthBasic.Text = "Basic";
+            this.rbAuthBasic.UseVisualStyleBackColor = true;
             // 
             // frmLogin
             // 
@@ -219,7 +221,7 @@
             this.Controls.Add(this.label4);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label1);
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "frmLogin";
             this.Text = "Login";
             this.TopMost = true;

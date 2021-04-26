@@ -9,13 +9,55 @@ namespace spToolbelt2019Lib
 {
     public static class ExtList
     {
+        public static void EnsureDefaultViewFields(this List lst,  string cViewFields)
+        {
+            EnsureViewFields(lst, lst.DefaultView, cViewFields);
+        }
+
+        public static void EnsureViewFields(this List lst,View workView,string cViewFields)
+        {
+            try
+            {
+                string[] vwFields = cViewFields.Split(';');
+                lst.Context.Load(workView, v => v.ViewFields);
+                lst.Context.ExecuteQuery();
+                workView.ViewFields.RemoveAll();
+                foreach (string vwField in vwFields)
+                {
+                    try
+                    {
+                        if (!workView.ViewFields.Contains(vwField))
+                        {
+                            workView.ViewFields.Add(vwField);
+                            workView.Update();
+                            lst.Context.ExecuteQuery();
+                        }
+                    } catch (Exception ex)
+                    {
+                        System.Diagnostics.Trace.WriteLine(ex.Message);
+                    }
+                }
+                //workView.ViewFields.Add("Editor");
+                //workView.ViewFields.Add("Modified");
+                workView.Update();
+                lst.Context.ExecuteQuery();
+            } catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine(ex.Message);
+            }
+            
+        }
+
+
+
         public static void SetListExperience(this List lst, ListExperience exp)
         {
             try
             {
                 
                 lst.ListExperienceOptions = exp;
-
+                lst.Update();
+                lst.Context.ExecuteQuery();
 
             } catch (Exception ex)
             {
@@ -576,8 +618,6 @@ namespace spToolbelt2019Lib
                     ct.DeleteObject();
                     lst.Update();
                     lst.Context.ExecuteQuery();
-
-
                 }
             }
             catch (Exception ex)

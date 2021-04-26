@@ -29,6 +29,38 @@ namespace spToolbelt2019Lib
             }
         }
 
+        public static void RemoveContentTypes(this Web workWeb, string cContentType)
+        {
+            try
+            {
+                string cStartsWith = cContentType.Substring(0, cContentType.IndexOf("*"));
+                List<ContentType> removeItems = new List<ContentType>();
+                ContentTypeCollection allCTs = workWeb.ContentTypes;
+                workWeb.Context.Load(allCTs);
+                workWeb.Context.ExecuteQuery();
+
+                foreach(ContentType ct in allCTs)
+                {
+                    if (ct.Name.ToLower().StartsWith(cStartsWith.ToLower()))
+                    {
+                        
+                        removeItems.Add(ct);
+                    }
+                }
+                foreach(ContentType ct in removeItems)
+                {
+                    ct.DeleteObject();
+                    workWeb.Context.ExecuteQuery();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error in Removing Content Type ", ex);
+            }
+        }
+
+
+
         public static void RemoveContentType(this Web workWeb, string cContentType)
         {
             try
@@ -426,7 +458,7 @@ namespace spToolbelt2019Lib
         {
             try
             {
-                if (!web.HasSiteColumn(cFieldTitle))
+                if (!web.HasSiteColumn(cInternalName))
                 {
                     web.AddSiteColumnDateTime(cInternalName,cFieldTitle, cFieldDescription, cGroup);
                 }
@@ -704,16 +736,32 @@ namespace spToolbelt2019Lib
 
         public static void EnsureContentTypeHasField(this Web web,  string cContentTypeName,string cFieldName)
         {
-            if (!web.ContentTypeHasField(cContentTypeName,cFieldName))
+            if (cFieldName.Contains(';'))
             {
-                web.AddFieldToContentType(cContentTypeName, cFieldName);
+                string[] fields = cFieldName.Split(';');
+                foreach (string field in fields)
+                {
+                    if (!web.ContentTypeHasField(cContentTypeName, field))
+                    {
+                        web.AddFieldToContentType(cContentTypeName, field);
+                    }
+                }
+            } else
+            {
+                if (!web.ContentTypeHasField(cContentTypeName, cFieldName))
+                {
+                    web.AddFieldToContentType(cContentTypeName, cFieldName);
+                }
             }
         }
 
         public static void AddFieldToContentType(this Web web,string cContentTypeName,string cFieldName)
         {
-
-            Field fld = web.GetSiteColumn(cFieldName);
+            if (cFieldName== "spiUserLastModified " || cFieldName == "spiItemGuid" || cFieldName == "spiSiteID " || cFieldName == "spiListID ")
+            {
+                System.Diagnostics.Trace.WriteLine("test");
+            }
+                Field fld = web.GetSiteColumn(cFieldName);
             if (fld==null)
             {
                 throw new Exception("Error in extWeb.AddFieldToContentType - Unable to get field "+cFieldName);
@@ -748,14 +796,17 @@ namespace spToolbelt2019Lib
             try
             {
                 ContentType ct = web.GetContentType(cContentTypeName);
-                FieldCollection flds = ct.Fields;
-                web.Context.Load(flds);
-                web.Context.ExecuteQuery();
-                foreach (Field fld in flds)
+                if (ct != null)
                 {
-                    if (fld.Title.ToLower()==cFieldName.ToLower() || fld.InternalName.ToLower()==cFieldName.ToLower())
+                    FieldCollection flds = ct.Fields;
+                    web.Context.Load(flds);
+                    web.Context.ExecuteQuery();
+                    foreach (Field fld in flds)
                     {
-                        return true;
+                        if (fld.Title.ToLower() == cFieldName.ToLower() || fld.InternalName.ToLower() == cFieldName.ToLower())
+                        {
+                            return true;
+                        }
                     }
                 }
             }

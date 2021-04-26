@@ -11,7 +11,6 @@ using System.Security;
 using System.Text;
 using System.Windows.Forms;
 using spc = Microsoft.SharePoint.Client;
-using odc = OfficeDevPnP.Core;
 
 namespace spToolbelt2019
 {
@@ -156,8 +155,9 @@ namespace spToolbelt2019
                         break;
                     case "PNP":
                         
-                        odc.AuthenticationManager authManager = new OfficeDevPnP.Core.AuthenticationManager();
-                        LoginContext = authManager.GetWebLoginClientContext(cboSites.Text, null);
+                        OfficeDevPnP.Core.AuthenticationManager authManager = new OfficeDevPnP.Core.AuthenticationManager();
+                        ClientContext ctx = authManager.GetWebLoginClientContext(cboSites.Text);
+                        //ClientContext context = authManager.GetSharePointOnlineAuthenticatedContextTenant(cboSites.Text, txtUserName.Text,password);
                         break;
                     default:
 
