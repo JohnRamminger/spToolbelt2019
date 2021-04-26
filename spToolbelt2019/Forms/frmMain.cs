@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using spToolbelt2019.Forms;
-using Squirrel;
+
 using System.Threading.Tasks;
 using System.Diagnostics;
 
@@ -43,10 +43,6 @@ namespace spToolbelt2019
 
         private async Task  CheckForUpdates()
         {
-            using (var manager = new UpdateManager("https://johnramminger.com/portals/0/deploy/spToolBelt2019", "spToolBelt2019"))
-            {
-                 await manager.UpdateApp();
-            }
         }
 
 

@@ -40,8 +40,7 @@
             this.cmdWorkflowFind = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
             this.button2 = new System.Windows.Forms.Button();
-            this.button10 = new System.Windows.Forms.Button();
-            this.button11 = new System.Windows.Forms.Button();
+            
             this.SuspendLayout();
             // 
             // button3
@@ -96,7 +95,7 @@
         private System.Windows.Forms.Button cmdWorkflowFind;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Button button2;
-        private System.Windows.Forms.Button button3;
-        private System.Windows.Forms.Button button4;
+        private System.Windows.Forms.Button button31;
+        private System.Windows.Forms.Button button41;
     }
 }
