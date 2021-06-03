@@ -1,6 +1,8 @@
 ﻿using Microsoft.SharePoint.Client;
 using System;
 using spToolbelt2019Lib;
+using spToolbelt2019lib.Code.Extensions;
+using System.Windows;
 
 namespace spToolbelt2019.Forms
 {
@@ -39,7 +41,13 @@ namespace spToolbelt2019.Forms
             ctxTarget.Load(lstTarget);
             ctxTarget.ExecuteQuery();
             List lstSource = ctxSource.Web.Lists.GetByTitle("NavigationItems");
-            CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
+            CamlQuery oQuery = new CamlQuery
+            {
+                ViewXml = "<View><Query><OrderBy><FieldRef Name='niLevel'/><FieldRef Name='niSortOrder'/></OrderBy></Query><RowLimit>5000</RowLimit></View>"
+            };
+
+
+
             ListItemCollection items = lstSource.GetItems(oQuery);
             ctxSource.Load(items, li=>li.Include(
                 i=>i.HasUniqueRoleAssignments,
@@ -64,53 +72,82 @@ namespace spToolbelt2019.Forms
 
             foreach(ListItem itm in items)
             {
-                listBox1.Items.Add("Working: " + itm["Title"].ToString());
-                ListItem tgtItem = lstTarget.GetListItemByTitle(itm["Title"].ToString());
-                if (tgtItem==null)
+                try
                 {
-                    ListItemCreationInformation lici = new ListItemCreationInformation();
-                    tgtItem = lstTarget.AddItem(lici);
-                    tgtItem["Title"] = itm["Title"];
-                }
+                    listBox1.Items.Add("Working: " + itm["Title"].ToString());
+                    ListItem tgtItem = lstTarget.GetListItemByTitle(itm["Title"].ToString());
+                    if (tgtItem == null)
+                    {
+                        ListItemCreationInformation lici = new ListItemCreationInformation();
+                        
+                        tgtItem = lstTarget.AddItem(lici);
+                        
+                    }
+                    SetFieldValue(tgtItem, itm, "Title");
+                    SetFieldValue(tgtItem, itm, "niAriaText");
+                    SetFieldValue(tgtItem, itm, "niCaption");
+                    SetFieldValue(tgtItem, itm, "niLinkUrl");
+                    SetFieldValue(tgtItem, itm, "niSiteID");
+                    SetFieldValue(tgtItem, itm, "niSortOrder");
+                    SetFieldValue(tgtItem, itm, "niLevel");
+                    SetFieldValue(tgtItem, itm, "niNewTab");
+                    SetFieldValue(tgtItem, itm, "niIndent");
+                    SetFieldValue(tgtItem, itm, "niEnabled");
+                    SetFieldValue(tgtItem, itm, "niLinkType");
+                    SetFieldValue(tgtItem, itm, "niPosition");
+                    SetFieldValue(tgtItem, itm, "niStyles");
 
-                tgtItem["niAriaText"] = itm["niAriaText"];
-                tgtItem["niCaption"] = itm["niCaption"];
-                tgtItem["niLinkUrl"] = itm["niLinkUrl"];
-                tgtItem["niSiteID"] = itm["niSiteID"];
-                tgtItem["niStyles"] = itm["niStyles"];
-                tgtItem["niToolTip"] = itm["niToolTip"];
-                tgtItem["niPosition"] = itm["niPosition"];
-                tgtItem["niLinkType"] = itm["niLinkType"];
-                tgtItem["niEnabled"] = itm["niEnabled"];
-                tgtItem["niIndent"] = itm["niIndent"];
-                tgtItem["niNewTab"] = itm["niNewTab"];
-                tgtItem["niLevel"] = itm["niLevel"];
-                tgtItem["niSortOrder"] = itm["niSortOrder"];
+                    
+                    if (itm["niParentItem"] != null)
+                    {
 
-                if (itm["niParentItem"] != null)
+                        FieldLookupValue flv = itm["niParentItem"] as FieldLookupValue;
+                        ListItem lookedUpItem = lstTarget.GetListItemByTitle(flv.LookupValue);
+                        if (lookedUpItem != null)
+                        {
+                            FieldLookupValue saveFlv = new FieldLookupValue();
+                            saveFlv.LookupId = lookedUpItem.Id;
+                            tgtItem["niParentItem"] = saveFlv;
+                        }
+                    }
+                    tgtItem.Update();
+                    ctxTarget.ExecuteQuery();
+                    if (itm.HasUniqueRoleAssignments)
+                    {
+                       SyncPemrissions(ctxTarget, tgtItem, itm);
+                    }
+                } catch (Exception ex)
                 {
-
-                    FieldLookupValue flv = itm["niParentItem"] as FieldLookupValue; 
-                    ListItem lookedUpItem = lstTarget.GetListItemByTitle(flv.LookupValue);
-                    FieldLookupValue saveFlv = new FieldLookupValue();
-                    saveFlv.LookupId = lookedUpItem.Id;
-                    tgtItem["niParentItem"] = saveFlv;
-                }
-                tgtItem.Update();
-                ctxTarget.ExecuteQuery();
-                if (itm.HasUniqueRoleAssignments)
-                {
-                    SyncPemrissions(ctxTarget, tgtItem, itm);
+                    listBox1.Items.Add("Error work item: " + itm["Title"].ToString() + " - " + ex.Message);
                 }
             }
             listBox1.Items.Add("Complete!");
 
         }
 
+        private void SetFieldValue(ListItem tgtItem, ListItem itm, string cInternalFieldName)
+        {
+            try
+            {
+                tgtItem[cInternalFieldName] = itm[cInternalFieldName];
+                tgtItem.Update();
+                tgtItem.Context.ExecuteQuery();
+            } catch (Exception ex)
+            {
+                MessageBox.Show("Eror on field:" + cInternalFieldName + " - " + ex.Message);
+            }
+        }
+
         private  void SyncPemrissions(ClientContext ctxTarget, ListItem tgtItem, ListItem item)
         {
             try
             {
+                ctxTarget.Load(tgtItem,a=>a.HasUniqueRoleAssignments);
+                ctxTarget.ExecuteQuery();
+                if (!tgtItem.HasUniqueRoleAssignments)
+                {
+                    tgtItem.BreakRoleInheritance(false, true);
+                }
                 item.Context.Load(item, i => i.RoleAssignments);
                 item.Context.ExecuteQuery();
                 foreach (RoleAssignment ra in item.RoleAssignments)
@@ -119,9 +156,48 @@ namespace spToolbelt2019.Forms
                     {
                         item.Context.Load(ra.Member);
                         item.Context.ExecuteQuery();
-                        if (!HasRole(tgtItem, ra.Member))
+                        if (!HasRole(ctxTarget,tgtItem, ra.Member))
                         {
-                            tgtItem.RoleAssignments.Add(ra.Member, ra.RoleDefinitionBindings);
+
+                            var roleDefBindCol = new RoleDefinitionBindingCollection(ctxTarget);
+                            roleDefBindCol.Add(tgtItem.ParentList.ParentWeb.RoleDefinitions.GetByType(RoleType.Reader));
+                            if (ra.Member.PrincipalType.ToString() != "SharePointGroup")
+                            {
+                                var user_group = tgtItem.ParentList.ParentWeb.EnsureUser(ra.Member.LoginName);
+                                tgtItem.RoleAssignments.Add(user_group, roleDefBindCol);
+                            }
+                            else
+                            {
+                                tgtItem.ParentList.ParentWeb.EnsureGroup(ra.Member.LoginName);
+
+                                var newgroup = tgtItem.ParentList.ParentWeb.SiteGroups.GetByName(ra.Member.LoginName);
+                                var srcgroup = item.ParentList.ParentWeb.SiteGroups.GetByName(ra.Member.LoginName);
+                                item.Context.Load(srcgroup, sg => sg.Users);
+                                item.Context.ExecuteQuery();
+                                foreach (User usr in srcgroup.Users)
+                                {
+                                    try
+                                    {
+                                        newgroup.EnsureUser(tgtItem.ParentList.ParentWeb,usr.LoginName);
+                                    } catch (Exception ex)
+                                    {
+                                        System.Diagnostics.Trace.WriteLine(ex.Message);
+                                    }
+                                }
+
+                                var roleDefBindCol2 = new RoleDefinitionBindingCollection(ctxTarget);
+                                roleDefBindCol2.Add(tgtItem.ParentList.ParentWeb.RoleDefinitions.GetByType(RoleType.Reader));
+
+                                tgtItem.RoleAssignments.Add(newgroup, roleDefBindCol2);
+                            }
+                            
+                            tgtItem.Update();
+                            ctxTarget.ExecuteQuery();
+
+
+
+
+                            
                         }
                     }
                     catch (Exception ex)
@@ -139,16 +215,16 @@ namespace spToolbelt2019.Forms
             }
         }
 
-        private  bool HasRole(ListItem tgtItem, Principal member)
+        private  bool HasRole(ClientContext permctx, ListItem tgtItem, Principal member)
         {
             try
             {
-                tgtItem.Context.Load(tgtItem.RoleAssignments);
-                tgtItem.Context.ExecuteQuery();
+                permctx.Load(tgtItem.RoleAssignments);
+                permctx.ExecuteQuery();
                 foreach (RoleAssignment ra in tgtItem.RoleAssignments)
                 {
-                    tgtItem.Context.Load(ra.Member);
-                    tgtItem.Context.ExecuteQuery();
+                    permctx.Load(ra.Member);
+                    permctx.ExecuteQuery();
                     if (ra.Member.LoginName == member.LoginName)
                     {
                         return true;

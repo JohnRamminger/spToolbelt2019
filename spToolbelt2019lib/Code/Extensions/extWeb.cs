@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Microsoft.SharePoint.Client;
 
@@ -965,5 +966,26 @@ namespace spToolbelt2019Lib
         }
         
         #endregion
+
+        public static void  EnsureGroup(this Web oWeb,string cGroupName)
+        {
+            try
+            {
+                if (!oWeb.GroupExists(cGroupName))
+                {
+                    GroupCreationInformation gci = new GroupCreationInformation();
+                    gci.Title = cGroupName;
+                    oWeb.SiteGroups.Add(gci);
+                    
+                    oWeb.Update();
+                    oWeb.Context.ExecuteQuery();
+                }
+            } catch (Exception ex)
+            {
+                throw new Exception("Exception Creating Group: " + cGroupName + "- " + ex.Message);
+            }
+        }
+
+
     }
 }
