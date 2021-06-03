@@ -340,6 +340,61 @@ namespace spToolbelt2019Lib
 
         }
 
+        public static bool HasItemByField(this List lst, string cValue,string cField)
+        {
+            string viewXML = "<View><Query><Where><Eq><FieldRef Name = '"+cField+"' /><Value Type = 'Text'>" + cValue + "</Value></Eq></Where></Query><RowLimit>5000</RowLimit></View>";
+            CamlQuery oQuery = new CamlQuery
+            {
+                ViewXml = viewXML
+            };
+
+            try
+            {
+                ListItemCollection items = lst.GetItems(oQuery);
+                lst.Context.Load(items);
+                lst.Context.ExecuteQuery();
+                if (items.Count > 0)
+                    return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine(ex.Message);
+            }
+            return false;
+
+
+        }
+
+
+        public static ListItem GetItemByField(this List lst, string cValue, string cField)
+        {
+            string viewXML = "<View><Query><Where><Eq><FieldRef Name = '" + cField + "' /><Value Type = 'Text'>" + cValue + "</Value></Eq></Where></Query><RowLimit>5000</RowLimit></View>";
+            CamlQuery oQuery = new CamlQuery
+            {
+                ViewXml = viewXML
+            };
+
+            try
+            {
+                ListItemCollection items = lst.GetItems(oQuery);
+                lst.Context.Load(items);
+                lst.Context.ExecuteQuery();
+                if (items.Count > 0)
+                {
+                    return items[0];
+                }
+                    
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine(ex.Message);
+            }
+            return null;
+
+
+        }
+
+
         public static bool HasField(this List lst,string cFieldName)
         {
             try

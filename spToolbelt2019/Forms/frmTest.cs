@@ -763,18 +763,18 @@ namespace spToolbelt2019.Forms
             ctx.ExecuteQuery();
         }
 
-        private void button5_Click_1(object sender, EventArgs e)
-        {
-            Web oWeb = ctx.Web;
-            ctx.Load(oWeb);
-            ctx.Load(oWeb.UserCustomActions,u=>u.Include(uc=>uc.ClientSideComponentProperties));
-            ctx.ExecuteQuery();
+        //private void button5_Click_1(object sender, EventArgs e)
+        //{
+        //    Web oWeb = ctx.Web;
+        //    ctx.Load(oWeb);
+        //    ctx.Load(oWeb.UserCustomActions,u=>u.Include(uc=>uc.ClientSideComponentProperties));
+        //    ctx.ExecuteQuery();
             
-            foreach (UserCustomAction uca in oWeb.UserCustomActions)
-            {
-                System.Diagnostics.Trace.WriteLine(uca.ClientSideComponentProperties);
-            }
-        }
+        //    foreach (UserCustomAction uca in oWeb.UserCustomActions)
+        //    {
+        //        System.Diagnostics.Trace.WriteLine(uca.ClientSideComponentProperties);
+        //    }
+        //}
     }
 
     public class EventList

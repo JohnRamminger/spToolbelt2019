@@ -167,7 +167,7 @@ namespace spToolbelt2019Lib
             {
                 Site oSite = workerCTX.Site;
                 workerCTX.Load(oSite, os => os.Url);
-                workerCTX.ExecuteQuery();
+                workerCTX.ExecuteQueryRetry();
                 string cAdminUrl = GetAdminUrl(workerCTX.Site.Url);
                 SPOSitePropertiesEnumerable prop = null;
                 ClientContext tenantCTX = new ClientContext(cAdminUrl)
@@ -184,7 +184,7 @@ namespace spToolbelt2019Lib
                 Tenant tenant = new Tenant(tenantCTX);
                 prop = tenant.GetSiteProperties(0, true);
                 tenantCTX.Load(prop);
-                tenantCTX.ExecuteQuery();
+                tenantCTX.ExecuteQueryRetry();
                 foreach (SiteProperties sp in prop)
                 {
                     cRetVal += sp.Url + ";";
@@ -255,7 +255,7 @@ namespace spToolbelt2019Lib
                 //if (f.Name == "filename")
                 {
                     pctx.Load(f.Files);
-                    pctx.ExecuteQuery();
+                    pctx.ExecuteQueryRetry();
                     FileCollection fileCol = f.Files;
                     foreach (Microsoft.SharePoint.Client.File file in fileCol)
                     {
@@ -266,7 +266,7 @@ namespace spToolbelt2019Lib
 
                 FolderCollection folders = f.Folders;
                 pctx.Load(folders);
-                pctx.ExecuteQuery();
+                pctx.ExecuteQueryRetry();
                 foreach (Folder folder in folders)
                 {
                     WalkFolders(pctx, folder);
@@ -401,7 +401,7 @@ namespace spToolbelt2019Lib
                                 List lst = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("ListName"));
 
                                 workCTX.Load(lst);
-                                workCTX.ExecuteQuery();
+                                workCTX.ExecuteQueryRetry();
                                 lst.DisableContentTypes();
                                 break;
                             case "download-images":
@@ -423,7 +423,7 @@ namespace spToolbelt2019Lib
                                 List lst2 = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("ListName"));
 
                                 workCTX.Load(lst2);
-                                workCTX.ExecuteQuery();
+                                workCTX.ExecuteQueryRetry();
                                 lst2.EnsureListHasContenttype(workCTX.Site, oWorkItem.GetParm("ContentType"));
                                 break;
 
@@ -439,7 +439,7 @@ namespace spToolbelt2019Lib
 
                                 List lstAttach = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("ListName"));
                                 workCTX.Load(lstAttach);
-                                workCTX.ExecuteQuery();
+                                workCTX.ExecuteQueryRetry();
                                 lstAttach.attachWorkflow(workCTX, oWorkItem.GetParm("workflowtemplate"));
                                 break;
 
@@ -452,7 +452,7 @@ namespace spToolbelt2019Lib
 
                                 List lstProvision = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("ListName"));
                                 workCTX.Load(lstProvision);
-                                workCTX.ExecuteQuery();
+                                workCTX.ExecuteQueryRetry();
                                 lstProvision.EnsureListHasContenttype(workCTX.Site, oWorkItem.GetParm("ContentType"));
                                 ShowProgress(string.Format("Remove Content Type From List: {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("DefaultContentType")));
                                 lstProvision.RemoveContentTypeFromList(oWorkItem.GetParm("DefaultContentType"));
@@ -632,10 +632,10 @@ namespace spToolbelt2019Lib
                                 NavigationNodeCollection oSearchNav = workCTX.Web.LoadSearchNavigation();
 
                                 //workCTX.Web.DeleteAllNavigationNodes(NavigationType.SearchNav);
-                                //workCTX.ExecuteQuery();
+                                //workCTX.ExecuteQueryRetry();
                                 workCTX.Web.SetPropertyBagValue("SRCH_ENH_FTR_URL_WEB", @"https://havertys.sharepoint.com/Sites/SearchCenter/Pages/results.aspx");
                                 workCTX.Web.SetPropertyBagValue("SRCH_ENH_FTR_URL", @"https://havertys.sharepoint.com/Sites/SearchCenter/Pages/results.aspx");
-                                workCTX.ExecuteQuery();
+                                workCTX.ExecuteQueryRetry();
 
                                 EnsureNavNode(workCTX, "Everything", "https://havertys.sharepoint.com/Sites/SearchCenter/Pages/results.aspx");
                                 EnsureNavNode(workCTX, "KB", "https://havertys.sharepoint.com/Sites/SearchCenter/Pages/kbresults.aspx");
@@ -646,7 +646,7 @@ namespace spToolbelt2019Lib
                                 EnsureNavNode(workCTX, "User Guides", "https://havertys.sharepoint.com/Sites/SearchCenter/Pages/ugresults.aspx");
                                 EnsureNavNode(workCTX, "Directory", "https://havertys.sharepoint.com/Sites/SearchCenter/Pages/dirresults.aspx");
 
-                                workCTX.ExecuteQuery();
+                                workCTX.ExecuteQueryRetry();
 
 
 
@@ -698,7 +698,7 @@ namespace spToolbelt2019Lib
                 string cFields = oWorkItem.GetParm("fields");
                 Web oWeb = workCTX.Web;
                 workCTX.Load(oWeb);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 string[] afields = cFields.Split(';');
                 foreach (string fn in afields)
                 {
@@ -717,11 +717,11 @@ namespace spToolbelt2019Lib
                 string strField = oWorkItem.GetParm("fieldname");
                 Field fld = workCTX.Web.Fields.GetByInternalNameOrTitle(strField);
                 workCTX.Load(fld);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 fld.SetShowInEditForm(false);
                 fld.SetShowInNewForm(false);
                 fld.Update();
-                ctx.ExecuteQuery();
+                ctx.ExecuteQueryRetry();
             } catch (Exception ex)
             {
 
@@ -734,7 +734,7 @@ namespace spToolbelt2019Lib
             string viewFields = oWorkItem.GetParm("viewfields");
             List workList = workCTX.Web.Lists.GetByTitle(listName);
             workCTX.Load(workList);
-            workCTX.ExecuteQuery();
+            workCTX.ExecuteQueryRetry();
             workList.EnsureDefaultViewFields(viewFields);
         }
 
@@ -745,7 +745,7 @@ namespace spToolbelt2019Lib
             {
                 ListCollection lists=workCTX.Web.Lists;
                 workCTX.Load(lists);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 string key = cListTitle.Replace("*", "");
                 foreach (List lst in lists)
                 {
@@ -756,7 +756,7 @@ namespace spToolbelt2019Lib
                     }
                 }
 
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
 
 
 
@@ -765,10 +765,10 @@ namespace spToolbelt2019Lib
             {
                 List workList = workCTX.Web.Lists.GetByTitle(cListTitle);
                 workCTX.Load(workList);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 workList.Hidden = true;
                 workList.Update();
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
             }
 
         }
@@ -846,12 +846,12 @@ namespace spToolbelt2019Lib
                 string viewXML = "<View><Query><Where><Eq><FieldRef Name = 'spmiItemGuid' /><Value Type = 'Text'>" + ii.ID + "</Value></Eq></Where></Query><RowLimit>10</RowLimit></View>";
                 List lst = workCTX.Web.Lists.GetByTitle("spmiItems");
                 workCTX.Load(lst);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 CamlQuery oQuery = new CamlQuery();
                 oQuery.ViewXml = viewXML;
                 ListItemCollection items = lst.GetItems(oQuery);
                 workCTX.Load(items);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 int iListID = 0;
 
                 foreach (var lstItem in items)
@@ -872,14 +872,14 @@ namespace spToolbelt2019Lib
                 {
                     listItem = lst.GetItemById(iListID);
                     workCTX.Load(listItem);
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
                 }
                 string cPerm = BuildPermissions(ii.permissions);
                 listItem["spmiPermissions"] = cPerm;
                 listItem["spmiListID"] = li.Id;
                 listItem["spmiListTitle"] = li.ListTitle;
                 listItem.Update();
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
             }
             catch (Exception ex)
             {
@@ -894,7 +894,7 @@ namespace spToolbelt2019Lib
 
             ListItemCollection items = lstImages.GetAllItems();
             workCTX.Load(items, i => i.Include(itm => itm.File.ServerRelativeUrl, itm => itm.File.Name));
-            workCTX.ExecuteQuery();
+            workCTX.ExecuteQueryRetry();
 
             string cLocalFolder = oWorkItem.GetParm("localfolder");
             if (!Directory.Exists(cLocalFolder))
@@ -1025,7 +1025,7 @@ namespace spToolbelt2019Lib
                 ShowProgress(string.Format("Ensure Content Type In List: {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("ctName")));
                 List lstWork = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("ListName"));
                 workCTX.Load(lstWork);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 lstWork.EnsureListHasContenttype(workCTX.Site,ctName);
                 ShowProgress(string.Format("Remove Content Type From List: {0} - {1}", oWorkItem.GetParm("ListName"), oWorkItem.GetParm("ContentType")));
                 lstWork.RemoveContentTypeFromList(ctParent);
@@ -1046,12 +1046,12 @@ namespace spToolbelt2019Lib
                 List lstWork = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("listname"));
                 Field fld = lstWork.Fields.GetByInternalNameOrTitle(oWorkItem.GetParm("fieldname"));
                 workCTX.Load(fld, f => f.Required);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 string cDefault = oWorkItem.GetParm("defaultvalue");
 
                 fld.DefaultValue = cDefault;
                 fld.Update();
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
 
             }
             catch (Exception ex)
@@ -1068,13 +1068,13 @@ namespace spToolbelt2019Lib
                 List lstWork = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("listname"));
                 FieldUser fld = (FieldUser)lstWork.Fields.GetByInternalNameOrTitle(oWorkItem.GetParm("fieldname"));
                 workCTX.Load(fld, f => f.Required);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 bool bMultiUser = oWorkItem.GetParmBool("allowmultiuser");
                 if (fld.AllowMultipleValues!=bMultiUser)
                 {
                     fld.AllowMultipleValues = bMultiUser;
                     fld.Update();
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
                 }
             }
             catch (Exception ex)
@@ -1092,13 +1092,13 @@ namespace spToolbelt2019Lib
                 List lstWork = workCTX.Web.Lists.GetByTitle(oWorkItem.GetParm("listname"));
                 Field fld = lstWork.Fields.GetByInternalNameOrTitle(oWorkItem.GetParm("fieldname"));
                 workCTX.Load(fld, f => f.Required);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 bool bRequired = oWorkItem.GetParmBool("required");
                 if (fld.Required != bRequired)
                 {
                     fld.Required = bRequired;
                     fld.Update();
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
                 }
             }
             catch (Exception ex)
@@ -1117,7 +1117,7 @@ namespace spToolbelt2019Lib
         {
             WebCollection webs = web.Webs;
             workCTX.Load(webs, w => w.Include(wi => wi.HasUniqueRoleAssignments, wi => wi.Url));
-            workCTX.ExecuteQuery();
+            workCTX.ExecuteQueryRetry();
             foreach (Web childweb in webs)
             {
 
@@ -1126,7 +1126,7 @@ namespace spToolbelt2019Lib
             }
             ListCollection lists = web.Lists;
             workCTX.Load(lists, lst => lst.Include(l => l.Title, l => l.HasUniqueRoleAssignments, l => l.Hidden, l => l.Title));
-            workCTX.ExecuteQuery();
+            workCTX.ExecuteQueryRetry();
             foreach (List list in lists)
             {
                 if (!list.Hidden && list.Title != "MicroFeed")
@@ -1162,7 +1162,7 @@ namespace spToolbelt2019Lib
 
                 RoleAssignmentCollection rac = web.RoleAssignments;
                 workCTX.Load(rac, ri => ri.Include(r => r.Member.PrincipalType, r => r.Member.LoginName));
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 List<string> groups = new List<string>();
                 List<string> users = new List<string>();
                 List<RoleAssignment> removeItems = new List<RoleAssignment>();
@@ -1184,7 +1184,7 @@ namespace spToolbelt2019Lib
                     roleAssignment.DeleteObject();
                 }
                 web.Update();
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (string user in users)
                 {
                     EnsureUserPermissionInWeb(workCTX, web, user, RoleType.Reader);
@@ -1212,7 +1212,7 @@ namespace spToolbelt2019Lib
             {
                 RoleAssignmentCollection rac = list.RoleAssignments;
                 workCTX.Load(rac, ri => ri.Include(r => r.Member.PrincipalType, r => r.Member.LoginName));
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 List<string> groups = new List<string>();
                 List<string> users = new List<string>();
                 List<RoleAssignment> removeItems = new List<RoleAssignment>();
@@ -1234,7 +1234,7 @@ namespace spToolbelt2019Lib
                     roleAssignment.DeleteObject();
                 }
                 list.Update();
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (string user in users)
                 {
                     EnsureUserPermissionInList(workCTX, list, user, RoleType.Reader);
@@ -1258,7 +1258,7 @@ namespace spToolbelt2019Lib
 
                 RoleAssignmentCollection rac = li.RoleAssignments;
                 workCTX.Load(rac, ri => ri.Include(r => r.Member.PrincipalType, r => r.Member.LoginName));
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 List<string> groups = new List<string>();
                 List<string> users = new List<string>();
                 List<RoleAssignment> removeItems = new List<RoleAssignment>();
@@ -1281,7 +1281,7 @@ namespace spToolbelt2019Lib
                 }
                 li.SystemUpdate();
 
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (string user in users)
                 {
                     EnsureUserPermissionInItem(workCTX, li, user, RoleType.Reader);
@@ -1305,7 +1305,7 @@ namespace spToolbelt2019Lib
             CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
             ListItemCollection items = list.GetItems(oQuery);
             workCTX.Load(items, itms => itms.Include(i => i.Id, i => i.HasUniqueRoleAssignments));
-            workCTX.ExecuteQuery();
+            workCTX.ExecuteQueryRetry();
             foreach (ListItem li in items)
             {
                 if (li.HasUniqueRoleAssignments)
@@ -1325,10 +1325,10 @@ namespace spToolbelt2019Lib
                 System.Threading.Thread.Sleep(3000);
                 GroupCollection oGroups = workCTX.Site.RootWeb.SiteGroups;
                 workCTX.Load(workCTX.Site, itm => itm.Url);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
 
                 workCTX.Load(oGroups, grps => grps.Include(grp => grp.Title));
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (var group in oGroups)
                 {
                     bool bComplete = false;
@@ -1338,7 +1338,7 @@ namespace spToolbelt2019Lib
                         {
                             UserCollection oUsers = group.Users;
                             workCTX.Load(oUsers, usrs => usrs.Include(usr => usr.Title));
-                            workCTX.ExecuteQuery();
+                            workCTX.ExecuteQueryRetry();
                             foreach (var user in oUsers)
                             {
                                 if (user.Title.Contains("Everyone") && !group.Title.Contains("Style Resource"))
@@ -1392,7 +1392,7 @@ namespace spToolbelt2019Lib
                 oQuery.ViewXml = "<View><Query><Where><Eq><FieldRef Name='UniquePermissions' /><Value Type='Boolean'>1</Value></Eq></Where></Query></View>";
                 ListItemCollection items = lstSites.GetItems(oQuery);
                 workCTX.Load(items, i => i.Include(itm => itm["SiteUrl"]));
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (ListItem listItem in items)
                 {
                     try
@@ -1433,7 +1433,7 @@ namespace spToolbelt2019Lib
                     List lstAccessRequests = siteCTX.Web.Lists.GetByTitle("Access Requests");
                     //FieldCollection flds = lstAccessRequests.Fields;
                     //siteCTX.Load(flds, fs => fs.Include(f => f.InternalName));
-                    //siteCTX.ExecuteQuery();
+                    //siteCTX.ExecuteQueryRetry();
                     //foreach (Field fld in flds)
                     //{
                     //    System.Diagnostics.Trace.WriteLine(fld.InternalName);
@@ -1447,7 +1447,7 @@ namespace spToolbelt2019Lib
                                                             itm => itm["RequestedWebId"],
                                                             itm => itm["RequestedListId"],
                                                             itm => itm["RequestedListItemId"]));
-                    siteCTX.ExecuteQuery();
+                    siteCTX.ExecuteQueryRetry();
                     foreach (ListItem listItem in items)
                     {
                         try
@@ -1463,7 +1463,7 @@ namespace spToolbelt2019Lib
                             Guid gWeb = new Guid(WebId);
                             Web oSourceWeb = siteCTX.Site.OpenWebById(gWeb);
                             siteCTX.Load(oSourceWeb, sw => sw.Url);
-                            siteCTX.ExecuteQuery();
+                            siteCTX.ExecuteQueryRetry();
                             cWebUrl = oSourceWeb.Url;
                             string cRequestedFor = listItem["RequestedFor"].ToString();
                             string cUserName = cRequestedFor.Substring(cRequestedFor.LastIndexOf("|") + 1);
@@ -1472,7 +1472,7 @@ namespace spToolbelt2019Lib
                                 Guid gList = new Guid(ListId);
                                 List lstRequested = oSourceWeb.Lists.GetById(gList);
                                 siteCTX.Load(lstRequested);
-                                siteCTX.ExecuteQuery();
+                                siteCTX.ExecuteQueryRetry();
                                 cListName = lstRequested.Title;
                                 cRequestType = "List";
                             }
@@ -1484,12 +1484,12 @@ namespace spToolbelt2019Lib
                             User oRequestedFor = null;
 
                             var result = Microsoft.SharePoint.Client.Utilities.Utility.ResolvePrincipal(ctx, ctx.Web, cUserName, Microsoft.SharePoint.Client.Utilities.PrincipalType.User, Microsoft.SharePoint.Client.Utilities.PrincipalSource.All, null, true);
-                            ctx.ExecuteQuery();
+                            ctx.ExecuteQueryRetry();
                             if (result != null)
                             {
                                 oRequestedFor = ctx.Web.EnsureUser(result.Value.LoginName);
                                 ctx.Load(oRequestedFor);
-                                ctx.ExecuteQuery();
+                                ctx.ExecuteQueryRetry();
                             }
 
 
@@ -1509,7 +1509,7 @@ namespace spToolbelt2019Lib
 
                                 liAccessRequest["Title"] = cRequestId;
                                 //liAccessRequest.Update();
-                                //ctx.ExecuteQuery();
+                                //ctx.ExecuteQueryRetry();
                                 liAccessRequest["SiteUrl"] = cWebUrl;
                                 if (!String.IsNullOrEmpty(cListName))
                                 {
@@ -1525,7 +1525,7 @@ namespace spToolbelt2019Lib
                                 liAccessRequest["AccessRequestType"] = cRequestType;
 
                                 liAccessRequest.Update();
-                                ctx.ExecuteQuery();
+                                ctx.ExecuteQueryRetry();
 
                             }
 
@@ -1557,7 +1557,7 @@ namespace spToolbelt2019Lib
                 oQuery.ViewXml = uilQuery;
                 ListItemCollection itms = lstAllAccessRequests.GetItems(oQuery);
                 ctx.Load(itms);
-                ctx.ExecuteQuery();
+                ctx.ExecuteQueryRetry();
                 foreach (ListItem listItem in itms)
                 {
                     if (listItem["Title"].ToString().ToLower() == cGuid.ToLower())
@@ -1583,11 +1583,11 @@ namespace spToolbelt2019Lib
             try
             {
                 workCTX.Load(web, ww => ww.Url);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 ShowInfo(web.Url);
                 WebCollection oWebs = web.Webs;
                 workCTX.Load(oWebs);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (Web childweb in oWebs)
                 {
                     EnableARSearch(workCTX, childweb);
@@ -1602,7 +1602,7 @@ namespace spToolbelt2019Lib
                     //lstAccessRequests.NoCrawl = false;
                     //lstAccessRequests.ReIndexList();
                     //lstAccessRequests.Update();
-                    //workCTX.ExecuteQuery();
+                    //workCTX.ExecuteQueryRetry();
 
                 }
 
@@ -1624,11 +1624,11 @@ namespace spToolbelt2019Lib
             try
             {
                 workCTX.Load(oWorkWeb, ww => ww.Url);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 ShowInfo(oWorkWeb.Url);
                 WebCollection oWebs = oWorkWeb.Webs;
                 workCTX.Load(oWebs);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (Web web in oWebs)
                 {
                     FixEncryptedText(workCTX, web);
@@ -1647,7 +1647,7 @@ namespace spToolbelt2019Lib
                         var fi = new FileInfo(fileName);
 
                         workCTX.Load(libSiteAssets.RootFolder);
-                        workCTX.ExecuteQuery();
+                        workCTX.ExecuteQueryRetry();
                         var fileUrl = String.Format("{0}/{1}", libSiteAssets.RootFolder.ServerRelativeUrl, fi.Name);
 
                         Microsoft.SharePoint.Client.File.SaveBinaryDirect(workCTX, fileUrl, fs, true);
@@ -1674,7 +1674,7 @@ namespace spToolbelt2019Lib
             ShowInfo(item);
             WebCollection oWebs = workCTX.Web.Webs;
             workCTX.Load(oWebs);
-            workCTX.ExecuteQuery();
+            workCTX.ExecuteQueryRetry();
             foreach (var web in oWebs)
             {
                 FindSiteCustimizations(workCTX, web);
@@ -1687,10 +1687,10 @@ namespace spToolbelt2019Lib
             try
             {
                 //workCTX.Load(oWorkWeb, ww => ww.Url);
-                //workCTX.ExecuteQuery();
+                //workCTX.ExecuteQueryRetry();
                 WebCollection oWebs = oWorkWeb.Webs;
                 workCTX.Load(oWebs);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (var web in oWebs)
                 {
                     FindSiteCustimizations(workCTX, web);
@@ -1701,12 +1701,12 @@ namespace spToolbelt2019Lib
                     List lstSiteAssets = oWorkWeb.Lists.GetByTitle("Site Assets");
                     Folder oRootFolder = lstSiteAssets.RootFolder;
                     workCTX.Load(oRootFolder);
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
                     List<Microsoft.SharePoint.Client.File> ofiles = GetFiles(workCTX, oRootFolder);
                     foreach (var file in ofiles)
                     {
                         workCTX.Load(file, ff => ff.ServerRelativeUrl);
-                        workCTX.ExecuteQuery();
+                        workCTX.ExecuteQueryRetry();
                         ShowProgress(file.ServerRelativeUrl);
 
                     }
@@ -1728,7 +1728,7 @@ namespace spToolbelt2019Lib
             {
                 FolderCollection ofolders = oWorkFolder.Folders;
                 workCTX.Load(ofolders);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (var folder in ofolders)
                 {
                     List<Microsoft.SharePoint.Client.File> oChildFiles = GetFiles(workCTX, folder);
@@ -1741,7 +1741,7 @@ namespace spToolbelt2019Lib
 
                 FileCollection oFiles = oWorkFolder.Files;
                 workCTX.Load(oFiles);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (var file in oFiles)
                 {
                     if (file.Name.ToLower().Contains(".js") || file.Name.ToLower().Contains(".htm"))
@@ -1783,7 +1783,7 @@ namespace spToolbelt2019Lib
                 ListItemCollection itms = lstLists.GetItems(oQuery);
                 List lstSites = workCTX.Web.Lists.GetByTitle("spmiSites");
                 workCTX.Load(itms, i => i.Include(itm => itm["SiteID"]));
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
 
                 foreach (var listItem in itms)
                 {
@@ -1792,7 +1792,7 @@ namespace spToolbelt2019Lib
                         int SiteID = Convert.ToInt32(listItem["SiteID"].ToString());
                         ListItem itmSite = lstLists.GetItemById(SiteID);
                         workCTX.Load(itmSite, i => i["SiteUrl"]);
-                        workCTX.ExecuteQuery();
+                        workCTX.ExecuteQueryRetry();
 
                         ProcessUserList(workCTX, itmSite["SiteUrl"].ToString());
                     }
@@ -1825,12 +1825,12 @@ namespace spToolbelt2019Lib
                 oQuery.ViewXml = peopleQuery;
                 ListItemCollection itms = lstUserInfo.GetItems(oQuery);
                 ulContext.Load(itms);
-                ulContext.ExecuteQuery();
+                ulContext.ExecuteQueryRetry();
 
                 foreach (var itm in itms)
                 {
                     ulContext.Load(itm);
-                    ulContext.ExecuteQuery();
+                    ulContext.ExecuteQueryRetry();
                     System.Diagnostics.Trace.WriteLine(itm["Title"]);
                 }
 
@@ -1865,13 +1865,13 @@ namespace spToolbelt2019Lib
                 List lst = workCTX.Web.Lists.GetByTitle("spmiSites");
 
                 workCTX.Load(lst);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 CamlQuery oQuery = new CamlQuery();
                 oQuery.ViewXml = viewXML;
                 ListItemCollection items = lst.GetItems(oQuery);
                 workCTX.Load(items, its => its.Include(i => i["spmiSiteUrl"], i => i.Id, i => i["spmiPermissions"]));
                 sw.Start();
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 TotalItems = items.Count;
                 foreach (var lstItem in items)
                 {
@@ -1887,7 +1887,7 @@ namespace spToolbelt2019Lib
                         saveItem["spmiPermissions"] = cPermissions;
                         saveItem["spmiPermissionsLastScan"] = DateTime.Now;
                         saveItem.Update();
-                        workCTX.ExecuteQuery();
+                        workCTX.ExecuteQueryRetry();
 
                         UpdateListPermissions(workCTX, cSiteURL, lstItem.Id);
                         
@@ -1930,14 +1930,14 @@ namespace spToolbelt2019Lib
 
                 List lst = workCTX.Web.Lists.GetByTitle("spmiLists");
                 workCTX.Load(lst);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 CamlQuery oQuery = new CamlQuery();
                 oQuery.ViewXml = viewXML;
                 ListItemCollection items = lst.GetItems(oQuery);
                 workCTX.Load(items, itms => itms.Include(itm => itm["spmiPermissions"], itm => itm["Title"], itm => itm.Id));
 
 
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (var lstItem in items)
                 {
                     try
@@ -1946,17 +1946,17 @@ namespace spToolbelt2019Lib
                         ShowInfo("Processing Item Permissions for:" + cList);
                         List itmLst = webCTX.Web.Lists.GetByTitle(cList);
                         webCTX.Load(itmLst, il => il.Id);
-                        webCTX.ExecuteQuery();
+                        webCTX.ExecuteQueryRetry();
                         CamlQuery oItemQuery = CamlQuery.CreateAllItemsQuery();
                         ListItemCollection permItems = itmLst.GetItems(oItemQuery);
                         webCTX.Load(permItems, itms => itms.Include(pi => pi["GUID"], pi => pi.HasUniqueRoleAssignments, pi => pi.Id));
-                        webCTX.ExecuteQuery();
+                        webCTX.ExecuteQueryRetry();
                         foreach (var listItem in permItems)
                         {
                             if (listItem.HasUniqueRoleAssignments)
                             {
                                 webCTX.Load(listItem);
-                                webCTX.ExecuteQuery();
+                                webCTX.ExecuteQueryRetry();
                                 ShowInfo(listItem.Id + " has unique permissions");
                                 string cItemPermissions = GetListItemPermissions(webCTX, listItem);
                                 SaveItemPermissions(workCTX, cList, lstSave, lstItem.Id, listItem, cItemPermissions);
@@ -1988,17 +1988,17 @@ namespace spToolbelt2019Lib
                 string viewXML = "<View><Query><Where><Eq><FieldRef Name = 'Title' /><Value Type = 'Text'>" + itmGuid + "</Value></Eq></Where></Query><RowLimit>5000</RowLimit></View>";
                 List lst = workCTX.Web.Lists.GetByTitle("spmiItems");
                 workCTX.Load(lst);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 CamlQuery oQuery = new CamlQuery();
                 oQuery.ViewXml = viewXML;
                 ListItemCollection items = lst.GetItems(oQuery);
                 workCTX.Load(items);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (var item in items)
                 {
                     item["Permissions"] = cItemPermissions;
                     item.Update();
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
                     return;
                 }
                 ListItemCreationInformation lici = new ListItemCreationInformation();
@@ -2009,7 +2009,7 @@ namespace spToolbelt2019Lib
                 newitem["ItemID"] = itm.Id;
                 newitem["Permissions"] = cItemPermissions;
                 newitem.Update();
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
             }
             catch (Exception ex)
             {
@@ -2032,14 +2032,14 @@ namespace spToolbelt2019Lib
                 viewXML = "<View><Query><Where><Eq><FieldRef Name = 'spmiSiteID' /><Value Type = 'Text'>" + iParentID + "</Value></Eq></Where></Query><RowLimit>5000</RowLimit></View>";
                 List lst = workCTX.Web.Lists.GetByTitle("spmiLists");
                 workCTX.Load(lst);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 CamlQuery oQuery = new CamlQuery();
                 oQuery.ViewXml = viewXML;
                 ListItemCollection items = lst.GetItems(oQuery);
                 workCTX.Load(items, itms => itms.Include(itm => itm["spmiPermissions"], itm => itm["Title"]));
 
 
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (var lstItem in items)
                 {
                     try
@@ -2051,7 +2051,7 @@ namespace spToolbelt2019Lib
                             lstItem["spmiPermissions"] = cPermissions;
                             lstItem["spmiPermissionsLastScan"] = DateTime.Now;
                             lstItem.Update();
-                            workCTX.ExecuteQuery();
+                            workCTX.ExecuteQueryRetry();
                         }
                         
                         WorkFolderPermissions(workCTX, webCTX, lstItem["Title"].ToString(), lstItem.Id);
@@ -2092,14 +2092,14 @@ namespace spToolbelt2019Lib
                 viewXML = "<View><Query><Where><Eq><FieldRef Name = 'spmiSiteID' /><Value Type = 'Text'>" + iParentID + "</Value></Eq></Where></Query><RowLimit>5000</RowLimit></View>";
                 List lst = workCTX.Web.Lists.GetByTitle("spmiLists");
                 workCTX.Load(lst);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 CamlQuery oQuery = new CamlQuery();
                 oQuery.ViewXml = viewXML;
                 ListItemCollection items = lst.GetItems(oQuery);
                 workCTX.Load(items, itms => itms.Include(itm => itm["spmiPermissions"], itm => itm["Title"]));
 
 
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (var lstItem in items)
                 {
                     try
@@ -2111,7 +2111,7 @@ namespace spToolbelt2019Lib
                             lstItem["spmiPermissions"] = cPermissions;
                             lstItem["spmiPermissionsLastScan"] = DateTime.Now;
                             lstItem.Update();
-                            workCTX.ExecuteQuery();
+                            workCTX.ExecuteQueryRetry();
                         }
 
                     }
@@ -2143,10 +2143,10 @@ namespace spToolbelt2019Lib
                 foreach (RoleAssignment item in roles)
                 {
                     workCTX.Load(item, i => i.Member);
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
                     RoleDefinitionBindingCollection roledefs = item.RoleDefinitionBindings;
                     workCTX.Load(roledefs);
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
                     foreach (RoleDefinition roledef in roledefs)
                     {
                         try
@@ -2162,7 +2162,7 @@ namespace spToolbelt2019Lib
 
                                     User oUser = workCTX.Web.EnsureUser(item.Member.LoginName);
                                     workCTX.Load(oUser);
-                                    workCTX.ExecuteQuery();
+                                    workCTX.ExecuteQueryRetry();
 
                                     opi.PermItemName = item.Member.Title + ":" + oUser.Email;
                                     opi.PermItemType = "Users";
@@ -2205,7 +2205,7 @@ namespace spToolbelt2019Lib
             {
                 RoleAssignmentCollection roles = itm.RoleAssignments;
                 workCTX.Load(roles);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 return GetBasePermissions(workCTX, roles);
 
             }
@@ -2226,7 +2226,7 @@ namespace spToolbelt2019Lib
                 workCTX.Load(lst);
                 RoleAssignmentCollection roles = lst.RoleAssignments;
                 workCTX.Load(roles);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 return GetBasePermissions(workCTX, roles);
             }
             catch (Exception ex)
@@ -2249,7 +2249,7 @@ namespace spToolbelt2019Lib
                 };
                 RoleAssignmentCollection roles = ctxWorkSite.Web.RoleAssignments;
                 ctxWorkSite.Load(roles);
-                ctxWorkSite.ExecuteQuery();
+                ctxWorkSite.ExecuteQueryRetry();
                 return GetBasePermissions(ctxWorkSite, roles);
             }
             catch (Exception ex)
@@ -2293,7 +2293,7 @@ namespace spToolbelt2019Lib
                 oListItem["FullControlUsersCount"] = oUsers.Count;
 
                 oListItem.Update();
-                saveContext.ExecuteQuery();
+                saveContext.ExecuteQueryRetry();
 
             }
             catch (Exception ex)
@@ -2313,7 +2313,7 @@ namespace spToolbelt2019Lib
                 }
                 User oWorkUser = saveContext.Web.EnsureUser(usrItem.LoginName);
                 saveContext.Load(oWorkUser);
-                saveContext.ExecuteQuery();
+                saveContext.ExecuteQueryRetry();
                 if (oWorkUser.LoginName.ToLower().Contains("rolemanager"))
                 {
                     return null;
@@ -2344,12 +2344,12 @@ namespace spToolbelt2019Lib
 
                 List lst = saveContext.Web.Lists.GetByTitle("spmiSites");
                 saveContext.Load(lst);
-                saveContext.ExecuteQuery();
+                saveContext.ExecuteQueryRetry();
                 CamlQuery oQuery = new CamlQuery();
                 oQuery.ViewXml = viewXML;
                 ListItemCollection items = lst.GetItems(oQuery);
                 saveContext.Load(items);
-                saveContext.ExecuteQuery();
+                saveContext.ExecuteQueryRetry();
                 foreach (var lstItem in items)
                 {
                     return lstItem;
@@ -2378,7 +2378,7 @@ namespace spToolbelt2019Lib
                 {
                     UserCollection grpUsers = oGroup.Users;
                     ctxWorkSite.Load(grpUsers);
-                    ctxWorkSite.ExecuteQuery();
+                    ctxWorkSite.ExecuteQueryRetry();
                     if (grpUsers.Count == 0) return null;
                     foreach (User grpUser in grpUsers)
                     {
@@ -2415,7 +2415,7 @@ namespace spToolbelt2019Lib
                 {
                     UserCollection grpUsers = oGroup.Users;
                     ctxWorkSite.Load(grpUsers);
-                    ctxWorkSite.ExecuteQuery();
+                    ctxWorkSite.ExecuteQueryRetry();
                     foreach (User grpUser in grpUsers)
                     {
                         cDetails += grpUser.Title + ":" + grpUser.Email + ";";
@@ -2436,10 +2436,10 @@ namespace spToolbelt2019Lib
         {
             Web oRootWeb = ctxWorkSite.Site.RootWeb;
             ctxWorkSite.Load(oRootWeb);
-            ctxWorkSite.ExecuteQuery();
+            ctxWorkSite.ExecuteQueryRetry();
             GroupCollection grps = ctxWorkSite.Site.RootWeb.SiteGroups;
             ctxWorkSite.Load(grps);
-            ctxWorkSite.ExecuteQuery();
+            ctxWorkSite.ExecuteQueryRetry();
             foreach (Group grp in grps)
             {
                 if (grp.Title == title) return grp;
@@ -2479,7 +2479,7 @@ namespace spToolbelt2019Lib
 
 
                 walkContext.Load(walkContext.Web, ww => ww.Title, ww => ww.Url, ww => ww.Id);
-                walkContext.ExecuteQuery();
+                walkContext.ExecuteQueryRetry();
                 ShowInfo(walkContext.Web.Title + " - " + walkContext.Web.Url);
                 ClientContext saveContext = new ClientContext(oWorkItem.GetParm("SaveContext"));
                 saveContext.Credentials = workCTX.Credentials;
@@ -2531,7 +2531,7 @@ namespace spToolbelt2019Lib
             {
                 workCTX.Load(workCTX.Site, s => s.Url);
                 workCTX.Load(oWorkWeb, ww => ww.RequestAccessEmail, ww => ww.Title, ww => ww.Url, ww => ww.Id, ww => ww.Webs, ww => ww.HasUniqueRoleAssignments, ww => ww.LastItemModifiedDate, ww => ww.LastItemUserModifiedDate);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
 
 
                 if (IsSkipSite(oWorkItem, oWorkWeb.Url))
@@ -2553,7 +2553,7 @@ namespace spToolbelt2019Lib
                 {
                     WebCollection oWebs = oWorkWeb.Webs;
                     workCTX.Load(oWebs, webs => webs.Include(ww => ww.Url));
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
                     foreach (var web in oWebs)
                     {
                         try
@@ -2573,7 +2573,7 @@ namespace spToolbelt2019Lib
                     ListCollection lists = oWorkWeb.Lists;
 
                     workCTX.Load(lists, lsts => lsts.Include(l => l.HasUniqueRoleAssignments, l => l.BaseTemplate, l => l.Hidden, l => l.Id, l => l.Title, l => l.ItemCount, l => l.LastItemModifiedDate, l => l.LastItemUserModifiedDate));
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
 
 
                     foreach (var list in lists)
@@ -2606,7 +2606,7 @@ namespace spToolbelt2019Lib
                 workCTX.Load(lstUsers);
                 ListItemCollection items = lstUsers.GetItems(CamlQuery.CreateAllItemsQuery());
                 workCTX.Load(items, itms => itms.Include(itm => itm.FieldValuesAsText, itm => itm["Title"], itm => itm["EMail"]));
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (var item in items)
                 {
                     if (item["EMail"] != null)
@@ -2631,12 +2631,12 @@ namespace spToolbelt2019Lib
 
                 List lst = saveContext.Web.Lists.GetByTitle("spmiLists");
                 saveContext.Load(lst);
-                saveContext.ExecuteQuery();
+                saveContext.ExecuteQueryRetry();
                 CamlQuery oQuery = new CamlQuery();
                 oQuery.ViewXml = viewXML;
                 ListItemCollection items = lst.GetItems(oQuery);
                 saveContext.Load(items);
-                saveContext.ExecuteQuery();
+                saveContext.ExecuteQueryRetry();
                 int iListID = 0;
 
                 foreach (var lstItem in items)
@@ -2661,7 +2661,7 @@ namespace spToolbelt2019Lib
                 {
                     listItem = lst.GetItemById(iListID);
                     saveContext.Load(listItem);
-                    saveContext.ExecuteQuery();
+                    saveContext.ExecuteQueryRetry();
                 }
                 listItem["spmiListBaseTemplate"] = list.BaseTemplate.ToString();
                 if (list.BaseTemplate==101)
@@ -2673,7 +2673,7 @@ namespace spToolbelt2019Lib
                 listItem["spmiLastItemModified"] = list.LastItemModifiedDate;
                 listItem["spmiItemCount"] = list.ItemCount;
                 listItem.Update();
-                saveContext.ExecuteQuery();
+                saveContext.ExecuteQueryRetry();
                 return listItem.Id;
             }
             catch (Exception ex)
@@ -2690,7 +2690,7 @@ namespace spToolbelt2019Lib
         {
             FolderCollection fldrs = fldr.Folders;
             lst.Context.Load(fldrs);
-            lst.Context.ExecuteQuery();
+            lst.Context.ExecuteQueryRetry();
 
             
         }
@@ -2703,12 +2703,12 @@ namespace spToolbelt2019Lib
 
                 List lst = saveContext.Web.Lists.GetByTitle("spmiSites");
                 saveContext.Load(lst);
-                saveContext.ExecuteQuery();
+                saveContext.ExecuteQueryRetry();
                 CamlQuery oQuery = new CamlQuery();
                 oQuery.ViewXml = viewXML;
                 ListItemCollection items = lst.GetItems(oQuery);
                 saveContext.Load(items, si => si.Include(i => i["spmiSiteUrl"], i => i.Id));
-                saveContext.ExecuteQuery();
+                saveContext.ExecuteQueryRetry();
                 int iFoundID = 0;
                 foreach (var listItem in items)
                 {
@@ -2730,7 +2730,7 @@ namespace spToolbelt2019Lib
                 {
                     itmSite = lst.GetItemById(iFoundID);
                     saveContext.Load(itmSite);
-                    saveContext.ExecuteQuery();
+                    saveContext.ExecuteQueryRetry();
                 }
 
                 itmSite["spmiUserCount"] = iUserCount;
@@ -2753,7 +2753,7 @@ namespace spToolbelt2019Lib
                     itmSite["spmiParentSite"] = iParentID;
                 }
                 itmSite.Update();
-                saveContext.ExecuteQuery();
+                saveContext.ExecuteQueryRetry();
                 return itmSite.Id;
             }
             catch (Exception ex)
@@ -2781,11 +2781,11 @@ namespace spToolbelt2019Lib
             try
             {
                 workCTX.Load(workWeb, w => w.Title, w => w.Url);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 ShowProgress(workWeb.Title + " - " + workWeb.Url);
                 WebCollection webs = workWeb.Webs;
                 workCTX.Load(webs);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (Web oWeb in webs)
                 {
                     EnabledVersioningForLists(workCTX, oWeb);
@@ -2793,21 +2793,21 @@ namespace spToolbelt2019Lib
 
                 ListCollection olists = workWeb.Lists;
                 workCTX.Load(olists);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (List list in olists)
                 {
                     try
                     {
                         ShowInfo("Working List - " + list.Title);
                         workCTX.Load(list, l => l.EnableVersioning, l => l.Hidden);
-                        workCTX.ExecuteQuery();
+                        workCTX.ExecuteQueryRetry();
                         if (!list.Hidden && !list.EnableVersioning)
                         {
                             list.EnableVersioning = true;
                             list.EnableMinorVersions = false;
                             list.MajorVersionLimit = 100;
                             list.Update();
-                            workCTX.ExecuteQuery();
+                            workCTX.ExecuteQueryRetry();
                             ShowInfo("Updated Versions for: " + list.Title);
                         }
                     }
@@ -2847,7 +2847,7 @@ namespace spToolbelt2019Lib
             {
                 ListCollection oLists = workCTX.Web.Lists;
                 workCTX.Load(oLists);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (List lst in oLists)
                 {
                     ShowUniqueItems(workCTX, lst);
@@ -2864,17 +2864,17 @@ namespace spToolbelt2019Lib
             try
             {
                 workCTX.Load(lst);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 ShowProgress(lst.Title + " - " + lst.ItemCount);
 
                 CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
                 ListItemCollection items = lst.GetItems(oQuery);
                 workCTX.Load(items);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (ListItem item in items)
                 {
                     workCTX.Load(item, X => X.HasUniqueRoleAssignments);
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
                     if (item.HasUniqueRoleAssignments)
                     {
                         ShowPerms(workCTX, item);
@@ -2894,16 +2894,16 @@ namespace spToolbelt2019Lib
 
                 RoleAssignmentCollection roles = itm.RoleAssignments;
                 workCTX.Load(roles);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 ShowProgress("Permissions for: " + itm.Id + " " + itm["FileLeafRef"].ToString());
                 foreach (RoleAssignment item in roles)
                 {
                     workCTX.Load(item, x => x.Member);
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
 
                     RoleDefinitionBindingCollection roledefs = item.RoleDefinitionBindings;
                     workCTX.Load(roledefs);
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
                     foreach (RoleDefinition roledef in roledefs)
                     {
                         if (!roledef.Name.Contains("Limited"))
@@ -2950,7 +2950,7 @@ namespace spToolbelt2019Lib
                 };
                 List SourceList = srcCTX.Web.Lists.GetByTitle(cSourceList);
                 srcCTX.Load(SourceList);
-                srcCTX.ExecuteQuery();
+                srcCTX.ExecuteQueryRetry();
                 int iBatch = 0;
                 while (SourceList.ItemCount > 0)
                 {
@@ -2966,7 +2966,7 @@ namespace spToolbelt2019Lib
                             ListItemCollection items = SourceList.GetItems(oQuery);
 
                             srcCTX.Load(items);
-                            srcCTX.ExecuteQuery();
+                            srcCTX.ExecuteQueryRetry();
 
 
 
@@ -2977,7 +2977,7 @@ namespace spToolbelt2019Lib
 
                             try
                             {
-                                srcCTX.ExecuteQuery();
+                                srcCTX.ExecuteQueryRetry();
 
                             }
                             catch (Exception ex)
@@ -2989,7 +2989,7 @@ namespace spToolbelt2019Lib
 
 
                             srcCTX.Load(SourceList);
-                            srcCTX.ExecuteQuery();
+                            srcCTX.ExecuteQueryRetry();
                         }
                     }
                     catch (Exception ex)
@@ -3054,13 +3054,13 @@ namespace spToolbelt2019Lib
                 string cViewName = oWorkItem.GetParm("viewname");
                 List lst = workCTX.Web.Lists.GetByTitle(cListName);
                 workCTX.Load(lst, l => l.BaseTemplate);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 View view = lst.GetView(cViewName);
 
                 CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
                 ListItemCollection items = lst.GetItems(oQuery);
                 workCTX.Load(items);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 View oView = lst.GetView(cViewName);
 
                 string cOutFile = @"c:\temp\" + cListName + "-export.csv";
@@ -3081,7 +3081,7 @@ namespace spToolbelt2019Lib
 
                             ListItem workItem = lst.GetItemById(lstItem.Id);
                             workCTX.Load(workItem);
-                            workCTX.ExecuteQuery();
+                            workCTX.ExecuteQueryRetry();
                             string cItemLine = "";
                             foreach (string itm in view.ViewFields)
                             {
@@ -3140,7 +3140,7 @@ namespace spToolbelt2019Lib
 
                 List lst = workCTX.Web.Lists.GetByTitle(cListName);
                 workCTX.Load(lst, l => l.BaseTemplate);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
 
                 Dictionary<string, string> fields = new Dictionary<string, string>();
                 string[] afields = cFieldSettings.Split(';');
@@ -3194,7 +3194,7 @@ namespace spToolbelt2019Lib
                                 //        {
                                 //            itm[fld.Key] = cValue;
                                 //            itm.Update();
-                                //            workCTX.ExecuteQuery();
+                                //            workCTX.ExecuteQueryRetry();
                                 //        }
                                 //    }
                                 //}
@@ -3216,7 +3216,7 @@ namespace spToolbelt2019Lib
                                         //string cValue = GetRowValue(headerInfo, fld.Value, values);
                                         itm[fld.Key] = cValue;
                                         itm.Update();
-                                        workCTX.ExecuteQuery();
+                                        workCTX.ExecuteQueryRetry();
                                     }
                                     catch (Exception ex)
                                     {
@@ -3330,10 +3330,10 @@ namespace spToolbelt2019Lib
                 tgtCTX.Credentials = ctx.Credentials;
                 List SourceList = srcCTX.Web.Lists.GetByTitle(cSourceList);
                 srcCTX.Load(SourceList);
-                srcCTX.ExecuteQuery();
+                srcCTX.ExecuteQueryRetry();
                 List TargetList = tgtCTX.Web.Lists.GetByTitle(cTargetList);
                 tgtCTX.Load(TargetList);
-                tgtCTX.ExecuteQuery();
+                tgtCTX.ExecuteQueryRetry();
 
                 if (FieldSettingsValid(SourceList, TargetList, cFieldSettings))
                 {
@@ -3383,7 +3383,7 @@ namespace spToolbelt2019Lib
                             System.Diagnostics.Trace.WriteLine(cTargetFieldInternalName + " = " + aFldSet[1].Replace("'", ""));
                         }
                         oNewItem.Update();
-                        tgtCTX.ExecuteQuery();
+                        tgtCTX.ExecuteQueryRetry();
                     }
                     catch (Exception ex)
                     {
@@ -3398,7 +3398,7 @@ namespace spToolbelt2019Lib
 
 
                 oNewItem.Update();
-                tgtCTX.ExecuteQuery();
+                tgtCTX.ExecuteQueryRetry();
 
                 ShowInfo(oNewItem.Id.ToString());
 
@@ -3416,12 +3416,12 @@ namespace spToolbelt2019Lib
             try
             {
                 tgtCTX.Load(targetList, tl => tl.WorkflowAssociations);
-                tgtCTX.ExecuteQuery();
+                tgtCTX.ExecuteQueryRetry();
                 for (int i = 0; i < targetList.WorkflowAssociations.Count; i++)
                 {
                     targetList.WorkflowAssociations[0].Enabled = !bDisable;
                     targetList.WorkflowAssociations[0].Update();
-                    tgtCTX.ExecuteQuery();
+                    tgtCTX.ExecuteQueryRetry();
                 }
             }
             catch (Exception ex)
@@ -3443,7 +3443,7 @@ namespace spToolbelt2019Lib
 
                 var publishedWorkflowDefinitions = workflowDeploymentService.EnumerateDefinitions(true);
                 workCTX.Load(publishedWorkflowDefinitions);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
 
                 var def = from defs in publishedWorkflowDefinitions
                           where defs.DisplayName == cWorkflowName
@@ -3458,7 +3458,7 @@ namespace spToolbelt2019Lib
                     // get all workflow associations
                     var workflowAssociations = workflowSubscriptionService.EnumerateSubscriptionsByDefinition(workflow.Id);
                     workCTX.Load(workflowAssociations);
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
 
                     // find the first association
                     var firstWorkflowAssociation = workflowAssociations.First();
@@ -3469,7 +3469,7 @@ namespace spToolbelt2019Lib
 
                     ShowProgress("Starting workflow for item: " + itm.Id);
                     workflowInstanceService.StartWorkflowOnListItem(firstWorkflowAssociation, itm.Id, startParameters);
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
 
                 }
 
@@ -3500,7 +3500,7 @@ namespace spToolbelt2019Lib
                         {
                             ListItem itmSource = SourceList.GetItemById(i);
                             srcCTX.Load(itmSource);
-                            srcCTX.ExecuteQuery();
+                            srcCTX.ExecuteQueryRetry();
 
                             CopyItem(SourceList, tgtCTX, TargetList, itmSource, cFieldSettings);
                         }
@@ -3526,14 +3526,14 @@ namespace spToolbelt2019Lib
                     }
                     ListItemCollection oSourceItems = SourceList.GetItems(oQuery);
                     srcCTX.Load(oSourceItems);
-                    srcCTX.ExecuteQuery();
+                    srcCTX.ExecuteQueryRetry();
                     TotalItems = oSourceItems.Count;
                     foreach (ListItem oSourceItem in oSourceItems)
                     {
                         try
                         {
                             srcCTX.Load(oSourceItem);
-                            srcCTX.ExecuteQuery();
+                            srcCTX.ExecuteQueryRetry();
                             CopyItem(SourceList, tgtCTX, TargetList, oSourceItem, cFieldSettings);
                         }
                         catch (Exception ex)
@@ -3602,7 +3602,7 @@ namespace spToolbelt2019Lib
                 {
                     WebCollection webs = oWorkWeb.Webs;
                     workCTX.Load(webs);
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
                     foreach (Web item in webs)
                     {
                         EnumWebParts(workCTX, item);
@@ -3613,7 +3613,7 @@ namespace spToolbelt2019Lib
                 {
                     FileCollection files = fldPages.Files;
                     workCTX.Load(files);
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
                     foreach (Microsoft.SharePoint.Client.File file in files)
                     {
                         if (file.Name.ToLower().Contains(".aspx"))
@@ -3628,7 +3628,7 @@ namespace spToolbelt2019Lib
                 {
                     FileCollection files = fldSitePages.Files;
                     workCTX.Load(files);
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
                     foreach (Microsoft.SharePoint.Client.File file in files)
                     {
                         if (file.Name.ToLower().Contains(".aspx"))
@@ -3649,7 +3649,7 @@ namespace spToolbelt2019Lib
         private void EnnumWebParts(ClientContext workCTX, Microsoft.SharePoint.Client.File file)
         {
             workCTX.Load(file, f => f.ServerRelativeUrl);
-            workCTX.ExecuteQuery();
+            workCTX.ExecuteQueryRetry();
             ShowProgress("Listing Web Parts for: " + file.ServerRelativeUrl);
 
 
@@ -3659,7 +3659,7 @@ namespace spToolbelt2019Lib
                 wps => wps.Include(
                 wp => wp.WebPart.Title, wp => wp.WebPart.Properties));
 
-            workCTX.ExecuteQuery();
+            workCTX.ExecuteQueryRetry();
 
             if (limitedWebPartManager.WebParts.Count > 0)
             {
@@ -3724,7 +3724,7 @@ namespace spToolbelt2019Lib
             {
                 FolderCollection folders = srcFolder.Folders;
                 srcFolder.Context.Load(folders);
-                srcFolder.Context.ExecuteQuery();
+                srcFolder.Context.ExecuteQueryRetry();
                 foreach (Folder folder in folders)
                 {
                     try
@@ -3733,7 +3733,7 @@ namespace spToolbelt2019Lib
                         if (tgtWorkFolder == null)
                         {
                             tgtFolder.Folders.Add(folder.Name);
-                            tgtCTX.ExecuteQuery();
+                            tgtCTX.ExecuteQueryRetry();
                             tgtWorkFolder = tgtFolder.Folders.GetFolder(folder.Name);
                         }
                         SyncFolder(srcCTX, tgtCTX, folder, tgtWorkFolder);
@@ -3745,7 +3745,7 @@ namespace spToolbelt2019Lib
                 }
                 FileCollection oSrcFiles = srcFolder.Files;
                 srcCTX.Load(oSrcFiles);
-                srcCTX.ExecuteQuery();
+                srcCTX.ExecuteQueryRetry();
                 foreach (Microsoft.SharePoint.Client.File srcFile in oSrcFiles)
                 {
                     Trace.WriteLine(srcFile.Name);
@@ -3754,7 +3754,7 @@ namespace spToolbelt2019Lib
                         try
                         {
                             srcFolder.Context.Load(srcFile, f => f.TimeLastModified);
-                            srcFolder.Context.ExecuteQuery();
+                            srcFolder.Context.ExecuteQueryRetry();
                             Microsoft.SharePoint.Client.File tgtFile = tgtFolder.GetFile(srcFile.Name);
                             if (tgtFile == null)
                             {
@@ -4084,7 +4084,7 @@ namespace spToolbelt2019Lib
                     {
                         RunCount++;
                         ctxWork.Load(oWeb, ow => ow.Url);
-                        ctxWork.ExecuteQuery();
+                        ctxWork.ExecuteQueryRetry();
                         ShowInfo("Working:" + oWeb.Url);
 
                         if (oWeb.HasList("Pages"))
@@ -4114,7 +4114,7 @@ namespace spToolbelt2019Lib
             {
                 List lstWork = workWeb.Lists.GetByTitle(cListName);
                 workWeb.Context.Load(lstWork);
-                workWeb.Context.ExecuteQuery();
+                workWeb.Context.ExecuteQueryRetry();
                 Folder wrkFolder = lstWork.RootFolder;
 
                 ShowUnPublishedFiles(wrkFolder);
@@ -4135,12 +4135,12 @@ namespace spToolbelt2019Lib
             try
             {
                 wrkFolder.Context.Load(wrkFolder, f => f.ServerRelativeUrl);
-                wrkFolder.Context.ExecuteQuery();
+                wrkFolder.Context.ExecuteQueryRetry();
 
                 ShowInfo("Working: " + wrkFolder.ServerRelativeUrl);
                 FolderCollection folders = wrkFolder.Folders;
                 wrkFolder.Context.Load(folders);
-                wrkFolder.Context.ExecuteQuery();
+                wrkFolder.Context.ExecuteQueryRetry();
                 foreach (Folder folder in folders)
                 {
                     ShowUnPublishedFiles(folder);
@@ -4148,14 +4148,14 @@ namespace spToolbelt2019Lib
                 }
                 FileCollection files = wrkFolder.Files;
                 wrkFolder.Context.Load(files);
-                wrkFolder.Context.ExecuteQuery();
+                wrkFolder.Context.ExecuteQueryRetry();
 
                 foreach (Microsoft.SharePoint.Client.File item in files)
                 {
                     try
                     {
                         wrkFolder.Context.Load(item, f => f.ServerRelativeUrl, f => f.Level);
-                        wrkFolder.Context.ExecuteQuery();
+                        wrkFolder.Context.ExecuteQueryRetry();
 
                         if (item.Level != FileLevel.Published)
                         {
@@ -4164,7 +4164,7 @@ namespace spToolbelt2019Lib
                                 if (!item.Name.Contains(".js"))
                                 {
                                     item.Publish("Published By script");
-                                    wrkFolder.Context.ExecuteQuery();
+                                    wrkFolder.Context.ExecuteQueryRetry();
                                 }
                             }
                             else
@@ -4207,16 +4207,16 @@ namespace spToolbelt2019Lib
                     {
                         RunCount++;
                         ctxWork.Load(oWeb, ow => ow.Url);
-                        ctxWork.ExecuteQuery();
+                        ctxWork.ExecuteQueryRetry();
                         ShowProgress("Working:" + oWeb.Url);
 
                         ListCollection lists = oWeb.Lists;
                         ctxWork.Load(lists);
-                        ctxWork.ExecuteQuery();
+                        ctxWork.ExecuteQueryRetry();
                         foreach (List list in lists)
                         {
                             ctxWork.Load(list, l => l.Title, l => l.Id);
-                            ctxWork.ExecuteQuery();
+                            ctxWork.ExecuteQueryRetry();
                             ShowInfo("Processing: " + list.Title);
                             if (list.ContainsGuidPart(cGuid))
                             {
@@ -4227,7 +4227,7 @@ namespace spToolbelt2019Lib
                                 CamlQuery oAllItems = CamlQuery.CreateAllItemsQuery();
                                 ListItemCollection items = list.GetItems(oAllItems);
                                 ctxWork.Load(items);
-                                ctxWork.ExecuteQuery();
+                                ctxWork.ExecuteQueryRetry();
                                 foreach (ListItem childitem in items)
                                 {
                                     if (childitem.ContainsGuidPart(cGuid))
@@ -4263,11 +4263,11 @@ namespace spToolbelt2019Lib
             try
             {
                 workCTX.Load(workWeb, ww => ww.Url);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 ShowInfo(workWeb.Url);
                 WebCollection webs = workWeb.Webs;
                 workCTX.Load(webs);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (Web web in webs)
                 {
                     UpdateHomePageReferences(workCTX, web);
@@ -4275,7 +4275,7 @@ namespace spToolbelt2019Lib
 
                 NavigationNodeCollection nodes = workWeb.Navigation.TopNavigationBar;
                 workCTX.Load(nodes);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (NavigationNode item in nodes)
                 {
                     if (item.Url.ToLower().Contains("home.aspx") || item.Url.ToLower().Contains("default.aspx"))
@@ -4286,7 +4286,7 @@ namespace spToolbelt2019Lib
 
                 nodes = workWeb.Navigation.QuickLaunch;
                 workCTX.Load(nodes);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (NavigationNode item in nodes)
                 {
                     if (item.Url.ToLower().Contains("home.aspx") || item.Url.ToLower().Contains("default.aspx"))
@@ -4344,13 +4344,13 @@ namespace spToolbelt2019Lib
 
                 List lstDocLib = workCTX.Web.Lists.GetByTitle(cListName);
                 workCTX.Load(lstDocLib);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
 
                 using (var fs = new FileStream(cFileLoc, FileMode.Open))
                 {
                     var fi = new FileInfo(cFileLoc);
                     workCTX.Load(lstDocLib.RootFolder, rf => rf.ServerRelativeUrl);
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
                     var fileUrl = String.Format("{0}/{1}", lstDocLib.RootFolder.ServerRelativeUrl, fi.Name);
                     Microsoft.SharePoint.Client.File.SaveBinaryDirect(workCTX, fileUrl, fs, true);
                     ListItem itm = GetItemByName(lstDocLib, fi.Name);
@@ -4379,7 +4379,7 @@ namespace spToolbelt2019Lib
                 {
                     itm["ContentTypeId"] = ctid;
                     itm.Update();
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
                 }
             }
             catch (Exception ex)
@@ -4394,13 +4394,13 @@ namespace spToolbelt2019Lib
             {
                 ContentTypeCollection cts = workCTX.Site.RootWeb.ContentTypes;
                 workCTX.Load(cts);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (ContentType ct in cts)
                 {
                     if (ct.Name == cContentType)
                     {
                         workCTX.Load(ct, contenttype => contenttype.Id);
-                        workCTX.ExecuteQuery();
+                        workCTX.ExecuteQueryRetry();
                         return ct.Id;
                     }
                 }
@@ -4420,7 +4420,7 @@ namespace spToolbelt2019Lib
                 CamlQuery oQuery = new CamlQuery() { ViewXml = string.Format("<Where><Eq><FieldRef Name = 'FileLeafRef' /><Value Type = 'File' > {0} </Value></Eq></Where>", name) };
                 ListItemCollection items = lstDocLib.GetItems(oQuery);
                 lstDocLib.Context.Load(items);
-                lstDocLib.Context.ExecuteQuery();
+                lstDocLib.Context.ExecuteQueryRetry();
                 foreach (ListItem item in items)
                 {
                     if (item["FileLeafRef"].ToString() == name)
@@ -4460,17 +4460,17 @@ namespace spToolbelt2019Lib
             try
             {
                 oWorkCTX.Load(workWeb, rw => rw.SiteLogoUrl, rw => rw.Url);
-                oWorkCTX.ExecuteQuery();
+                oWorkCTX.ExecuteQueryRetry();
                 if (workWeb.SiteLogoUrl != cImageUrl)
                 {
                     workWeb.SiteLogoUrl = cImageUrl;
                     workWeb.Update();
-                    oWorkCTX.ExecuteQuery();
+                    oWorkCTX.ExecuteQueryRetry();
                     ShowProgress("UpdateSiteImage for: " + workWeb.Url);
                 }
                 WebCollection oWebs = workWeb.Webs;
                 oWorkCTX.Load(oWebs);
-                oWorkCTX.ExecuteQuery();
+                oWorkCTX.ExecuteQueryRetry();
                 foreach (Web oWeb in oWebs)
                 {
                     UpdateWebLogos(oWorkCTX, oWeb, cImageUrl);
@@ -4496,7 +4496,7 @@ namespace spToolbelt2019Lib
                 };
                 GroupCollection grps = wrkCTX.Site.RootWeb.SiteGroups;
                 wrkCTX.Load(grps);
-                wrkCTX.ExecuteQuery();
+                wrkCTX.ExecuteQueryRetry();
                 foreach (Group grp in grps)
                 {
                     try
@@ -4532,7 +4532,7 @@ namespace spToolbelt2019Lib
             Tenant tenant = new Tenant(tenantCTX);
             prop = tenant.GetSiteProperties(0, true);
             tenantCTX.Load(prop);
-            tenantCTX.ExecuteQuery();
+            tenantCTX.ExecuteQueryRetry();
             foreach (SiteProperties sp in prop)
             {
                 ShowProgress("Working: " + sp.Url);
@@ -4553,7 +4553,7 @@ namespace spToolbelt2019Lib
                 };
                 WebCollection webs = workCTX.Site.RootWeb.Webs;
                 workCTX.Load(webs);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (Web web in webs)
                 {
                     WalkChildSites(web);
@@ -4574,7 +4574,7 @@ namespace spToolbelt2019Lib
 
                 WebCollection webs = web.Webs;
                 web.Context.Load(webs);
-                web.Context.ExecuteQuery();
+                web.Context.ExecuteQueryRetry();
                 foreach (Web childweb in webs)
                 {
                     try
@@ -4601,7 +4601,7 @@ namespace spToolbelt2019Lib
                 NavigationNodeCollection oNodes = oNode.Children;
                 workCTX.Load(oNode);
                 workCTX.Load(oNodes);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (NavigationNode item in oNodes)
                 {
                     if (item.Title == Title) return true;
@@ -4653,11 +4653,11 @@ namespace spToolbelt2019Lib
                 NavigationNodeCollection oNodes = oNode.Children;
                 workCTX.Load(oNode);
                 workCTX.Load(oNodes);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (NavigationNode item in oNodes)
                 {
                     if (item.Title == Title) item.DeleteObject();
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
                 }
             }
             catch (Exception ex)
@@ -4704,16 +4704,16 @@ namespace spToolbelt2019Lib
                 };
                 ContentTypeCollection cts = workCtx.Web.ContentTypes;
                 workCtx.Load(cts);
-                workCtx.ExecuteQuery();
+                workCtx.ExecuteQueryRetry();
                 foreach (ContentType ct in cts)
                 {
                     if (ct.Group == "Havertys")
                     {
                         workCtx.Load(ct);
-                        workCtx.ExecuteQuery();
+                        workCtx.ExecuteQueryRetry();
                         FieldCollection flds = ct.Fields;
                         workCtx.Load(flds);
-                        workCtx.ExecuteQuery();
+                        workCtx.ExecuteQueryRetry();
                         foreach (Field fld in flds)
                         {
                             ShowInfo(string.Format("Field: {0} - {1}", ct.Name, fld.InternalName));
@@ -4771,14 +4771,14 @@ namespace spToolbelt2019Lib
                     };
                     WebCollection webs = workCTX.Site.RootWeb.Webs;
                     workCTX.Load(webs);
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
 
                     iSiteCount += GetSiteCount(workCTX, workCTX.Site.RootWeb);
 
                     foreach (Web web in webs)
                     {
                         workCTX.Load(web);
-                        workCTX.ExecuteQuery();
+                        workCTX.ExecuteQueryRetry();
 
                         if (!web.Url.Contains("HavertysNavigation") && !web.Url.Contains("havertys-") && !spwebs.Contains(web.Url))
                         {
@@ -4802,7 +4802,7 @@ namespace spToolbelt2019Lib
             try
             {
                 workCTX.Load(workWeb);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
 
                 if (!workWeb.Url.Contains("HavertysNavigation") && !workWeb.Url.Contains("havertys-") && !spwebs.Contains(workWeb.Url))
                 {
@@ -4812,12 +4812,12 @@ namespace spToolbelt2019Lib
                 int iSiteCount = 0;
                 WebCollection webs = workWeb.Webs;
                 workCTX.Load(webs);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
 
                 foreach (Web web in webs)
                 {
                     workCTX.Load(web);
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
 
                     if (!web.Url.Contains("HavertysNavigation") && !web.Url.Contains("havertys-") && !spwebs.Contains(web.Url))
                     {
@@ -4881,7 +4881,7 @@ namespace spToolbelt2019Lib
             var folderUrl = (string)listItem["FileDirRef"];
             var parentFolder = listItem.ParentList.ParentWeb.GetFolderByServerRelativeUrl(folderUrl);
             listItem.Context.Load(parentFolder);
-            listItem.Context.ExecuteQuery();
+            listItem.Context.ExecuteQueryRetry();
             return parentFolder;
         }
 
@@ -4891,20 +4891,20 @@ namespace spToolbelt2019Lib
             ContentType ct = workCTX.Web.GetContentType("CIS Document");
             workCTX.Load(ct);
             workCTX.Load(ctFolder);
-            workCTX.ExecuteQuery();
+            workCTX.ExecuteQueryRetry();
             List lst = workCTX.Web.Lists.GetByTitle(cListName);
 
             List lstUpdate = updateCTX.Web.Lists.GetByTitle(cListName);
             updateCTX.Load(lstUpdate);
-            updateCTX.ExecuteQuery();
+            updateCTX.ExecuteQueryRetry();
 
             workCTX.Load(lst);
-            workCTX.ExecuteQuery();
+            workCTX.ExecuteQueryRetry();
             lst.EnsureListHasContenttype(workCTX.Site, "CIS Document");
             CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
             ListItemCollection items = lst.GetItems(oQuery);
             workCTX.Load(items);
-            workCTX.ExecuteQuery();
+            workCTX.ExecuteQueryRetry();
 
             ShowProgress(cListName + " = " + items.Count);
             foreach (var listItem in items)
@@ -4912,7 +4912,7 @@ namespace spToolbelt2019Lib
                 try
                 {
                     workCTX.Load(listItem, l => l["FileLeafRef"], l => l["Title"], l => l.ContentType.Name, l => l["FileDirRef"]);
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
                     Folder parentFolder = GetListItemFolder(listItem);
                     if (listItem["Title"] != null)
                     {
@@ -4941,7 +4941,7 @@ namespace spToolbelt2019Lib
                             {
                                 ListItem itmUpdate = lstUpdate.GetItemById(listItem.Id);
                                 updateCTX.Load(itmUpdate);
-                                updateCTX.ExecuteQuery();
+                                updateCTX.ExecuteQueryRetry();
 
 
                                 itmUpdate["cisFolder"] = parentFolder.Name;
@@ -4953,7 +4953,7 @@ namespace spToolbelt2019Lib
                                 itmUpdate["cisLocationNo"] = cNumber;
                                 itmUpdate["cisLocationType"] = cType;
                                 itmUpdate.Update();
-                                updateCTX.ExecuteQuery();
+                                updateCTX.ExecuteQueryRetry();
 
                                 // ProcessItem(listItem, parentFolder.Name);
                             }
@@ -4976,21 +4976,21 @@ namespace spToolbelt2019Lib
             ContentType ct = workCTX.Web.GetContentType("CIS Document");
             workCTX.Load(ct);
             workCTX.Load(ctFolder);
-            workCTX.ExecuteQuery();
+            workCTX.ExecuteQueryRetry();
             List lst = workCTX.Web.Lists.GetByTitle(cListName);
             workCTX.Load(lst);
-            workCTX.ExecuteQuery();
+            workCTX.ExecuteQueryRetry();
 
 
             var field = workCTX.CastTo<FieldChoice>(lst.Fields.GetByInternalNameOrTitle("Document Type"));
             workCTX.Load(field, f => f.Choices);
-            workCTX.ExecuteQuery();
+            workCTX.ExecuteQueryRetry();
 
 
             CamlQuery oQuery = CamlQuery.CreateAllItemsQuery();
             ListItemCollection items = lst.GetItems(oQuery);
             workCTX.Load(items, itms => itms.Include(itm => itm.ContentType.Name, itm => itm.Id, itm => itm["FileDirRef"], itm => itm["FileLeafRef"], itm => itm["cisDocumentType"], itm => itm["cisLocationNo"], itm => itm["cisLocationName"], itm => itm["cisLocationType"], itm => itm["cisFolder"]));
-            workCTX.ExecuteQuery();
+            workCTX.ExecuteQueryRetry();
 
             ShowProgress(cListName + " = " + items.Count);
             foreach (var listItem in items)
@@ -5083,7 +5083,7 @@ namespace spToolbelt2019Lib
                     if (bUpdate)
                     {
                         listItem.Update();
-                        workCTX.ExecuteQuery();
+                        workCTX.ExecuteQueryRetry();
                     }
 
                 }
@@ -5255,7 +5255,7 @@ namespace spToolbelt2019Lib
                 listItem["cisLocationNo"] = cNumber;
                 listItem["cisLocationType"] = cType;
                 listItem.Update();
-                listItem.Context.ExecuteQuery();
+                listItem.Context.ExecuteQueryRetry();
             }
             catch (Exception ex)
             {
@@ -5310,7 +5310,7 @@ namespace spToolbelt2019Lib
             {
                 RoleAssignmentCollection roleAssignments = web.RoleAssignments;
                 workCTX.Load(roleAssignments, ra => ra.Include(rd => rd.Member.LoginName, rd => rd.Member.Title, rd => rd.Member.PrincipalType, rd => rd.RoleDefinitionBindings));
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (RoleAssignment ra in roleAssignments)
                 {
                     if (ra.Member.LoginName == cUserName)
@@ -5324,7 +5324,7 @@ namespace spToolbelt2019Lib
                 roleAssignments.Add(user_group, roleDefBindCol);
                 workCTX.Load(roleAssignments);
                 web.Update();
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
             }
             catch (Exception ex)
             {
@@ -5340,7 +5340,7 @@ namespace spToolbelt2019Lib
             {
                 RoleAssignmentCollection roleAssignments = list.RoleAssignments;
                 workCTX.Load(roleAssignments, ra => ra.Include(rd => rd.Member.LoginName, rd => rd.Member.Title, rd => rd.Member.PrincipalType, rd => rd.RoleDefinitionBindings));
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (RoleAssignment ra in roleAssignments)
                 {
                     if (ra.Member.LoginName == cUserName)
@@ -5354,7 +5354,7 @@ namespace spToolbelt2019Lib
                 roleAssignments.Add(user_group, roleDefBindCol);
                 workCTX.Load(roleAssignments);
                 list.Update();
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
             }
             catch (Exception ex)
             {
@@ -5371,7 +5371,7 @@ namespace spToolbelt2019Lib
             {
                 RoleAssignmentCollection roleAssignments = item.RoleAssignments;
                 workCTX.Load(roleAssignments, ra => ra.Include(rd => rd.Member.LoginName, rd => rd.Member.Title, rd => rd.Member.PrincipalType, rd => rd.RoleDefinitionBindings));
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (RoleAssignment ra in roleAssignments)
                 {
                     if (ra.Member.LoginName == cUserName)
@@ -5385,7 +5385,7 @@ namespace spToolbelt2019Lib
                 roleAssignments.Add(user_group, roleDefBindCol);
                 workCTX.Load(roleAssignments);
                 item.SystemUpdate();
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
             }
             catch (Exception ex)
             {
@@ -5401,7 +5401,7 @@ namespace spToolbelt2019Lib
             {
                 RoleAssignmentCollection roleAssignments = web.RoleAssignments;
                 workCTX.Load(roleAssignments, ra => ra.Include(rd => rd.Member.Title, rd => rd.Member.PrincipalType, rd => rd.RoleDefinitionBindings));
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (RoleAssignment ra in roleAssignments)
                 {
                     if (ra.Member.Title == cGroupName)
@@ -5415,7 +5415,7 @@ namespace spToolbelt2019Lib
                 roleAssignments.Add(user_group, roleDefBindCol);
                 workCTX.Load(roleAssignments);
                 web.Update();
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
             }
             catch (Exception ex)
             {
@@ -5431,7 +5431,7 @@ namespace spToolbelt2019Lib
             {
                 RoleAssignmentCollection roleAssignments = list.RoleAssignments;
                 workCTX.Load(roleAssignments, ra => ra.Include(rd => rd.Member.Title, rd => rd.Member.PrincipalType, rd => rd.RoleDefinitionBindings));
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (RoleAssignment ra in roleAssignments)
                 {
                     if (ra.Member.Title == cGroupName)
@@ -5445,7 +5445,7 @@ namespace spToolbelt2019Lib
                 roleAssignments.Add(user_group, roleDefBindCol);
                 workCTX.Load(roleAssignments);
                 list.Update();
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
             }
             catch (Exception ex)
             {
@@ -5463,7 +5463,7 @@ namespace spToolbelt2019Lib
 
                 RoleAssignmentCollection roleAssignments = item.RoleAssignments;
                 workCTX.Load(roleAssignments, ra => ra.Include(rd => rd.Member.Title, rd => rd.Member.PrincipalType, rd => rd.RoleDefinitionBindings));
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 foreach (RoleAssignment ra in roleAssignments)
                 {
                     if (ra.Member.Title == cGroupName)
@@ -5477,7 +5477,7 @@ namespace spToolbelt2019Lib
                 roleAssignments.Add(user_group, roleDefBindCol);
                 workCTX.Load(roleAssignments);
                 item.SystemUpdate();
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
             }
             catch (Exception ex)
             {
@@ -5497,12 +5497,12 @@ namespace spToolbelt2019Lib
                 var page = workCTX.Web.GetFileByServerRelativeUrl(cPageUrl);
                 var wpm = page.GetLimitedWebPartManager(PersonalizationScope.Shared);
                 workCTX.Load(wpm, w => w.WebParts);
-                workCTX.ExecuteQuery();
+                workCTX.ExecuteQueryRetry();
                 Console.WriteLine(wpm.WebParts.Count);
                 foreach (WebPartDefinition wp in wpm.WebParts)
                 {
                     workCTX.Load(wp, wpi => wpi.WebPart);
-                    workCTX.ExecuteQuery();
+                    workCTX.ExecuteQueryRetry();
                     System.Diagnostics.Trace.WriteLine(wp.ToString());
 
 
@@ -5601,7 +5601,7 @@ namespace spToolbelt2019Lib
                 CamlQuery oQueryAll = CamlQuery.CreateAllItemsQuery();
                 ListItemCollection items = saveContext.Web.Lists.GetByTitle("spmiLists").GetItems(oQueryAll);
                 saveContext.Load(items, l => l.Include(li => li["spmiListID"], li => li["spmiSiteUrl"], li => li["spmiItemCount"], li => li["Title"]));
-                saveContext.ExecuteQuery();
+                saveContext.ExecuteQueryRetry();
 
 
                 foreach (ListItem listItem in items)
@@ -5680,7 +5680,7 @@ namespace spToolbelt2019Lib
             {
                 List workList = scanContext.Web.Lists.GetById(new Guid(cListId));
                 scanContext.Load(workList);
-                scanContext.ExecuteQuery();
+                scanContext.ExecuteQueryRetry();
 
                 CamlQuery camlQuery = new CamlQuery();
                 camlQuery.ViewXml = "<View Scope='RecursiveAll'><RowLimit>5000</RowLimit><ViewFields><FieldRef Name='ID' /></ViewFields></View>";
@@ -5693,7 +5693,7 @@ namespace spToolbelt2019Lib
                     scanContext.Load(listItemCollection);//, l => l.Include(li => li.File, li => li.FieldValuesAsText, li => li.HasUniqueRoleAssignments, li => li.DisplayName, li => li["Title"], li => li["FileLeafRef"], li => li["GUID"], li => li["File_x0020_Size"]));
 
 
-                    scanContext.ExecuteQuery();
+                    scanContext.ExecuteQueryRetry();
 
                     //Adding the current set of ListItems in our single buffer
                     items.AddRange(listItemCollection);
@@ -5711,7 +5711,7 @@ namespace spToolbelt2019Lib
                     {
                         scanContext.Load(li, itm => itm.DisplayName, itm => itm["GUID"], itm => itm.ContentType, itm => itm["Title"], itm => itm.FieldValuesAsText, itm => itm.HasUniqueRoleAssignments);
                     }
-                    scanContext.ExecuteQuery();
+                    scanContext.ExecuteQueryRetry();
                     if (li.ContentType.Name != "Folder")
                     {
                         SaveItemInfo(saveContext, li, cListId, (workList.BaseTemplate == 101));
@@ -5741,7 +5741,7 @@ namespace spToolbelt2019Lib
                 List lst = saveContext.Web.Lists.GetByTitle("spmiItems");
                 ListItemCollection items = lst.GetItems(oQuery);
                 saveContext.Load(items);
-                saveContext.ExecuteQuery();
+                saveContext.ExecuteQueryRetry();
                 if (items.Count == 0)
                 {
                     ListItemCreationInformation lici = new ListItemCreationInformation();
@@ -5771,7 +5771,7 @@ namespace spToolbelt2019Lib
                     workItem["spmiItemData"] = JsonConvert.SerializeObject(itm.FieldValuesAsText.FieldValues);
                     //workItem["spmiParentFolderUrl"] = itm.File.foldeworkFolder.ServerRelativeUrl
                     workItem.Update();
-                    saveContext.ExecuteQuery();
+                    saveContext.ExecuteQueryRetry();
                 }
             }
             catch (Exception ex)
@@ -5784,21 +5784,21 @@ namespace spToolbelt2019Lib
         private Int32 GetItemsToProcess(Web oWeb)
         {
             oWeb.Context.Load(oWeb, w => w.ServerRelativeUrl);
-            oWeb.Context.ExecuteQuery();
+            oWeb.Context.ExecuteQueryRetry();
             ShowSiteInfo("Working: " + oWeb.ServerRelativeUrl);
             Int32 runningCount = 1;
             try
             {
                 WebCollection webs = oWeb.Webs;
                 oWeb.Context.Load(webs);
-                oWeb.Context.ExecuteQuery();
+                oWeb.Context.ExecuteQueryRetry();
                 foreach (Web web in webs)
                 {
                     runningCount += GetItemsToProcess(web);
                 }
                 ListCollection lsts = oWeb.Lists;
                 oWeb.Context.Load(lsts, ls => ls.Include(l => l.Title), ls => ls.Include(l => l.BaseTemplate), ls => ls.Include(l => l.ItemCount), ls => ls.Where(l => l.Hidden == false && l.IsCatalog == false));
-                oWeb.Context.ExecuteQuery();
+                oWeb.Context.ExecuteQueryRetry();
                 foreach (List list in lsts)
                 {
                     runningCount = runningCount + 1;// +list.ItemCount;
@@ -5825,7 +5825,7 @@ namespace spToolbelt2019Lib
                 ClientContext walkContext = new ClientContext(oWorkItem.GetParm("scanurl"));
                 walkContext.Credentials = workCTX.Credentials;
                 walkContext.Load(walkContext.Web, ww => ww.Title, ww => ww.ServerRelativeUrl, ww => ww.Id);
-                walkContext.ExecuteQuery();
+                walkContext.ExecuteQueryRetry();
                 ShowInfo(walkContext.Web.Title + " - " + walkContext.Web.ServerRelativeUrl);
                 ShowProgress("Walking Site: " + oWorkItem.GetParm("scanurl"));
 
@@ -5920,7 +5920,7 @@ namespace spToolbelt2019Lib
                     itm = spmiLists.AddItem(lici);
                     itm["spmiListID"] = li.ListID;
                     itm.Update();
-                    saveContext.ExecuteQuery();
+                    saveContext.ExecuteQueryRetry();
                 }
                 itm["spmiItemCount"] = li.ItemCount;
                 itm["spmiLastItemModified"] = li.LastItemModified;
@@ -5944,7 +5944,7 @@ namespace spToolbelt2019Lib
                 itm["spmiUniquePermissions"] = li.UniquePermissions;
 
                 itm.Update();
-                saveContext.ExecuteQuery();
+                saveContext.ExecuteQueryRetry();
 
             }
             catch (Exception ex)
@@ -5966,7 +5966,7 @@ namespace spToolbelt2019Lib
                     itm["spmiSiteUrl"] = si.SiteUrl;
                     itm["Title"] = si.Title;
                     itm.Update();
-                    saveContext.ExecuteQuery();
+                    saveContext.ExecuteQueryRetry();
                 }
 
                 ////itm["spmiAccessRequestEmail"] = si.AccessRequestEmail;
@@ -5996,7 +5996,7 @@ namespace spToolbelt2019Lib
 
 
                 itm.Update();
-                saveContext.ExecuteQuery();
+                saveContext.ExecuteQueryRetry();
             }
             catch (Exception ex)
             {
@@ -6015,7 +6015,7 @@ namespace spToolbelt2019Lib
                 oListQuery.ViewXml = viewXML;
                 ListItemCollection listitems = lstLists.GetItems(oListQuery);
                 ctx.Load(listitems, itms => itms.Include(i => i.FieldValuesAsText, i => i.Id, i => i["Title"], i => i["spmiSiteUrl"], i => i["TargetList"], i => i["spmiTargetAction"], i => i["spmiTargetLocation"], i => i["spmiSiteID"]));
-                ctx.ExecuteQuery();
+                ctx.ExecuteQueryRetry();
                 RunCount = 0;
                 TotalItems = listitems.Count;
                 sw.Start();
@@ -6036,11 +6036,11 @@ namespace spToolbelt2019Lib
                     List tgtList = tgtCTX.Web.Lists.GetByTitle(itm["TargetList"].ToString());
                     tgtCTX.Load(tgtList);
                     tgtCTX.Load(tgtFields);
-                    tgtCTX.ExecuteQuery();
+                    tgtCTX.ExecuteQueryRetry();
 
                     FieldCollection srcFields = srcCTX.Web.Lists.GetByTitle(li.Title).Fields;
                     srcCTX.Load(srcFields, sfs => sfs.Include(sf => sf.Id, sf => sf.InternalName, sf => sf.Description, sf => sf.Hidden, sf => sf.Title, sf => sf.TypeAsString, sf => sf.Group));
-                    srcCTX.ExecuteQuery();
+                    srcCTX.ExecuteQueryRetry();
                     foreach (Field srcFld in srcFields)
                     {
                         try
@@ -6059,18 +6059,18 @@ namespace spToolbelt2019Lib
                                     }
                                     Field workField = tgtFields.GetByInternalNameOrTitle(srcFld.InternalName);
                                     tgtCTX.Load(workField);
-                                    tgtCTX.ExecuteQuery();
+                                    tgtCTX.ExecuteQueryRetry();
 
                                     if (!tgtList.Fields.HasField(workField.Id))
                                     {
                                         tgtList.Fields.Add(workField);
                                         tgtList.Update();
-                                        tgtCTX.ExecuteQuery();
+                                        tgtCTX.ExecuteQueryRetry();
                                     }
 
                                     workField = tgtList.Fields.GetByInternalNameOrTitle(srcFld.InternalName);
                                     tgtCTX.Load(workField);
-                                    tgtCTX.ExecuteQuery();
+                                    tgtCTX.ExecuteQueryRetry();
 
                                     if (workField.Title != srcFld.Title)
                                     {
@@ -6083,7 +6083,7 @@ namespace spToolbelt2019Lib
                                             workField.Title = srcFld.Title;
                                             workField.Update();
                                             tgtList.Update();
-                                            tgtCTX.ExecuteQuery();
+                                            tgtCTX.ExecuteQueryRetry();
 
                                         }
 
@@ -6154,7 +6154,7 @@ namespace spToolbelt2019Lib
                     case "Choice":
                         FieldChoice fc = (FieldChoice)srcFld;
                         srcCTX.Load(fc);
-                        srcCTX.ExecuteQuery();
+                        srcCTX.ExecuteQueryRetry();
 
                         tgtFields.EnsureFieldChoice(srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group, fc.Choices);
                         break;
@@ -6171,7 +6171,7 @@ namespace spToolbelt2019Lib
                     case "Computed":
                         FieldComputed fcomp = (FieldComputed)srcFld;
                         srcCTX.Load(fcomp, f => f.TypeAsString, f => f.Title, f => f.InternalName, f => f.Description, f => f.Group);
-                        srcCTX.ExecuteQuery();
+                        srcCTX.ExecuteQueryRetry();
 
                         string cCalculation = "";
                         tgtFields.EnsureFieldComputed(fcomp.TypeAsString, srcFld.InternalName, srcFld.Title, srcFld.Description, srcFld.Group, cCalculation);
@@ -6241,7 +6241,7 @@ namespace spToolbelt2019Lib
                 oListQuery.ViewXml = viewXML;
                 ListItemCollection listitems = lstLists.GetItems(oListQuery);
                 ctx.Load(listitems, itms => itms.Include(i => i.FieldValuesAsText, i => i.Id, i => i["Title"], i => i["spmiSiteUrl"], i => i["TargetList"], i => i["spmiTargetAction"], i => i["spmiTargetLocation"], i => i["spmiSiteID"]));
-                ctx.ExecuteQuery();
+                ctx.ExecuteQueryRetry();
                 List<ListInfo> listData = new List<ListInfo>();
                 foreach (ListItem itm in listitems)
                 {
@@ -6264,7 +6264,7 @@ namespace spToolbelt2019Lib
 
                         List tgtList = tgtCTX.Web.Lists.GetByTitle(itm["TargetList"].ToString());
                         tgtCTX.Load(tgtList, tls => tls.RootFolder);
-                        tgtCTX.ExecuteQuery();
+                        tgtCTX.ExecuteQueryRetry();
                         string cFolderTitle = itm["Title"].ToString();
                         cFolderTitle = cFolderTitle.Replace("/", "-");
                         tgtList.RootFolder.EnsureFolder(cFolderTitle);
@@ -6298,12 +6298,14 @@ namespace spToolbelt2019Lib
 
                 List lst = saveContext.Web.Lists.GetByTitle("spmiSites");
                 saveContext.Load(lst);
-                saveContext.ExecuteQuery();
+                saveContext.ExecuteQueryRetry();
                 CamlQuery oQuery = new CamlQuery();
                 oQuery.ViewXml = viewXML;
                 ListItemCollection items = lst.GetItems(oQuery);
                 saveContext.Load(items, si => si.Include(i => i["spmiSiteUrl"], i => i.Id));
-                saveContext.ExecuteQuery();
+                saveContext.ExecuteQueryRetry();
+                
+                
                 int iFoundID = 0;
                 foreach (var listItem in items)
                 {
@@ -6325,9 +6327,12 @@ namespace spToolbelt2019Lib
                 {
                     itmSite = lst.GetItemById(iFoundID);
                     saveContext.Load(itmSite);
-                    saveContext.ExecuteQuery();
+                    saveContext.ExecuteQueryRetry();
                 }
-                itmSite["spmiDepth"] = GetDepth(siteInfo.SiteUrl);
+                itmSite["spmiDepth"] = GetDepth(siteInfo);
+                Int32 icomplexity = GetSiteScore(siteInfo);
+                itmSite["spmiSiteComplexityScore"] = icomplexity;
+                itmSite["spmiSiteComplexityScore"] = icomplexity;
                 //itmSite["spmiParentSite"] = siteInfo.ParentWeb;
                 itmSite["spmiSiteID"] = siteInfo.Id;
                 string cPerm = BuildPermissions(siteInfo.Permissions);
@@ -6335,12 +6340,16 @@ namespace spToolbelt2019Lib
 
                 itmSite["spmiLastScan"] = DateTime.Now;
                 itmSite["spmiUniquePermissions"] = siteInfo.HasUniquePermissions;
-                //if (iParentID > 0)
-                //{
-                //    itmSite["spmiParentSite"] = iParentID;
-                //}
+                if (!String.IsNullOrEmpty(siteInfo.ParentWeb))
+                {
+                    Int32 iParentID = GetSiteID(saveContext, siteInfo.ParentWeb);
+                    if (iParentID > 0)
+                    {
+                        itmSite["spmiParentSite"] = iParentID;
+                    }
+                }
                 itmSite.Update();
-                saveContext.ExecuteQuery();
+                saveContext.ExecuteQueryRetry();
                 return itmSite.Id;
             }
             catch (Exception ex)
@@ -6353,6 +6362,48 @@ namespace spToolbelt2019Lib
                 {
                     ShowError(ex, "EnsureSiteInGallery " + siteInfo.SiteUrl, "");
                 }
+            }
+            return -1;
+        }
+
+        private Int32 GetSiteScore(infoSite siteInfo)
+        {
+            Int32 iSiteScore = 0;
+            if (siteInfo.HasUniquePermissions)
+            {
+                iSiteScore += 100;
+            }
+            foreach(infoList li in siteInfo.Lists)
+            {
+                iSiteScore += (10 + li.ListItemCount);
+                if(li.UniquePermissions)
+                {
+                    iSiteScore += 100;
+                }
+                foreach(infoItem ii in li.items)
+                {
+                    iSiteScore += 10;
+                }
+            }
+
+            return iSiteScore;
+        }
+
+        private int GetSiteID(ClientContext saveContext, string parentWeb)
+        {
+            try
+            {
+                List lstSites = saveContext.Web.Lists.GetByTitle("spmiSites");
+                ListItem parent = lstSites.GetItemByField(parentWeb, "spmiSiteUrl");
+                saveContext.Load(parent);
+                saveContext.ExecuteQueryRetry();
+                if (parent!=null)
+                {
+                    return parent.Id;
+                }
+            } catch(Exception ex)
+            {
+
             }
             return -1;
         }
@@ -6374,9 +6425,13 @@ namespace spToolbelt2019Lib
             return cRetVal;
         }
 
-        private Int32 GetDepth(string siteUrl)
+        private Int32 GetDepth(infoSite si)
         {
-            string tmpStr = siteUrl.Substring(siteUrl.IndexOf("//") + 2);
+            if (string.IsNullOrEmpty(si.ParentWeb))
+            {
+                return 1;
+            }
+            string tmpStr = si.SiteUrl.Substring(si.SiteUrl.IndexOf("//") + 2);
             return CountStringOccurrences(tmpStr, "/") + 1;
         }
 
@@ -6401,12 +6456,12 @@ namespace spToolbelt2019Lib
 
                 List lst = saveContext.Web.Lists.GetByTitle("spmiLists");
                 saveContext.Load(lst);
-                saveContext.ExecuteQuery();
+                saveContext.ExecuteQueryRetry();
                 CamlQuery oQuery = new CamlQuery();
                 oQuery.ViewXml = viewXML;
                 ListItemCollection items = lst.GetItems(oQuery);
                 saveContext.Load(items);
-                saveContext.ExecuteQuery();
+                saveContext.ExecuteQueryRetry();
                 int iListID = 0;
 
                 foreach (var lstItem in items)
@@ -6431,7 +6486,7 @@ namespace spToolbelt2019Lib
                 {
                     listItem = lst.GetItemById(iListID);
                     saveContext.Load(listItem);
-                    saveContext.ExecuteQuery();
+                    saveContext.ExecuteQueryRetry();
                 }
                 listItem["spmiLastScan"] = DateTime.Now;
                 listItem["spmiUniquePermissions"] = listInfo.UniquePermissions;
@@ -6439,7 +6494,7 @@ namespace spToolbelt2019Lib
                 listItem["spmiPermissions"] = cPerm;
                 listItem["spmiItemCount"] = listInfo.ListItemCount;
                 listItem.Update();
-                saveContext.ExecuteQuery();
+                saveContext.ExecuteQueryRetry();
                 return listItem.Id;
             }
             catch (Exception ex)

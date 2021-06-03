@@ -42,6 +42,7 @@
             this.viewLogFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.testToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuSiteScript = new System.Windows.Forms.ToolStripMenuItem();
+            this.syncNavToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.checkForUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.shareGateScriptBuilderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
@@ -53,7 +54,7 @@
             this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
             this.toolStripButton2 = new System.Windows.Forms.ToolStripButton();
             this.tbSiteScript = new System.Windows.Forms.ToolStripButton();
-            this.syncNavToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.metaDataToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -65,7 +66,8 @@
             this.fileToolStripMenuItem,
             this.editToolStripMenuItem1,
             this.toolsToolStripMenuItem,
-            this.scanConfigToolStripMenuItem});
+            this.scanConfigToolStripMenuItem,
+            this.metaDataToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Padding = new System.Windows.Forms.Padding(2, 1, 0, 1);
@@ -165,6 +167,13 @@
             this.mnuSiteScript.Text = "Site Script";
             this.mnuSiteScript.Click += new System.EventHandler(this.mnuSiteScript_Click);
             // 
+            // syncNavToolStripMenuItem
+            // 
+            this.syncNavToolStripMenuItem.Name = "syncNavToolStripMenuItem";
+            this.syncNavToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
+            this.syncNavToolStripMenuItem.Text = "SyncNav";
+            this.syncNavToolStripMenuItem.Click += new System.EventHandler(this.syncNavToolStripMenuItem_Click);
+            // 
             // checkForUpdatesToolStripMenuItem
             // 
             this.checkForUpdatesToolStripMenuItem.Name = "checkForUpdatesToolStripMenuItem";
@@ -259,12 +268,12 @@
             this.tbSiteScript.Text = "toolStripButton2";
             this.tbSiteScript.Click += new System.EventHandler(this.tbSiteScript_Click);
             // 
-            // syncNavToolStripMenuItem
+            // metaDataToolStripMenuItem
             // 
-            this.syncNavToolStripMenuItem.Name = "syncNavToolStripMenuItem";
-            this.syncNavToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
-            this.syncNavToolStripMenuItem.Text = "SyncNav";
-            this.syncNavToolStripMenuItem.Click += new System.EventHandler(this.syncNavToolStripMenuItem_Click);
+            this.metaDataToolStripMenuItem.Name = "metaDataToolStripMenuItem";
+            this.metaDataToolStripMenuItem.Size = new System.Drawing.Size(70, 22);
+            this.metaDataToolStripMenuItem.Text = "MetaData";
+            this.metaDataToolStripMenuItem.Click += new System.EventHandler(this.metaDataToolStripMenuItem_Click);
             // 
             // frmMain
             // 
@@ -319,6 +328,7 @@
         private System.Windows.Forms.ToolStripMenuItem scanConfigToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem updateFromSQLToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem syncNavToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem metaDataToolStripMenuItem;
     }
 }
 

@@ -283,6 +283,7 @@
     <Compile Include="Code\Extensions\extListItem.cs" />
     <Compile Include="Code\Extensions\extWeb.cs" />
     <Compile Include="Code\GetUserInfo.cs" />
+    <Compile Include="Code\metadataWorker.cs" />
     <Compile Include="Code\scriptItem.cs" />
     <Compile Include="Code\scriptItems.cs" />
     <Compile Include="Code\scriptWorker.cs" />

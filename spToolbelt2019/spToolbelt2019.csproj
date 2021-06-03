@@ -417,6 +417,12 @@
     <Compile Include="Forms\frmMain.Designer.cs">
       <DependentUpon>frmMain.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\frmMetaDataSync.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\frmMetaDataSync.Designer.cs">
+      <DependentUpon>frmMetaDataSync.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\frmResetPerms.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -478,6 +484,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\frmMain.resx">
       <DependentUpon>frmMain.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\frmMetaDataSync.resx">
+      <DependentUpon>frmMetaDataSync.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\frmResetPerms.resx">
       <DependentUpon>frmResetPerms.cs</DependentUpon>

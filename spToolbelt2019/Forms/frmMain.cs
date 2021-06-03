@@ -189,5 +189,12 @@ namespace spToolbelt2019
             sn.Show();
 
         }
+
+        private void metaDataToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            frmMetaDataSync frmMDS = new frmMetaDataSync(ctx);
+            frmMDS.MdiParent = this;
+            frmMDS.Show();
+        }
     }
 }
